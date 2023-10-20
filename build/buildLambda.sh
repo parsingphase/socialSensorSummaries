@@ -2,9 +2,6 @@
 
 set -euo pipefail
 
-SCHEDULE_FILE=2023.csv
-WATERMARK_FILE=watermark3.png
-
 get_script_dir () {
     SOURCE="${BASH_SOURCE[0]}"
     SOURCE_DIR=$( dirname "$SOURCE" )
@@ -14,9 +11,7 @@ get_script_dir () {
 
 SCRIPT_DIR="$( get_script_dir )"
 
-SCHEDULE_DIR="${SCRIPT_DIR}/../potd_schedules"
 DIST_DIR="${SCRIPT_DIR}/../dist"
-DATA_DIR="${SCRIPT_DIR}/../data"
 BUILD_DIR="${SCRIPT_DIR}"
 OUTPUT_DIR="${BUILD_DIR}/output"
 
@@ -28,10 +23,10 @@ rollup -c
 # Then we can safely `npm install --omit=dev` in `dist`
 
 rm -rf "${OUTPUT_DIR}/lambda.zip"
-mkdir -p "${DIST_DIR}/data/"
-cp "${SCHEDULE_DIR}/${SCHEDULE_FILE}" "${DIST_DIR}/data/"
-cp "${DATA_DIR}/${WATERMARK_FILE}" "${DIST_DIR}/data/watermark.png"
+
 cd "${DIST_DIR}"
+npm ci --omit=dev
+
 rm -rf "${OUTPUT_DIR}"
 mkdir -p "${OUTPUT_DIR}"
 zip -r "${OUTPUT_DIR}/lambda.zip" * > /dev/null

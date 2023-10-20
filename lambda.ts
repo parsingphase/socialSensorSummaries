@@ -4,7 +4,7 @@ import {
   fetchDailyCount,
   postToMastodon,
 } from "./core/haiku2masto";
-import { config } from "./config/config";
+
 import { DateTime, Duration } from "luxon";
 
 /**
