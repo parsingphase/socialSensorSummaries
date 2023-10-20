@@ -1,0 +1,44 @@
+{
+  "name": "masto-bird-summary",
+  "version": "0.0.1",
+  "description": "Haikubox to Mastodon daily summary poster",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm run test:static",
+    "test:static": "npm run test:static:prettier && npm run test:static:lint && npm run test:static:tsc",
+    "test:static:lint": "eslint . --ext ts --ext js",
+    "test:static:tsc": "tsc --pretty --noEmit",
+    "test:static:prettier": "prettier -c .",
+    "lambda:build": "./build/buildLambda.sh",
+    "lambda:deploy:dev": "npm run lambda:build && npm run cdk:deploy:dev",
+    "lambda:deploy:prod": "npm run lambda:build && npm run cdk:deploy:prod",
+    "cdk:synth": "cdk synth",
+    "cdk:deploy:dev": "cdk deploy --require-approval broadening",
+    "cdk:deploy:prod": "DEPLOY_ENV=prod cdk deploy --require-approval broadening"
+  },
+  "author": "Richard George <richard@phase.org>",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.109",
+    "@types/luxon": "^3.1.0",
+    "@types/node": "^18.11.12",
+    "@types/ws": "^8.5.8",
+    "@typescript-eslint/eslint-plugin": "^5.46.0",
+    "aws-cdk": "^2.102.0",
+    "aws-cdk-lib": "^2.102.0",
+    "aws-lambda": "^1.0.7",
+    "eslint": "^8.29.0",
+    "eslint-plugin-jsdoc": "^39.6.4",
+    "prettier": "^2.8.1",
+    "rollup": "^3.7.5",
+    "rollup-plugin-copy": "^3.4.0",
+    "rollup-plugin-typescript2": "^0.34.1",
+    "ts-node": "^10.9.1",
+    "tsconfig-paths": "^4.1.1",
+    "typescript": "^4.9.4"
+  },
+  "dependencies": {
+    "luxon": "^3.1.1",
+    "masto": "4.9.1"
+  }
+}
