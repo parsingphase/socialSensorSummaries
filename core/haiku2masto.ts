@@ -36,7 +36,7 @@ function buildBirdPost(
   // sorted by default, but let's be sure
   birds.sort((a, b) => b.count - a.count);
 
-  let postString = `Top ${listLength} birds detected in my yard yesterday:\n\n`;
+  let postString = `The ${listLength} most frequently observed bird species in my yard yesterday:\n\n`;
   birds
     .slice(0, listLength)
     .forEach(({ bird }, index) => (postString += `${index + 1}: ${bird}\n`));
