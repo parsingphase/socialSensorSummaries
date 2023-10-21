@@ -41,7 +41,7 @@ function buildBirdPost(
   birds.sort((a, b) => b.count - a.count);
 
   let postText = "#YesterdaysYardBirds (NE MA):\n";
-  const tailText = "\n\n#DailyBird #Birds";
+  const tailText = "\n\n#DailyBird #Birds #BirdsongDetection";
   const candidateLines: string[] = [];
 
   (minObservationCount
