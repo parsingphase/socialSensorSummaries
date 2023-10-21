@@ -27,15 +27,15 @@ async function fetchDailyCount(
  * Build daily summary string
  *
  * @param birds
- * @param listLength
- * @param maxLength
- * @param minCount
+ * @param maxBirds
+ * @param maxPostLength
+ * @param minObservationCount
  */
 function buildBirdPost(
   birds: { bird: string; count: number }[],
-  listLength: number,
-  maxLength: number = 500,
-  minCount?: number
+  maxBirds: number,
+  maxPostLength: number = 500,
+  minObservationCount?: number
 ): string {
   // sorted by default, but let's be sure
   birds.sort((a, b) => b.count - a.count);
@@ -44,14 +44,17 @@ function buildBirdPost(
   const tailText = "\n\n#DailyBird #Birds";
   const candidateLines: string[] = [];
 
-  (minCount ? birds.filter((b) => b.count >= minCount) : birds)
-    .slice(0, listLength)
+  (minObservationCount
+    ? birds.filter((b) => b.count >= minObservationCount)
+    : birds
+  )
+    .slice(0, maxBirds)
     .forEach(({ bird }, index) => candidateLines.push(`${index + 1}: ${bird}`));
 
   for (let i = 0; i < candidateLines.length; i++) {
     if (
       postText.length + candidateLines[i].length + tailText.length <
-      maxLength
+      maxPostLength
     ) {
       postText += `\n${candidateLines[i]}`;
     } else {
