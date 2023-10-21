@@ -28,21 +28,39 @@ async function fetchDailyCount(
  *
  * @param birds
  * @param listLength
+ * @param maxLength
+ * @param minCount
  */
 function buildBirdPost(
   birds: { bird: string; count: number }[],
-  listLength: number
+  listLength: number,
+  maxLength: number = 500,
+  minCount?: number
 ): string {
   // sorted by default, but let's be sure
   birds.sort((a, b) => b.count - a.count);
 
-  let postString = `The ${listLength} most frequently observed bird species in my yard yesterday:\n\n`;
-  birds
-    .slice(0, listLength)
-    .forEach(({ bird }, index) => (postString += `${index + 1}: ${bird}\n`));
+  let postText = "#YesterdaysYardBirds (NE MA):\n";
+  const tailText = "\n\n#DailyBird #Birds";
+  const candidateLines: string[] = [];
 
-  postString += "\n#Birds #DailyBird";
-  return postString;
+  (minCount ? birds.filter((b) => b.count >= minCount) : birds)
+    .slice(0, listLength)
+    .forEach(({ bird }, index) => candidateLines.push(`${index + 1}: ${bird}`));
+
+  for (let i = 0; i < candidateLines.length; i++) {
+    if (
+      postText.length + candidateLines[i].length + tailText.length <
+      maxLength
+    ) {
+      postText += `\n${candidateLines[i]}`;
+    } else {
+      break;
+    }
+  }
+
+  postText += tailText;
+  return postText;
 }
 
 /**

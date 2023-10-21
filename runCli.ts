@@ -18,12 +18,16 @@ async function main(): Promise<void> {
   const { serialNumber, apiBaseUrl: haikuBaseUrl } = config.haikubox;
   const birds = await fetchDailyCount(haikuBaseUrl, serialNumber, when);
 
-  const listLength = 10;
-  const postString = buildBirdPost(birds, listLength);
+  const listLength = 20;
+  const {
+    apiClientToken,
+    apiBaseUrl: mastoBaseUrl,
+    maxPostLength,
+  } = config.mastodon;
+  const postString = buildBirdPost(birds, listLength, maxPostLength, 3);
 
   console.log({ birds, postString, length: postString.length });
 
-  const { apiClientToken, apiBaseUrl: mastoBaseUrl } = config.mastodon;
   const { postVisibility } = config.lambda.dev;
   const status = await postToMastodon(
     mastoBaseUrl,
