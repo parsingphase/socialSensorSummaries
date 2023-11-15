@@ -2,10 +2,7 @@
 
 import { DateTime, Duration } from "luxon";
 import { config } from "./config/config";
-import {
-  buildBirdPost,
-  postToMastodon,
-} from "./core/haiku2masto";
+import { buildBirdPost, postToMastodon } from "./core/haiku2masto";
 import { fetchDailyCount } from "./haiku";
 
 /**

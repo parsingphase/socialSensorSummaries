@@ -1,8 +1,5 @@
 import { Context, ScheduledEvent } from "aws-lambda";
-import {
-  buildBirdPost,
-  postToMastodon,
-} from "./core/haiku2masto";
+import { buildBirdPost, postToMastodon } from "./core/haiku2masto";
 
 import { DateTime, Duration } from "luxon";
 import { fetchDailyCount } from "./haiku";

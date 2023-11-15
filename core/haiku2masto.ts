@@ -1,6 +1,5 @@
 import { CreateStatusParams, login, Status, StatusVisibility } from "masto";
 
-
 /**
  * Build daily summary string
  *

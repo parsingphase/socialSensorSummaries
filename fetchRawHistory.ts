@@ -27,7 +27,7 @@ async function main() {
     }
 
     day = day.plus({ day: 1 });
-  } while (day < DateTime.now());
+  } while (day < DateTime.now().minus({ day: 1 }));
 }
 
 main().finally(() => console.log("DONE"));
