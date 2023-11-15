@@ -1,7 +1,7 @@
 #!/usr/bin/env npx ts-node --esm -r tsconfig-paths/register
 
 import { loadCachedDailyData } from "./haiku";
-import { createCanvas, DOMMatrix } from "canvas";
+import { CanvasRenderingContext2D, createCanvas, DOMMatrix } from "canvas";
 import fs from "fs";
 
 const rawDir = `${__dirname}/rawHaikuData`;
@@ -9,6 +9,25 @@ const rawDir = `${__dirname}/rawHaikuData`;
 type DatedCount = { bird: string; date: string; count: number };
 
 type LineChartPoint = { columnLabel: string; count: number };
+
+function smooth(data: LineChartPoint[], number: number) {
+  const reach = Math.floor(number / 2);
+  const outData: LineChartPoint[] = [];
+  for (let i = 0; i < data.length; i++) {
+    const segment = data.slice(
+      Math.max(i - reach, 0),
+      Math.min(i + reach, data.length - 1)
+    );
+
+    let total = 0;
+    segment.forEach((s) => (total += s.count));
+    outData.push({
+      columnLabel: data[i].columnLabel,
+      count: total / segment.length,
+    });
+  }
+  return outData;
+}
 
 class LineChart {
   protected canvasWidth: number;
@@ -57,12 +76,14 @@ class LineChart {
 
   private drawGraph() {
     const canvas = createCanvas(this.canvasWidth, this.canvasHeight);
-    const ctx = canvas.getContext("2d");
+    const ctx: CanvasRenderingContext2D = canvas.getContext("2d");
 
     const bgColor = "rgb(230,230,230)";
     const fgColor = "rgb(245,245,230)";
-    const lineColor = "rgb(63,63,127)";
+    const dataColor = "rgb(210,210,210)";
+    const avgColor = "rgb(63,63,127)";
     const textColor = "rgb(0,0,0)";
+    const avgDash = [4, 4];
 
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
@@ -93,8 +114,43 @@ class LineChart {
     );
 
     const lineChartPoints = [...this.data];
-    ctx.strokeStyle = lineColor;
+    this.plotPoints(ctx, lineChartPoints, dataColor);
+    this.plotPoints(ctx, smooth(lineChartPoints, 7), avgColor, avgDash);
 
+    for (
+      let labelColumn = 0;
+      labelColumn <= lineChartPoints.length;
+      labelColumn += lineChartPoints.length / 4
+    ) {
+      // LHS date label
+      ctx.translate(
+        this.graphOffset.x +
+          (labelColumn / this.data.length) * (this.graphWidth - 6),
+        this.graphOffset.y + this.graphHeight + 10
+      );
+      ctx.rotate(Math.PI / 2);
+      ctx.fillStyle = textColor;
+      ctx.fillText(
+        lineChartPoints[
+          Math.min(lineChartPoints.length - 1, Math.floor(labelColumn))
+        ].columnLabel,
+        0,
+        0
+      );
+      ctx.setTransform(new DOMMatrix([1, 0, 0, 1, 0, 0]));
+    }
+
+    return canvas;
+  }
+
+  protected plotPoints(
+    ctx: CanvasRenderingContext2D,
+    lineChartPoints: LineChartPoint[],
+    lineColor: string,
+    dash: number[] = []
+  ) {
+    ctx.strokeStyle = lineColor;
+    ctx.setLineDash(dash);
     const startDatum = lineChartPoints[0];
     if (startDatum) {
       const startPoint = this.graphPointToCanvasXY(0, startDatum.count);
@@ -109,39 +165,8 @@ class LineChart {
         ctx.lineTo(nextPoint.x, nextPoint.y);
       }
       ctx.stroke();
-
-      for (
-        let labelColumn = 0;
-        labelColumn <= this.data.length;
-        labelColumn += this.data.length / 4
-      ) {
-        // LHS date label
-        ctx.translate(
-          this.graphOffset.x +
-            (labelColumn / this.data.length) * (this.graphWidth - 6),
-          this.graphOffset.y + this.graphHeight + 10
-        );
-        ctx.rotate(Math.PI / 2);
-        ctx.fillStyle = textColor;
-        ctx.fillText(
-          this.data[Math.min(this.data.length - 1, Math.floor(labelColumn))]
-            .columnLabel,
-          0,
-          0
-        );
-        ctx.setTransform(new DOMMatrix([1, 0, 0, 1, 0, 0]));
-      }
-      // // RHS date label
-      // ctx.translate(
-      //   this.graphOffset.x + this.graphWidth - 6,
-      //   this.graphOffset.y + this.graphHeight + 10
-      // );
-      // ctx.rotate(Math.PI / 2);
-      // ctx.fillStyle = textColor;
-      // ctx.fillText(this.data[this.data.length - 1].columnLabel, 0, 0);
-      // ctx.setTransform(new DOMMatrix([1, 0, 0, 1, 0, 0]));
     }
-    return canvas;
+    ctx.setLineDash([]);
   }
 
   private graphPointToCanvasXY(i: number, count: number) {
