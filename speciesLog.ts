@@ -35,12 +35,12 @@ class LineChart {
     this.title = title;
 
     this.graphOffset = {
-      x: 100,
-      y: 100,
+      x: 60,
+      y: 60,
     };
 
-    this.graphWidth = Math.floor(canvasWidth - 150);
-    this.graphHeight = Math.floor(canvasHeight - 200);
+    this.graphWidth = Math.floor(canvasWidth - 100);
+    this.graphHeight = Math.floor(canvasHeight - 150);
 
     this.data = data;
 
@@ -59,8 +59,8 @@ class LineChart {
     const canvas = createCanvas(this.canvasWidth, this.canvasHeight);
     const ctx = canvas.getContext("2d");
 
-    const bgColor = "rgb(200,200,200)";
-    const fgColor = "rgb(230,230,230)";
+    const bgColor = "rgb(230,230,230)";
+    const fgColor = "rgb(245,245,230)";
     const lineColor = "rgb(63,63,127)";
     const textColor = "rgb(0,0,0)";
 
@@ -70,7 +70,7 @@ class LineChart {
     ctx.fillStyle = textColor;
     ctx.font = "20px Impact";
     const textMeasure = ctx.measureText(this.title);
-    ctx.fillText(this.title, (this.canvasWidth - textMeasure.width) / 2, 50);
+    ctx.fillText(this.title, (this.canvasWidth - textMeasure.width) / 2, 35);
 
     ctx.font = "12px Impact";
     ctx.fillText(
@@ -110,28 +110,36 @@ class LineChart {
       }
       ctx.stroke();
 
-      // LHS date label
-      ctx.translate(this.graphOffset.x, this.graphOffset.y + this.graphHeight + 10);
-      ctx.rotate(Math.PI/2);
-      ctx.fillStyle = textColor;
-      ctx.fillText(
-        startDatum.columnLabel,
-        0,
-        0
-      );
-      ctx.setTransform(new DOMMatrix([1, 0, 0, 1, 0, 0]));
-
-      // RHS date label
-      ctx.translate(this.graphOffset.x + this.graphWidth - 6, this.graphOffset.y + this.graphHeight + 10);
-      ctx.rotate(Math.PI/2);
-      ctx.fillStyle = textColor;
-      ctx.fillText(
-        this.data[this.data.length-1].columnLabel,
-        0,
-        0
-      );
-      ctx.setTransform(new DOMMatrix([1, 0, 0, 1, 0, 0]));
-
+      for (
+        let labelColumn = 0;
+        labelColumn <= this.data.length;
+        labelColumn += this.data.length / 4
+      ) {
+        // LHS date label
+        ctx.translate(
+          this.graphOffset.x +
+            (labelColumn / this.data.length) * (this.graphWidth - 6),
+          this.graphOffset.y + this.graphHeight + 10
+        );
+        ctx.rotate(Math.PI / 2);
+        ctx.fillStyle = textColor;
+        ctx.fillText(
+          this.data[Math.min(this.data.length - 1, Math.floor(labelColumn))]
+            .columnLabel,
+          0,
+          0
+        );
+        ctx.setTransform(new DOMMatrix([1, 0, 0, 1, 0, 0]));
+      }
+      // // RHS date label
+      // ctx.translate(
+      //   this.graphOffset.x + this.graphWidth - 6,
+      //   this.graphOffset.y + this.graphHeight + 10
+      // );
+      // ctx.rotate(Math.PI / 2);
+      // ctx.fillStyle = textColor;
+      // ctx.fillText(this.data[this.data.length - 1].columnLabel, 0, 0);
+      // ctx.setTransform(new DOMMatrix([1, 0, 0, 1, 0, 0]));
     }
     return canvas;
   }
