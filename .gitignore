@@ -2,3 +2,4 @@ cdk.out
 build/output
 config.ts
 dist
+rawHaikuData

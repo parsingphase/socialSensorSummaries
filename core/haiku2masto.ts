@@ -1,27 +1,5 @@
 import { CreateStatusParams, login, Status, StatusVisibility } from "masto";
 
-/**
- * Fetch daily status from Haikubox API
- * @param haikuBaseUrl
- * @param serialNumber
- * @param when
- */
-async function fetchDailyCount(
-  haikuBaseUrl: string,
-  serialNumber: string,
-  when: string
-): Promise<{ bird: string; count: number }[]> {
-  const queryUrl = `${haikuBaseUrl}haikubox/${serialNumber}/daily-count?date=${when}`;
-
-  const birds: { bird: string; count: number }[] = await (
-    await fetch(queryUrl)
-  ).json();
-
-  if (!(birds && birds?.length > 0)) {
-    throw new Error("No birds!");
-  }
-  return birds;
-}
 
 /**
  * Build daily summary string
@@ -93,4 +71,4 @@ async function postToMastodon(
   return masto.statuses.create(statusParams);
 }
 
-export { buildBirdPost, postToMastodon, fetchDailyCount };
+export { buildBirdPost, postToMastodon };
