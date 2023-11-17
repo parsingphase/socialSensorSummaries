@@ -1,45 +1,14 @@
 #!/usr/bin/env npx ts-node --esm -r tsconfig-paths/register
 
 import * as fs from "fs";
-import { BirdRecord, DayRecord, loadCachedDailyData } from "./haiku";
+import {
+  aggregateAllDays,
+  BirdRecord,
+  DayRecord,
+  loadCachedDailyData,
+} from "./haiku";
 
 const rawDir = `${__dirname}/rawHaikuData`;
-
-/**
- * Given a set of daily records, convert to a list of BirdRecords covering the total time period, one count per bird
- *
- * @param allData
- * @param dailyMinimum
- * @param totalMinimum
- */
-function aggregateAllDays(
-  allData: DayRecord[],
-  dailyMinimum: number = 1,
-  totalMinimum: number = 1
-): BirdRecord[] {
-  const totalCountMap: { [bird: string]: number } = {};
-  allData.map((d) => {
-    return d.dayData
-      .filter((c) => c.count >= dailyMinimum)
-      .map(
-        (b) =>
-          (totalCountMap[b.bird] = totalCountMap[b.bird]
-            ? totalCountMap[b.bird] + b.count
-            : b.count)
-      );
-  });
-
-  const totalCount: BirdRecord[] = [];
-  for (const birdKey in totalCountMap) {
-    totalCount.push({ bird: birdKey, count: totalCountMap[birdKey] });
-  }
-
-  // console.log(totalCountMap);
-
-  totalCount.sort((a, b) => b.count - a.count);
-
-  return totalCount.filter((d) => d.count >= totalMinimum);
-}
 
 async function main() {
   const allData = loadCachedDailyData(rawDir);

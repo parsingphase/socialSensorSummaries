@@ -1,6 +1,6 @@
 #!/usr/bin/env npx ts-node --esm -r tsconfig-paths/register
 
-import { loadCachedDailyData } from "./haiku";
+import { aggregateAllDays, DayRecord, loadCachedDailyData } from "./haiku";
 import { CanvasRenderingContext2D, createCanvas, DOMMatrix } from "canvas";
 import fs from "fs";
 
@@ -215,17 +215,11 @@ class LineChart {
   }
 }
 
-function main() {
-  const targetSpecies = process.argv[2];
-
-  if (!targetSpecies) {
-    console.log("Must specify species");
-    process.exit(1);
-  }
-
-  const allData = loadCachedDailyData(rawDir);
-  // we want an ordered list of [ { bird: SPECIES, date: YYYY-MM-DD, count: number }]
-
+function drawSpeciesGraph(
+  allData: DayRecord[],
+  targetSpecies: string,
+  outFile: string
+) {
   const speciesDayCount: DatedCount[] = [];
 
   for (const dailyTotals of allData) {
@@ -246,11 +240,30 @@ function main() {
   });
 
   const graph = new LineChart(800, 600, data, targetSpecies);
-  const outFile = `${__dirname}/tmp/${targetSpecies}.png`;
   graph.writeToPng(outFile);
 
   // console.log(JSON.stringify(speciesDayCount));
-  console.log(`Wrote to ${data.length} points to ${outFile}`);
+  console.log(`Wrote ${data.length} points to ${outFile}`);
+}
+
+function main() {
+  const targetSpecies = process.argv[2];
+  const allData = loadCachedDailyData(rawDir);
+  const aggregate = aggregateAllDays(allData, 1, 10);
+
+  let drawSpecies: string[] = [];
+  if (targetSpecies) {
+    drawSpecies = [targetSpecies];
+  } else {
+    drawSpecies = aggregate.map((a) => a.bird);
+  }
+
+  // we want an ordered list of [ { bird: SPECIES, date: YYYY-MM-DD, count: number }]
+  for (const species of drawSpecies) {
+    const speciesCount = aggregate.filter((a) => a.bird == species)[0].count;
+    const outFile = `${__dirname}/tmp/${species} (${speciesCount}).png`;
+    drawSpeciesGraph(allData, species, outFile);
+  }
 }
 
 main();
