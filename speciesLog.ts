@@ -117,26 +117,19 @@ class LineChart {
     this.plotPoints(ctx, lineChartPoints, dataColor);
     this.plotPoints(ctx, smooth(lineChartPoints, 7), avgColor, avgDash);
 
-    for (
-      let labelColumn = 0;
-      labelColumn <= lineChartPoints.length;
-      labelColumn += lineChartPoints.length / 4
-    ) {
+    const numColumLabels = 10;
+    for (let numerator = 0; numerator <= numColumLabels; numerator++) {
       // LHS date label
+      const labelColumn = Math.floor(
+        (numerator * (lineChartPoints.length - 1)) / numColumLabels
+      );
       ctx.translate(
-        this.graphOffset.x +
-          (labelColumn / this.data.length) * (this.graphWidth - 6),
+        this.graphOffset.x + (labelColumn / this.data.length) * this.graphWidth,
         this.graphOffset.y + this.graphHeight + 10
       );
       ctx.rotate(Math.PI / 2);
       ctx.fillStyle = textColor;
-      ctx.fillText(
-        lineChartPoints[
-          Math.min(lineChartPoints.length - 1, Math.floor(labelColumn))
-        ].columnLabel,
-        0,
-        0
-      );
+      ctx.fillText(lineChartPoints[labelColumn].columnLabel, 0, 0);
       ctx.setTransform(new DOMMatrix([1, 0, 0, 1, 0, 0]));
     }
 
@@ -155,13 +148,13 @@ class LineChart {
     if (startDatum) {
       const startPoint = this.graphPointToCanvasXY(0, startDatum.count);
 
-      console.log({ startPoint });
+      // console.log({ startPoint });
       ctx.beginPath();
       ctx.moveTo(startPoint.x, startPoint.y);
       for (let i = 1; i < lineChartPoints.length; i++) {
         const count = lineChartPoints[i].count;
         const nextPoint = this.graphPointToCanvasXY(i, count);
-        console.log({ nextPoint });
+        // console.log({ nextPoint });
         ctx.lineTo(nextPoint.x, nextPoint.y);
       }
       ctx.stroke();
