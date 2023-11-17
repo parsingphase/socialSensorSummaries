@@ -43,6 +43,15 @@ class LineChart {
 
   protected title: string;
 
+  protected bgColor = "rgb(230,230,230)";
+  protected fgColor = "rgb(245,245,230)";
+  protected dataColor = "rgb(210,210,210)";
+  protected avgColor = "rgb(63,63,127)";
+  protected textColor = "rgb(0,0,0)";
+  protected avgDash = [4, 4];
+  protected titleFont = "20px Impact";
+  protected labelFont = "12px Impact";
+
   constructor(
     canvasWidth: number,
     canvasHeight: number,
@@ -78,34 +87,18 @@ class LineChart {
     const canvas = createCanvas(this.canvasWidth, this.canvasHeight);
     const ctx: CanvasRenderingContext2D = canvas.getContext("2d");
 
-    const bgColor = "rgb(230,230,230)";
-    const fgColor = "rgb(245,245,230)";
-    const dataColor = "rgb(210,210,210)";
-    const avgColor = "rgb(63,63,127)";
-    const textColor = "rgb(0,0,0)";
-    const avgDash = [4, 4];
-
-    ctx.fillStyle = bgColor;
+    ctx.fillStyle = this.bgColor;
     ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
 
-    ctx.fillStyle = textColor;
-    ctx.font = "20px Impact";
+    ctx.fillStyle = this.textColor;
+    ctx.font = this.titleFont;
     const textMeasure = ctx.measureText(this.title);
     ctx.fillText(this.title, (this.canvasWidth - textMeasure.width) / 2, 35);
 
-    ctx.font = "12px Impact";
-    ctx.fillText(
-      "0",
-      this.graphOffset.x - 20,
-      this.graphOffset.y + this.graphHeight + 6
-    );
-    ctx.fillText(
-      this.maxValue.toString(),
-      this.graphOffset.x - 30,
-      this.graphOffset.y + 6
-    );
+    ctx.font = this.labelFont;
+    this.drawValueLabels(ctx);
 
-    ctx.fillStyle = fgColor;
+    ctx.fillStyle = this.fgColor;
     ctx.fillRect(
       this.graphOffset.x,
       this.graphOffset.y,
@@ -114,10 +107,61 @@ class LineChart {
     );
 
     const lineChartPoints = [...this.data];
-    this.plotPoints(ctx, lineChartPoints, dataColor);
-    this.plotPoints(ctx, smooth(lineChartPoints, 7), avgColor, avgDash);
+    this.plotPoints(ctx, lineChartPoints, this.dataColor);
+    this.plotPoints(
+      ctx,
+      smooth(lineChartPoints, 7),
+      this.avgColor,
+      this.avgDash
+    );
 
-    const numColumLabels = 10;
+    this.drawColumnLabels(10, lineChartPoints, ctx);
+
+    return canvas;
+  }
+
+  private drawValueLabels(ctx: CanvasRenderingContext2D) {
+    const numSteps = 10;
+    let stepSize = 1;
+    let exponent = 0;
+
+    // console.log({ maxValue: this.maxValue });
+
+    stepGen: while (true) {
+      let nextStep;
+      for (const multiple of [1, 2, 5]) {
+        nextStep = multiple * Math.pow(10, exponent);
+        // console.log({ stepSize });
+        if (nextStep >= this.maxValue / numSteps) {
+          break stepGen;
+        }
+        stepSize = nextStep;
+      }
+      exponent++;
+    }
+
+    let step = 0;
+    let label = 0;
+    do {
+      const labelYPos = (label / this.maxValue) * this.graphHeight;
+      // console.log({ label, labelYPos, maxValue: this.maxValue });
+      const labelString = label.toString();
+      const labelWidth = ctx.measureText(labelString).width;
+      ctx.fillText(
+        labelString,
+        this.graphOffset.x - labelWidth - 10,
+        this.graphOffset.y + this.graphHeight - labelYPos + 6
+      );
+      step++;
+      label = step * stepSize;
+    } while (label <= this.maxValue);
+  }
+
+  private drawColumnLabels(
+    numColumLabels: number,
+    lineChartPoints: LineChartPoint[],
+    ctx: CanvasRenderingContext2D
+  ) {
     for (let numerator = 0; numerator <= numColumLabels; numerator++) {
       // LHS date label
       const labelColumn = Math.floor(
@@ -128,12 +172,10 @@ class LineChart {
         this.graphOffset.y + this.graphHeight + 10
       );
       ctx.rotate(Math.PI / 2);
-      ctx.fillStyle = textColor;
+      ctx.fillStyle = this.textColor;
       ctx.fillText(lineChartPoints[labelColumn].columnLabel, 0, 0);
       ctx.setTransform(new DOMMatrix([1, 0, 0, 1, 0, 0]));
     }
-
-    return canvas;
   }
 
   protected plotPoints(
