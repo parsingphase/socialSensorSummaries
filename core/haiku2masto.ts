@@ -11,7 +11,7 @@ import { CreateStatusParams, login, Status, StatusVisibility } from "masto";
 function buildBirdPost(
   birds: { bird: string; count: number }[],
   maxBirds: number,
-  maxPostLength: number = 500,
+  maxPostLength = 500,
   minObservationCount?: number
 ): string {
   // sorted by default, but let's be sure

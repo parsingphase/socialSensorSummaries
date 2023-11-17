@@ -10,7 +10,10 @@ import {
 
 const rawDir = `${__dirname}/rawHaikuData`;
 
-async function main() {
+/**
+ * Run script
+ */
+async function main(): Promise<void> {
   const allData = loadCachedDailyData(rawDir);
 
   // just get all names

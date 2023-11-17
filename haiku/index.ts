@@ -24,7 +24,12 @@ async function fetchDailyCount(
   return birds || [];
 }
 
-function listDatesWithData(dataDir: string) {
+/**
+ * List all the dates for which we have data files
+ *
+ * @param dataDir
+ */
+function listDatesWithData(dataDir: string): string[] {
   const dirList = fs.readdirSync(dataDir);
   // console.log(JSON.stringify(dirList));
   const rawFiles = dirList
@@ -34,6 +39,11 @@ function listDatesWithData(dataDir: string) {
   return rawFiles;
 }
 
+/**
+ * Fetch and parse a given day's file
+ *
+ * @param dataDir
+ */
 function loadCachedDailyData(dataDir: string): DayRecord[] {
   const dates = listDatesWithData(dataDir);
 
@@ -57,8 +67,8 @@ function loadCachedDailyData(dataDir: string): DayRecord[] {
  */
 function aggregateAllDays(
   allData: DayRecord[],
-  dailyMinimum: number = 1,
-  totalMinimum: number = 1
+  dailyMinimum = 1,
+  totalMinimum = 1
 ): BirdRecord[] {
   const totalCountMap: { [bird: string]: number } = {};
   allData.map((d) => {

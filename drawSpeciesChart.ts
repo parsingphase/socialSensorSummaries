@@ -10,7 +10,13 @@ type DatedCount = { bird: string; date: string; count: number };
 
 type LineChartPoint = { columnLabel: string; count: number };
 
-function smooth(data: LineChartPoint[], number: number) {
+/**
+ * Create a rolling average of a dataset
+ *
+ * @param data
+ * @param number
+ */
+function smooth(data: LineChartPoint[], number: number): LineChartPoint[] {
   const reach = Math.floor(number / 2);
   const outData: LineChartPoint[] = [];
   for (let i = 0; i < data.length; i++) {
@@ -215,6 +221,13 @@ class LineChart {
   }
 }
 
+/**
+ * Draw graph for a single species
+ *
+ * @param allData
+ * @param targetSpecies
+ * @param outFile
+ */
 function drawSpeciesGraph(
   allData: DayRecord[],
   targetSpecies: string,
@@ -246,7 +259,10 @@ function drawSpeciesGraph(
   console.log(`Wrote ${data.length} points to ${outFile}`);
 }
 
-function main() {
+/**
+ * Run script
+ */
+function main(): void {
   const targetSpecies = process.argv[2];
   const allData = loadCachedDailyData(rawDir);
   const aggregate = aggregateAllDays(allData, 1, 10);

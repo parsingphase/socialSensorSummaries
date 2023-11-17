@@ -8,11 +8,18 @@ import * as fs from "fs";
 const start = DateTime.local(2023, 7, 15);
 const outDir = `${__dirname}/rawHaikuData`;
 
+/**
+ * Sleep as a raw delay
+ * @param ms
+ */
 async function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function main() {
+/**
+ * Run script
+ */
+async function main(): Promise<void> {
   const { serialNumber, apiBaseUrl: haikuBaseUrl } = config.haikubox;
 
   let day: DateTime = start;
