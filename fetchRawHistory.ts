@@ -2,7 +2,7 @@
 
 import { DateTime } from "luxon";
 import { config } from "./config/config";
-import { fetchDailyCount } from "./haiku";
+import { fetchDailyCount } from "./lib/haiku";
 import * as fs from "fs";
 
 const start = DateTime.local(2023, 7, 15);

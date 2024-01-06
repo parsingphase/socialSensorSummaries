@@ -2,7 +2,8 @@ import { Context, ScheduledEvent } from "aws-lambda";
 import { buildBirdPost, postToMastodon } from "./core/haiku2masto";
 
 import { DateTime, Duration } from "luxon";
-import { fetchDailyCount } from "./haiku";
+import { fetchDailyCount } from "./lib/haiku";
+import { seenBirds } from "./lib/sightings";
 
 /**
  * Return an ENV value, object if it's missing
@@ -18,12 +19,9 @@ function assertedEnvVar(key: string): string {
 }
 
 export const handler = async (
-  event: ScheduledEvent,
-  context: Context
+  _event: ScheduledEvent,
+  _context: Context
 ): Promise<void> => {
-  void event;
-  void context;
-
   const mastoToken = assertedEnvVar("MASTO_CLIENT_TOKEN");
   const mastoBaseUrl = assertedEnvVar("MASTO_BASE_URL");
 
@@ -37,7 +35,7 @@ export const handler = async (
     .toFormat("yyyy-MM-dd");
   const birds = await fetchDailyCount(haikuBaseUrl, serialNumber, when);
 
-  const postString = buildBirdPost(birds, 20, 500, 3);
+  const postString = buildBirdPost(birds, 20, 500, 3, seenBirds);
 
   console.log({ birds, postString, length: postString.length });
 

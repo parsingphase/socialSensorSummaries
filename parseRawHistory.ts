@@ -6,7 +6,7 @@ import {
   BirdRecord,
   DayRecord,
   loadCachedDailyData,
-} from "./haiku";
+} from "./lib/haiku";
 
 const rawDir = `${__dirname}/rawHaikuData`;
 
