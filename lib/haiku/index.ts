@@ -2,7 +2,7 @@ import fs from "fs";
 
 type BirdRecord = { bird: string; count: number };
 
-type DayRecord = { date: string; dayData: BirdRecord[] };
+type DayRecord = { date: string; dayData: BirdRecord[] | null };
 
 /**
  * Fetch daily status from Haikubox API
@@ -14,18 +14,20 @@ async function fetchDailyCount(
   haikuBaseUrl: string,
   serialNumber: string,
   when: string
-): Promise<{ bird: string; count: number }[]> {
+): Promise<BirdRecord[] | null> {
   const queryUrl = `${haikuBaseUrl}haikubox/${serialNumber}/daily-count?date=${when}`;
 
-  const birds: { bird: string; count: number }[] = await (
-    await fetch(queryUrl)
-  ).json();
-
-  return birds || [];
+  let birds: BirdRecord[] | null = null;
+  try {
+    birds = await (await fetch(queryUrl)).json();
+  } catch (e) {
+    console.log(e);
+  }
+  return birds;
 }
 
 /**
- * List all the dates for which we have data files
+ * List all the dates for which we have data files, sorted
  *
  * @param dataDir
  */
@@ -52,8 +54,8 @@ function loadCachedDailyData(dataDir: string): DayRecord[] {
   for (const date of dates) {
     const dayData = JSON.parse(
       fs.readFileSync(`${dataDir}/${date}.json`, "utf-8")
-    ) as BirdRecord[];
-    allData.push({ date, dayData });
+    ) as BirdRecord[] | null;
+    allData.push({ date, dayData: dayData });
   }
   return allData;
 }
@@ -71,15 +73,17 @@ function aggregateAllDays(
   totalMinimum = 1
 ): BirdRecord[] {
   const totalCountMap: { [bird: string]: number } = {};
-  allData.map((d) => {
-    return d.dayData
-      .filter((c) => c.count >= dailyMinimum)
-      .map(
-        (b) =>
-          (totalCountMap[b.bird] = totalCountMap[b.bird]
-            ? totalCountMap[b.bird] + b.count
-            : b.count)
-      );
+  allData.forEach((d) => {
+    if (d.dayData) {
+      d.dayData
+        .filter((c) => c.count >= dailyMinimum)
+        .map(
+          (b) =>
+            (totalCountMap[b.bird] = totalCountMap[b.bird]
+              ? totalCountMap[b.bird] + b.count
+              : b.count)
+        );
+    }
   });
 
   const totalCount: BirdRecord[] = [];

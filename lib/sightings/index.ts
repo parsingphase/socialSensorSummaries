@@ -30,7 +30,7 @@ const seenBirds = [
   "Gray Catbird",
   "Northern Mockingbird",
   "Orchard Oriole",
-  "Evening Grossbeak",
+  "Evening Grosbeak",
   "Red-tailed Hawk",
   "Osprey",
   "Song Sparrow",
@@ -56,6 +56,7 @@ const seenBirds = [
   "Purple Finch",
   "Sharp-shinned Hawk",
   "Golden-crowned Kinglet",
+  "American Tree Sparrow",
 ];
 
 export { seenBirds };

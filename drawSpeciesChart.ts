@@ -3,21 +3,29 @@
 import { aggregateAllDays, DayRecord, loadCachedDailyData } from "./lib/haiku";
 import { CanvasRenderingContext2D, createCanvas, DOMMatrix } from "canvas";
 import fs from "fs";
+import { DateTime } from "luxon";
 
 const rawDir = `${__dirname}/rawHaikuData`;
 
-type DatedCount = { bird: string; date: string; count: number };
+type DatedCount = { bird: string; date: string; count: number | null };
 
-type LineChartPoint = { columnLabel: string; count: number };
+type LineChartPoint = { columnLabel: string; count: number | null };
+
+type Outage = {
+  startDate: string;
+  startPos: number;
+  endDate: string;
+  endPos: number;
+};
 
 /**
- * Create a rolling average of a dataset
+ * Create a rolling average of a dataset over a symmetric window
  *
  * @param data
- * @param number
+ * @param window
  */
-function smooth(data: LineChartPoint[], number: number): LineChartPoint[] {
-  const reach = Math.floor(number / 2);
+function smooth(data: LineChartPoint[], window: number): LineChartPoint[] {
+  const reach = Math.floor(window / 2);
   const outData: LineChartPoint[] = [];
   for (let i = 0; i < data.length; i++) {
     const segment = data.slice(
@@ -26,13 +34,29 @@ function smooth(data: LineChartPoint[], number: number): LineChartPoint[] {
     );
 
     let total = 0;
-    segment.forEach((s) => (total += s.count));
+    let dataPoints = 0;
+    segment.forEach((s) => {
+      if (s.count !== null) {
+        total += s.count;
+        dataPoints++;
+      }
+    });
     outData.push({
       columnLabel: data[i].columnLabel,
-      count: total / segment.length,
+      count: total / dataPoints,
     });
   }
   return outData;
+}
+
+function stripNulls<T>(values: (T | null)[]): T[] {
+  const numbers: T[] = [];
+  values.forEach((d) => {
+    if (d !== null) {
+      numbers.push(d);
+    }
+  });
+  return numbers;
 }
 
 class LineChart {
@@ -48,6 +72,7 @@ class LineChart {
   protected numValues: number;
 
   protected title: string;
+  protected outages: Outage[];
 
   protected bgColor = "rgb(230,230,230)";
   protected fgColor = "rgb(245,245,230)";
@@ -62,11 +87,13 @@ class LineChart {
     canvasWidth: number,
     canvasHeight: number,
     data: LineChartPoint[],
-    title: string
+    title: string,
+    outages: Outage[] = []
   ) {
     this.canvasWidth = canvasWidth;
     this.canvasHeight = canvasHeight;
     this.title = title;
+    this.outages = outages;
 
     this.graphOffset = {
       x: 60,
@@ -78,7 +105,8 @@ class LineChart {
 
     this.data = data;
 
-    this.maxValue = Math.max(...data.map((d) => d.count));
+    let values = data.map((d) => d.count);
+    this.maxValue = Math.max(...stripNulls(values));
     this.numValues = data.length;
   }
 
@@ -123,6 +151,17 @@ class LineChart {
 
     this.drawColumnLabels(10, lineChartPoints, ctx);
 
+    for (const outage of this.outages) {
+      ctx.fillStyle = this.bgColor;
+      ctx.fillRect(
+        this.graphXtoCanvasX(outage.startPos),
+        this.graphYtoCanvasY(0) + 2,
+        this.graphXtoCanvasX(outage.endPos) -
+          this.graphXtoCanvasX(outage.startPos),
+        this.graphYtoCanvasY(this.maxValue) - this.graphYtoCanvasY(0) - 2
+      );
+    }
+
     return canvas;
   }
 
@@ -131,13 +170,10 @@ class LineChart {
     let stepSize = 1;
     let exponent = 0;
 
-    // console.log({ maxValue: this.maxValue });
-
     stepGen: while (true) {
       let nextStep;
       for (const multiple of [1, 2, 5]) {
         nextStep = multiple * Math.pow(10, exponent);
-        // console.log({ stepSize });
         if (nextStep >= this.maxValue / numSteps) {
           break stepGen;
         }
@@ -150,7 +186,6 @@ class LineChart {
     let label = 0;
     do {
       const labelYPos = (label / this.maxValue) * this.graphHeight;
-      // console.log({ label, labelYPos, maxValue: this.maxValue });
       const labelString = label.toString();
       const labelWidth = ctx.measureText(labelString).width;
       ctx.fillText(
@@ -192,18 +227,20 @@ class LineChart {
   ) {
     ctx.strokeStyle = lineColor;
     ctx.setLineDash(dash);
+    // FIXME Find first, don't just check for zeroth being present
     const startDatum = lineChartPoints[0];
-    if (startDatum) {
+    if (startDatum && startDatum.count !== null) {
+      // FIXME check should be by-point
       const startPoint = this.graphPointToCanvasXY(0, startDatum.count);
 
-      // console.log({ startPoint });
       ctx.beginPath();
       ctx.moveTo(startPoint.x, startPoint.y);
       for (let i = 1; i < lineChartPoints.length; i++) {
         const count = lineChartPoints[i].count;
-        const nextPoint = this.graphPointToCanvasXY(i, count);
-        // console.log({ nextPoint });
-        ctx.lineTo(nextPoint.x, nextPoint.y);
+        if (count !== null) {
+          const nextPoint = this.graphPointToCanvasXY(i, count);
+          ctx.lineTo(nextPoint.x, nextPoint.y);
+        }
       }
       ctx.stroke();
     }
@@ -212,12 +249,21 @@ class LineChart {
 
   private graphPointToCanvasXY(i: number, count: number) {
     return {
-      x: this.graphOffset.x + ((i + 0.5) / this.numValues) * this.graphWidth,
-      y:
-        this.graphOffset.y +
-        this.graphHeight -
-        (count / this.maxValue) * this.graphHeight,
+      x: this.graphXtoCanvasX(i),
+      y: this.graphYtoCanvasY(count),
     };
+  }
+
+  private graphXtoCanvasX(x: number) {
+    return this.graphOffset.x + ((x + 0.5) / this.numValues) * this.graphWidth;
+  }
+
+  private graphYtoCanvasY(y: number) {
+    return (
+      this.graphOffset.y +
+      this.graphHeight -
+      (y / this.maxValue) * this.graphHeight
+    );
   }
 }
 
@@ -227,18 +273,26 @@ class LineChart {
  * @param allData
  * @param targetSpecies
  * @param outFile
+ * @param outages
  */
 function drawSpeciesGraph(
   allData: DayRecord[],
   targetSpecies: string,
+  outages: Outage[],
   outFile: string
 ) {
   const speciesDayCount: DatedCount[] = [];
 
   for (const dailyTotals of allData) {
     const { date, dayData } = dailyTotals;
-    const speciesCount = dayData.filter((d) => d.bird === targetSpecies);
-    const count = speciesCount.length > 0 ? speciesCount[0].count : 0;
+
+    let count: number | null = null;
+    if (dayData) {
+      const speciesCount = dayData.filter((d) => d.bird === targetSpecies);
+      count = speciesCount.length > 0 ? speciesCount[0].count : 0;
+    } else {
+      count = null;
+    }
     const dateRecord: DatedCount = {
       bird: targetSpecies,
       date,
@@ -252,10 +306,9 @@ function drawSpeciesGraph(
     return datum;
   });
 
-  const graph = new LineChart(800, 600, data, targetSpecies);
+  const graph = new LineChart(800, 600, data, targetSpecies, outages);
   graph.writeToPng(outFile);
 
-  // console.log(JSON.stringify(speciesDayCount));
   console.log(`Wrote ${data.length} points to ${outFile}`);
 }
 
@@ -274,11 +327,36 @@ function main(): void {
     drawSpecies = aggregate.map((a) => a.bird);
   }
 
+  // calculate outages
+  const outages: Outage[] = [];
+
+  for (let i = 0; i < allData.length; i++) {
+    const dailyTotals = allData[i];
+    const { date, dayData } = dailyTotals;
+    if (!dayData) {
+      const yesterday = DateTime.fromFormat(date, "yyyy-MM-dd")
+        .minus({ day: 1 })
+        .toFormat("yyyy-MM-dd");
+      const ongoingOutage = outages.find((o) => o.endDate == yesterday);
+      if (ongoingOutage) {
+        ongoingOutage.endDate = date;
+        ongoingOutage.endPos = i;
+      } else {
+        outages.push({
+          startDate: date,
+          startPos: i,
+          endDate: date,
+          endPos: i,
+        });
+      }
+    }
+  }
+
   // we want an ordered list of [ { bird: SPECIES, date: YYYY-MM-DD, count: number }]
   for (const species of drawSpecies) {
     const speciesCount = aggregate.filter((a) => a.bird == species)[0].count;
     const outFile = `${__dirname}/tmp/${species} (${speciesCount}).png`;
-    drawSpeciesGraph(allData, species, outFile);
+    drawSpeciesGraph(allData, species, outages, outFile);
   }
 }
 

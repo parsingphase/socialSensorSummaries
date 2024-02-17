@@ -1,6 +1,6 @@
 import { CreateStatusParams, login, Status, StatusVisibility } from "masto";
 
-const caveatUrl = 'https://m.phase.org/@parsingphase/111711558681612429';
+const caveatUrl = "https://m.phase.org/@parsingphase/111711558681612429";
 
 /**
  * Build daily summary string
@@ -28,7 +28,7 @@ function buildBirdPost(
   let unverifiedBirds = 0;
 
   function buildLine(index: number, bird: string): string {
-    let line = `${index + 1}: ${bird}`;
+    let line = `${index + 1} ${bird}`;
     if (confirmedObservations && !confirmedObservations.includes(bird)) {
       line += " ^";
       unverifiedBirds++;
@@ -39,7 +39,7 @@ function buildBirdPost(
   birds
     .filter((b) => b.count >= minObservationCount)
     .slice(0, maxBirds)
-    .forEach(({bird}, index) => candidateLines.push(buildLine(index, bird)));
+    .forEach(({ bird }, index) => candidateLines.push(buildLine(index, bird)));
 
   if (unverifiedBirds > 0) {
     tailText = `\n\n ^ caveat: ${caveatUrl}` + tailText;
