@@ -21,7 +21,7 @@ async function main(): Promise<void> {
     apiBaseUrl: mastoBaseUrl,
     maxPostLength,
   } = config.mastodon;
-  const postString = buildBirdPost(birds, listLength, maxPostLength, 3);
+  const postString = buildBirdPost(birds || [], listLength, maxPostLength, 3);
 
   console.log({ birds, postString, length: postString.length });
 

@@ -20,7 +20,7 @@ const seenBirds = [
   "Baltimore Oriole",
   "Common Raven",
   "Bald Eagle",
-  "Cooper’s Hawk",
+  "Cooper's Hawk",
   "American Crow",
   "Fish Crow",
   "Wild Turkey",
@@ -57,6 +57,7 @@ const seenBirds = [
   "Sharp-shinned Hawk",
   "Golden-crowned Kinglet",
   "American Tree Sparrow",
+  "Mallard",
 ];
 
 export { seenBirds };

@@ -35,7 +35,7 @@ export const handler = async (
     .toFormat("yyyy-MM-dd");
   const birds = await fetchDailyCount(haikuBaseUrl, serialNumber, when);
 
-  const postString = buildBirdPost(birds, 20, 500, 3, seenBirds);
+  const postString = buildBirdPost(birds || [], 20, 500, 3, seenBirds);
 
   console.log({ birds, postString, length: postString.length });
 
