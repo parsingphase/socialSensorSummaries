@@ -27,9 +27,12 @@ function buildBirdPost(
   const candidateLines: string[] = [];
   let unverifiedBirds = 0;
 
+  const normalizeBirdName = (n: string) => n.replace(/^[a-z]+/g, '').toLowerCase();
+  const normalizedSeenBirds = (confirmedObservations || []).map(normalizeBirdName)
+
   function buildLine(index: number, bird: string): string {
     let line = `${index + 1} ${bird}`;
-    if (confirmedObservations && !confirmedObservations.includes(bird)) {
+    if (!normalizedSeenBirds.includes(normalizeBirdName(bird))) {
       line += " ^";
       unverifiedBirds++;
     }
@@ -39,7 +42,7 @@ function buildBirdPost(
   birds
     .filter((b) => b.count >= minObservationCount)
     .slice(0, maxBirds)
-    .forEach(({ bird }, index) => candidateLines.push(buildLine(index, bird)));
+    .forEach(({bird}, index) => candidateLines.push(buildLine(index, bird)));
 
   if (unverifiedBirds > 0) {
     tailText = `\n\n ^ caveat: ${caveatUrl}` + tailText;

@@ -13,7 +13,7 @@ const seenBirds = [
   "White-breasted Nuthatch",
   "Downy Woodpecker",
   "House Sparrow",
-  "Red-Winged Blackbird",
+  "Red-winged Blackbird",
   "Red-bellied Woodpecker",
   "Hairy Woodpecker",
   "Blue Jay",
@@ -58,6 +58,7 @@ const seenBirds = [
   "Golden-crowned Kinglet",
   "American Tree Sparrow",
   "Mallard",
+  "Brown-headed Cowbird",
 ];
 
 export { seenBirds };
