@@ -7,9 +7,7 @@ async function main() {
 
   const queryUrl = `${haikuBaseUrl}haikubox/${serialNumber}/yearly-count?year=2023`;
 
-  const birds: { bird: string; count: number }[] = await (
-    await fetch(queryUrl)
-  ).json();
+  const birds: { bird: string; count: number }[] = await (await fetch(queryUrl)).json();
 
   for (let i = 0; i < birds.length; i++) {
     console.log(`${i + 1} ${birds[i].bird}`);

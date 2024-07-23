@@ -34,9 +34,7 @@ async function fetchDailyCount(
 function listDatesWithData(dataDir: string): string[] {
   const dirList = fs.readdirSync(dataDir);
   // console.log(JSON.stringify(dirList));
-  const rawFiles = dirList
-    .filter((f) => f.match(/^\d{4}-\d{2}-\d{2}/))
-    .map((f) => f.split(".")[0]);
+  const rawFiles = dirList.filter((f) => f.match(/^\d{4}-\d{2}-\d{2}/)).map((f) => f.split(".")[0]);
   rawFiles.sort();
   return rawFiles;
 }
@@ -52,9 +50,9 @@ function loadCachedDailyData(dataDir: string): DayRecord[] {
   const allData: DayRecord[] = [];
   // console.log(JSON.stringify(dates));
   for (const date of dates) {
-    const dayData = JSON.parse(
-      fs.readFileSync(`${dataDir}/${date}.json`, "utf-8")
-    ) as BirdRecord[] | null;
+    const dayData = JSON.parse(fs.readFileSync(`${dataDir}/${date}.json`, "utf-8")) as
+      | BirdRecord[]
+      | null;
     allData.push({ date, dayData: dayData });
   }
   return allData;
@@ -67,11 +65,7 @@ function loadCachedDailyData(dataDir: string): DayRecord[] {
  * @param dailyMinimum
  * @param totalMinimum
  */
-function aggregateAllDays(
-  allData: DayRecord[],
-  dailyMinimum = 1,
-  totalMinimum = 1
-): BirdRecord[] {
+function aggregateAllDays(allData: DayRecord[], dailyMinimum = 1, totalMinimum = 1): BirdRecord[] {
   const totalCountMap: { [bird: string]: number } = {};
   allData.forEach((d) => {
     if (d.dayData) {

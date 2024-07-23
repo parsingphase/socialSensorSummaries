@@ -18,12 +18,7 @@ export function ucFirst(text: string): string {
 }
 
 export class IacStack extends cdk.Stack {
-  constructor(
-    scope: Construct,
-    id: string,
-    deployEnv: "prod" | "dev",
-    props?: StackProps
-  ) {
+  constructor(scope: Construct, id: string, deployEnv: "prod" | "dev", props?: StackProps) {
     super(scope, id, props);
 
     const lambdaAssetPath = `${__dirname}/../../build/output/lambda.zip`;

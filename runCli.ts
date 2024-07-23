@@ -16,22 +16,13 @@ async function main(): Promise<void> {
   const birds = await fetchDailyCount(haikuBaseUrl, serialNumber, when);
 
   const listLength = 20;
-  const {
-    apiClientToken,
-    apiBaseUrl: mastoBaseUrl,
-    maxPostLength,
-  } = config.mastodon;
+  const { apiClientToken, apiBaseUrl: mastoBaseUrl, maxPostLength } = config.mastodon;
   const postString = buildBirdPost(birds || [], listLength, maxPostLength, 3);
 
   console.log({ birds, postString, length: postString.length });
 
   const { postVisibility } = config.lambda.dev;
-  const status = await postToMastodon(
-    mastoBaseUrl,
-    apiClientToken,
-    postString,
-    postVisibility
-  );
+  const status = await postToMastodon(mastoBaseUrl, apiClientToken, postString, postVisibility);
 
   console.log(`Posted to ${status.url}`);
 }

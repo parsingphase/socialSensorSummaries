@@ -18,10 +18,7 @@ function assertedEnvVar(key: string): string {
   return token;
 }
 
-export const handler = async (
-  _event: ScheduledEvent,
-  _context: Context
-): Promise<void> => {
+export const handler = async (_event: ScheduledEvent, _context: Context): Promise<void> => {
   const mastoToken = assertedEnvVar("MASTO_CLIENT_TOKEN");
   const mastoBaseUrl = assertedEnvVar("MASTO_BASE_URL");
 
@@ -39,12 +36,7 @@ export const handler = async (
 
   console.log({ birds, postString, length: postString.length });
 
-  const status = await postToMastodon(
-    mastoBaseUrl,
-    mastoToken,
-    postString,
-    visibility
-  );
+  const status = await postToMastodon(mastoBaseUrl, mastoToken, postString, visibility);
 
   console.log(`Posted to ${status.url}`);
 };

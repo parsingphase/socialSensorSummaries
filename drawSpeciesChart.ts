@@ -1,11 +1,6 @@
 #!/usr/bin/env npx ts-node --esm -r tsconfig-paths/register
 
-import {
-  aggregateAllDays,
-  BirdRecord,
-  DayRecord,
-  loadCachedDailyData,
-} from "./lib/haiku";
+import { aggregateAllDays, BirdRecord, DayRecord, loadCachedDailyData } from "./lib/haiku";
 import { CanvasRenderingContext2D, createCanvas, DOMMatrix } from "canvas";
 import fs from "fs";
 import { DateTime } from "luxon";
@@ -33,10 +28,7 @@ function smooth(data: LineChartPoint[], window: number): LineChartPoint[] {
   const reach = Math.floor(window / 2);
   const outData: LineChartPoint[] = [];
   for (let i = 0; i < data.length; i++) {
-    const segment = data.slice(
-      Math.max(i - reach, 0),
-      Math.min(i + reach, data.length - 1)
-    );
+    const segment = data.slice(Math.max(i - reach, 0), Math.min(i + reach, data.length - 1));
 
     let total = 0;
     let dataPoints = 0;
@@ -138,21 +130,11 @@ class LineChart {
     this.drawValueLabels(ctx);
 
     ctx.fillStyle = this.fgColor;
-    ctx.fillRect(
-      this.graphOffset.x,
-      this.graphOffset.y,
-      this.graphWidth,
-      this.graphHeight
-    );
+    ctx.fillRect(this.graphOffset.x, this.graphOffset.y, this.graphWidth, this.graphHeight);
 
     const lineChartPoints = [...this.data];
     this.plotPoints(ctx, lineChartPoints, this.dataColor);
-    this.plotPoints(
-      ctx,
-      smooth(lineChartPoints, 7),
-      this.avgColor,
-      this.avgDash
-    );
+    this.plotPoints(ctx, smooth(lineChartPoints, 7), this.avgColor, this.avgDash);
 
     this.drawColumnLabels(10, lineChartPoints, ctx);
 
@@ -161,8 +143,7 @@ class LineChart {
       ctx.fillRect(
         this.graphXtoCanvasX(outage.startPos),
         this.graphYtoCanvasY(0) + 2,
-        this.graphXtoCanvasX(outage.endPos) -
-          this.graphXtoCanvasX(outage.startPos),
+        this.graphXtoCanvasX(outage.endPos) - this.graphXtoCanvasX(outage.startPos),
         this.graphYtoCanvasY(this.maxValue) - this.graphYtoCanvasY(0) - 2
       );
     }
@@ -210,9 +191,7 @@ class LineChart {
   ) {
     for (let numerator = 0; numerator <= numColumLabels; numerator++) {
       // LHS date label
-      const labelColumn = Math.floor(
-        (numerator * (lineChartPoints.length - 1)) / numColumLabels
-      );
+      const labelColumn = Math.floor((numerator * (lineChartPoints.length - 1)) / numColumLabels);
       ctx.translate(
         this.graphOffset.x + (labelColumn / this.data.length) * this.graphWidth,
         this.graphOffset.y + this.graphHeight + 10
@@ -264,11 +243,7 @@ class LineChart {
   }
 
   private graphYtoCanvasY(y: number) {
-    return (
-      this.graphOffset.y +
-      this.graphHeight -
-      (y / this.maxValue) * this.graphHeight
-    );
+    return this.graphOffset.y + this.graphHeight - (y / this.maxValue) * this.graphHeight;
   }
 }
 
@@ -313,13 +288,7 @@ function drawSpeciesGraph(
     return datum;
   });
 
-  const graph = new LineChart(
-    800,
-    600,
-    data,
-    targetSpecies || "All species",
-    outages
-  );
+  const graph = new LineChart(800, 600, data, targetSpecies || "All species", outages);
   graph.writeToPng(outFile);
 
   console.log(`Wrote ${data.length} points to ${outFile}`);
@@ -380,12 +349,7 @@ function main(): void {
   }
   let countAll = 0;
   aggregate.forEach((a) => (countAll += a.count));
-  drawSpeciesGraph(
-    allData,
-    null,
-    outages,
-    outPathForSpecies("All species", countAll)
-  );
+  drawSpeciesGraph(allData, null, outages, outPathForSpecies("All species", countAll));
 }
 
 main();

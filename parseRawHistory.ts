@@ -1,12 +1,7 @@
 #!/usr/bin/env npx ts-node --esm -r tsconfig-paths/register
 
 import * as fs from "fs";
-import {
-  aggregateAllDays,
-  BirdRecord,
-  DayRecord,
-  loadCachedDailyData,
-} from "./lib/haiku";
+import { aggregateAllDays, BirdRecord, DayRecord, loadCachedDailyData } from "./lib/haiku";
 
 const rawDir = `${__dirname}/rawHaikuData`;
 
@@ -24,10 +19,7 @@ async function main(): Promise<void> {
 
   const dailyMinimum = 3;
   const totalMinimum = 10;
-  const aggregate = aggregateAllDays(allData, dailyMinimum, totalMinimum).slice(
-    0,
-    20
-  );
+  const aggregate = aggregateAllDays(allData, dailyMinimum, totalMinimum).slice(0, 20);
   // console.log(aggregate, aggregate.length);
 
   const allDays = allData.map((a) => a.date);
@@ -43,9 +35,7 @@ async function main(): Promise<void> {
       if (foundDay.length == 0) {
         row.push(0);
       } else {
-        const foundRecord: BirdRecord[] = foundDay[0].dayData.filter(
-          (d) => d.bird == bird
-        );
+        const foundRecord: BirdRecord[] = (foundDay[0]?.dayData||[]).filter((d) => d.bird == bird);
         // console.log({bird,foundRecord});
         row.push(foundRecord.length > 0 ? foundRecord[0].count : 0);
       }
