@@ -22,19 +22,24 @@ function buildBirdPost(
   birds.sort((a, b) => b.count - a.count);
 
   let postText = "#YesterdaysYardBirds 🤖 (NE MA):\n";
-  let tailText = "\n\n#Birds #BirdsongDetection";
+  let fixedTags = "\n\n#Birds #BirdsongDetection";
+  let unverifiedBirds = 0;
+  let firstUnverifiedBirdIndex: number | null = null;
+  let caveat = "";
+
   const optionalTag = " #HaikuBox";
   const candidateLines: string[] = [];
-  let unverifiedBirds = 0;
-
-  const normalizeBirdName = (n: string) => n.replace(/^[a-z]+/g, '').toLowerCase();
-  const normalizedSeenBirds = (confirmedObservations || []).map(normalizeBirdName)
+  const normalizeBirdName = (n: string) => n.replace(/^[a-z]+/g, "").toLowerCase();
+  const normalizedSeenBirds = (confirmedObservations || []).map(normalizeBirdName);
 
   function buildLine(index: number, bird: string): string {
     let line = `${index + 1} ${bird}`;
     if (!normalizedSeenBirds.includes(normalizeBirdName(bird))) {
       line += " ^";
       unverifiedBirds++;
+      if (!firstUnverifiedBirdIndex) {
+        firstUnverifiedBirdIndex = index;
+      }
     }
     return line;
   }
@@ -42,24 +47,30 @@ function buildBirdPost(
   birds
     .filter((b) => b.count >= minObservationCount)
     .slice(0, maxBirds)
-    .forEach(({bird}, index) => candidateLines.push(buildLine(index, bird)));
+    .forEach(({ bird }, index) => candidateLines.push(buildLine(index, bird)));
 
   if (unverifiedBirds > 0) {
-    tailText = `\n\n ^ caveat: ${caveatUrl}` + tailText;
+    caveat = `\n\n ^ caveat: ${caveatUrl}`;
   }
 
+  let maxBirdIndexIncluded = 0;
   for (let i = 0; i < candidateLines.length; i++) {
     if (
-      postText.length + candidateLines[i].length + tailText.length <
+      postText.length + candidateLines[i].length + fixedTags.length + caveat.length <
       maxPostLength
     ) {
       postText += `\n${candidateLines[i]}`;
+      maxBirdIndexIncluded = i;
     } else {
       break;
     }
   }
 
-  postText += tailText;
+  if (firstUnverifiedBirdIndex !== null && maxBirdIndexIncluded >= firstUnverifiedBirdIndex) {
+    postText += caveat;
+  }
+
+  postText += fixedTags;
 
   if ((postText + optionalTag).length <= maxPostLength) {
     postText += optionalTag;

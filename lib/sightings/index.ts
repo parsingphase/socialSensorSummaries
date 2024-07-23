@@ -62,6 +62,8 @@ const seenBirds = [
   "Snow Goose", // Clear recording on Haikubox; not seen
   "American Woodcock", // Clear recording on Haikubox; not seen
   "Orange-crowned Warbler",
+  "Pileated Woodpecker",
+  "House Wren",
 ];
 
 export { seenBirds };

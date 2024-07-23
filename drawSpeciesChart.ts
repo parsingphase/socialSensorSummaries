@@ -1,6 +1,11 @@
 #!/usr/bin/env npx ts-node --esm -r tsconfig-paths/register
 
-import { aggregateAllDays, DayRecord, loadCachedDailyData } from "./lib/haiku";
+import {
+  aggregateAllDays,
+  BirdRecord,
+  DayRecord,
+  loadCachedDailyData,
+} from "./lib/haiku";
 import { CanvasRenderingContext2D, createCanvas, DOMMatrix } from "canvas";
 import fs from "fs";
 import { DateTime } from "luxon";
@@ -277,7 +282,7 @@ class LineChart {
  */
 function drawSpeciesGraph(
   allData: DayRecord[],
-  targetSpecies: string,
+  targetSpecies: string | null,
   outages: Outage[],
   outFile: string
 ) {
@@ -288,13 +293,15 @@ function drawSpeciesGraph(
 
     let count: number | null = null;
     if (dayData) {
-      const speciesCount = dayData.filter((d) => d.bird === targetSpecies);
+      const speciesCount: BirdRecord[] = targetSpecies
+        ? dayData.filter((d) => d.bird === targetSpecies)
+        : dayData;
       count = speciesCount.length > 0 ? speciesCount[0].count : 0;
     } else {
       count = null;
     }
     const dateRecord: DatedCount = {
-      bird: targetSpecies,
+      bird: targetSpecies || "All",
       date,
       count,
     };
@@ -306,7 +313,13 @@ function drawSpeciesGraph(
     return datum;
   });
 
-  const graph = new LineChart(800, 600, data, targetSpecies, outages);
+  const graph = new LineChart(
+    800,
+    600,
+    data,
+    targetSpecies || "All species",
+    outages
+  );
   graph.writeToPng(outFile);
 
   console.log(`Wrote ${data.length} points to ${outFile}`);
@@ -319,6 +332,7 @@ function main(): void {
   const targetSpecies = process.argv[2];
   const allData = loadCachedDailyData(rawDir);
   const aggregate = aggregateAllDays(allData, 1, 10);
+  // const aggregate = aggregateAllDays(allData, 1, 1000);
 
   let drawSpecies: string[] = [];
   if (targetSpecies) {
@@ -352,12 +366,26 @@ function main(): void {
     }
   }
 
+  function outPathForSpecies(species: string, speciesCount: number) {
+    return `${__dirname}/tmp/${species} (${speciesCount}).png`;
+  }
+
   // we want an ordered list of [ { bird: SPECIES, date: YYYY-MM-DD, count: number }]
   for (const species of drawSpecies) {
-    const speciesCount = aggregate.filter((a) => a.bird == species)[0].count;
-    const outFile = `${__dirname}/tmp/${species} (${speciesCount}).png`;
-    drawSpeciesGraph(allData, species, outages, outFile);
+    const speciesCount = aggregate.find((a) => a.bird == species)?.count || 0;
+    if (speciesCount >= 1) {
+      const outFile = outPathForSpecies(species, speciesCount);
+      drawSpeciesGraph(allData, species, outages, outFile);
+    }
   }
+  let countAll = 0;
+  aggregate.forEach((a) => (countAll += a.count));
+  drawSpeciesGraph(
+    allData,
+    null,
+    outages,
+    outPathForSpecies("All species", countAll)
+  );
 }
 
 main();
