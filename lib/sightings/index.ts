@@ -64,6 +64,8 @@ const seenBirds = [
   "Orange-crowned Warbler",
   "Pileated Woodpecker",
   "House Wren",
+  "Broad-winged Hawk",
+  "Red-breasted Nuthatch",
 ];
 
 export { seenBirds };
