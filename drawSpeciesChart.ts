@@ -115,9 +115,11 @@ class LineChart {
   }
 
   private drawGraph() {
+    // Setup key context
     const canvas = createCanvas(this.canvasWidth, this.canvasHeight);
     const ctx: CanvasRenderingContext2D = canvas.getContext("2d");
 
+    // Set core colors, fonts
     ctx.fillStyle = this.bgColor;
     ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
 
@@ -126,18 +128,22 @@ class LineChart {
     const textMeasure = ctx.measureText(this.title);
     ctx.fillText(this.title, (this.canvasWidth - textMeasure.width) / 2, 35);
 
+    // Draw y-labels
     ctx.font = this.labelFont;
     this.drawValueLabels(ctx);
 
     ctx.fillStyle = this.fgColor;
     ctx.fillRect(this.graphOffset.x, this.graphOffset.y, this.graphWidth, this.graphHeight);
 
+    // Draw data
     const lineChartPoints = [...this.data];
     this.plotPoints(ctx, lineChartPoints, this.dataColor);
     this.plotPoints(ctx, smooth(lineChartPoints, 7), this.avgColor, this.avgDash);
 
+    // Draw x-labels
     this.drawColumnLabels(10, lineChartPoints, ctx);
 
+    // Draw any outage gaps
     for (const outage of this.outages) {
       ctx.fillStyle = this.bgColor;
       ctx.fillRect(
@@ -151,6 +157,11 @@ class LineChart {
     return canvas;
   }
 
+  /**
+   * Draw y-axis ticks, auto-scaled
+   * @param ctx
+   * @private
+   */
   private drawValueLabels(ctx: CanvasRenderingContext2D) {
     const numSteps = 10;
     let stepSize = 1;
@@ -214,7 +225,6 @@ class LineChart {
     // FIXME Find first, don't just check for zeroth being present
     const startDatum = lineChartPoints[0];
     if (startDatum && startDatum.count !== null) {
-      // FIXME check should be by-point
       const startPoint = this.graphPointToCanvasXY(0, startDatum.count);
 
       ctx.beginPath();
