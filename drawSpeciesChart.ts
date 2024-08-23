@@ -3,13 +3,14 @@
 import { aggregateAllDays, BirdRecord, DayRecord, loadCachedDailyData } from "./lib/haiku";
 import { CanvasRenderingContext2D, createCanvas, DOMMatrix } from "canvas";
 import fs from "fs";
-import { DateTime } from "luxon";
+import { DateTime, Interval } from "luxon";
 
 const rawDir = `${__dirname}/rawHaikuData`;
+const HAIKU_DATE_FORMAT = "yyyy-MM-dd";
 
 type DatedCount = { bird: string; date: string; count: number | null };
 
-type LineChartPoint = { columnLabel: string; count: number | null };
+type LineChartPoint = { date: string; xIndex: number; count: number | null };
 
 type Outage = {
   startDate: string;
@@ -39,8 +40,9 @@ function smooth(data: LineChartPoint[], window: number): LineChartPoint[] {
       }
     });
     outData.push({
-      columnLabel: data[i].columnLabel,
+      date: data[i].date,
       count: total / dataPoints,
+      xIndex: data[i].xIndex
     });
   }
   return outData;
@@ -64,7 +66,7 @@ class LineChart {
   protected graphWidth: number;
   protected graphHeight: number;
 
-  protected data: LineChartPoint[];
+  protected data: MultiYearData;
   protected maxValue: number;
   protected numValues: number;
 
@@ -83,9 +85,9 @@ class LineChart {
   constructor(
     canvasWidth: number,
     canvasHeight: number,
-    data: LineChartPoint[],
+    data: MultiYearData,
     title: string,
-    outages: Outage[] = []
+    outages: Outage[] = [],
   ) {
     this.canvasWidth = canvasWidth;
     this.canvasHeight = canvasHeight;
@@ -102,9 +104,14 @@ class LineChart {
 
     this.data = data;
 
-    let values = data.map((d) => d.count);
+    let linearData:LineChartPoint[] = [];
+    for(const year in data)   {
+      linearData=[...linearData, ...data[year]]
+    }
+
+    let values = linearData.map((d) => d.count);
     this.maxValue = Math.max(...stripNulls(values));
-    this.numValues = data.length;
+    this.numValues = linearData.length;
   }
 
   public writeToPng(filename: string) {
@@ -135,14 +142,24 @@ class LineChart {
     ctx.fillStyle = this.fgColor;
     ctx.fillRect(this.graphOffset.x, this.graphOffset.y, this.graphWidth, this.graphHeight);
 
+    // TODO build color array dynamically, draw averages with higher gamma & wider
+    const colors = [
+      "rgb(100,150,220)",
+      "rgb(100,200,100)",
+    ]
+
+    const years = Object.keys(this.data)
     // Draw data
-    const lineChartPoints = [...this.data];
-    this.plotPoints(ctx, lineChartPoints, this.dataColor);
-    this.plotPoints(ctx, smooth(lineChartPoints, 7), this.avgColor, this.avgDash);
-
-    // Draw x-labels
-    this.drawColumnLabels(10, lineChartPoints, ctx);
-
+    for(let i=0;i<years.length;i++) {
+      const year = years[i];
+      const lineChartPoints = [...this.data[year]];
+      // this.plotPoints(ctx, lineChartPoints, this.dataColor);
+      // this.plotPoints(ctx, smooth(lineChartPoints, 7), this.avgColor, this.avgDash);
+      this.plotPoints(ctx, smooth(lineChartPoints, 7), colors[i]);
+      // Draw x-labels
+      // FIXME only run this once
+      this.drawColumnLabels(10, lineChartPoints, ctx);
+    }
     // Draw any outage gaps
     for (const outage of this.outages) {
       ctx.fillStyle = this.bgColor;
@@ -195,6 +212,13 @@ class LineChart {
     } while (label <= this.maxValue);
   }
 
+  /**
+   * Draw x-axis lables
+   * @param numColumLabels
+   * @param lineChartPoints
+   * @param ctx
+   * @private
+   */
   private drawColumnLabels(
     numColumLabels: number,
     lineChartPoints: LineChartPoint[],
@@ -203,13 +227,14 @@ class LineChart {
     for (let numerator = 0; numerator <= numColumLabels; numerator++) {
       // LHS date label
       const labelColumn = Math.floor((numerator * (lineChartPoints.length - 1)) / numColumLabels);
+      const selectPoint = lineChartPoints[labelColumn];
       ctx.translate(
-        this.graphOffset.x + (labelColumn / this.data.length) * this.graphWidth,
+        this.graphOffset.x + (selectPoint.xIndex / 366) * this.graphWidth,
         this.graphOffset.y + this.graphHeight + 10
       );
       ctx.rotate(Math.PI / 2);
       ctx.fillStyle = this.textColor;
-      ctx.fillText(lineChartPoints[labelColumn].columnLabel, 0, 0);
+      ctx.fillText(selectPoint.date, 0, 0);
       ctx.setTransform(new DOMMatrix([1, 0, 0, 1, 0, 0]));
     }
   }
@@ -219,20 +244,21 @@ class LineChart {
     lineChartPoints: LineChartPoint[],
     lineColor: string,
     dash: number[] = []
-  ) {
+  ): void {
     ctx.strokeStyle = lineColor;
     ctx.setLineDash(dash);
     // FIXME Find first, don't just check for zeroth being present
     const startDatum = lineChartPoints[0];
     if (startDatum && startDatum.count !== null) {
-      const startPoint = this.graphPointToCanvasXY(0, startDatum.count);
+      const startPoint = this.graphPointToCanvasXY(startDatum.xIndex, startDatum.count);
 
       ctx.beginPath();
       ctx.moveTo(startPoint.x, startPoint.y);
       for (let i = 1; i < lineChartPoints.length; i++) {
-        const count = lineChartPoints[i].count;
+        const datum = lineChartPoints[i];
+        const count = datum.count;
         if (count !== null) {
-          const nextPoint = this.graphPointToCanvasXY(i, count);
+          const nextPoint = this.graphPointToCanvasXY(datum.xIndex, count);
           ctx.lineTo(nextPoint.x, nextPoint.y);
         }
       }
@@ -249,13 +275,16 @@ class LineChart {
   }
 
   private graphXtoCanvasX(x: number) {
-    return this.graphOffset.x + ((x + 0.5) / this.numValues) * this.graphWidth;
+    const maxXValue = 366;
+    return this.graphOffset.x + ((x + 0.5) / maxXValue) * this.graphWidth;
   }
 
   private graphYtoCanvasY(y: number) {
     return this.graphOffset.y + this.graphHeight - (y / this.maxValue) * this.graphHeight;
   }
 }
+
+type MultiYearData = Record<string, LineChartPoint[]>;
 
 /**
  * Draw graph for a single species
@@ -274,7 +303,7 @@ function drawSpeciesGraph(
   const speciesDayCount: DatedCount[] = [];
 
   for (const dailyTotals of allData) {
-    const { date, dayData } = dailyTotals;
+    const {date, dayData} = dailyTotals;
 
     let count: number | null = null;
     if (dayData) {
@@ -293,24 +322,49 @@ function drawSpeciesGraph(
     speciesDayCount.push(dateRecord);
   }
 
-  const data = speciesDayCount.map((d) => {
-    const datum: LineChartPoint = { columnLabel: d.date, count: d.count };
-    return datum;
+  // convert raw day counts to chartable data
+
+  const dataByYear: MultiYearData = {};
+
+  speciesDayCount.forEach((d) => {
+    const dateObject = DateTime.fromFormat(d.date, HAIKU_DATE_FORMAT);
+    const year = dateObject.year;
+    if (!dataByYear[year]) {
+      dataByYear[year] = [];
+    }
+    const startOfYear = DateTime.local(year, 1, 1);
+    const dayOfYear = Interval.fromDateTimes(startOfYear, dateObject).count('days');
+    const datum: LineChartPoint = {date: d.date, count: d.count, xIndex: dayOfYear};
+    // TODO xIndex could actually be dayOfYear + 1 if it's NOT a leap year, but it is a date from March onwards
+    // labels need to act like a leap year (if we do the above, they *will*)
+    dataByYear[year].push(datum)
   });
 
-  const graph = new LineChart(800, 600, data, targetSpecies || "All species", outages);
+
+  const graph = new LineChart(800, 600, dataByYear, targetSpecies || "All species", outages);
   graph.writeToPng(outFile);
 
-  console.log(`Wrote ${data.length} points to ${outFile}`);
+  console.log(`Wrote ${speciesDayCount.length} points to ${outFile}`);
 }
 
 /**
  * Run script
  */
 function main(): void {
-  const targetSpecies = process.argv[2];
+  const target = process.argv[2];
+
+  let minObservations = 10;
+  let targetSpecies: string|null = null;
+  if(target) {
+    if(target.match(/^\d+$/)) {
+      minObservations = parseInt(target, 10);
+    } else {
+      targetSpecies = target;
+    }
+  }
+
   const allData = loadCachedDailyData(rawDir);
-  const aggregate = aggregateAllDays(allData, 1, 10);
+  const aggregate = aggregateAllDays(allData, 1, minObservations);
   // const aggregate = aggregateAllDays(allData, 1, 1000);
 
   let drawSpecies: string[] = [];
@@ -323,27 +377,30 @@ function main(): void {
   // calculate outages
   const outages: Outage[] = [];
 
-  for (let i = 0; i < allData.length; i++) {
-    const dailyTotals = allData[i];
-    const { date, dayData } = dailyTotals;
-    if (!dayData) {
-      const yesterday = DateTime.fromFormat(date, "yyyy-MM-dd")
-        .minus({ day: 1 })
-        .toFormat("yyyy-MM-dd");
-      const ongoingOutage = outages.find((o) => o.endDate == yesterday);
-      if (ongoingOutage) {
-        ongoingOutage.endDate = date;
-        ongoingOutage.endPos = i;
-      } else {
-        outages.push({
-          startDate: date,
-          startPos: i,
-          endDate: date,
-          endPos: i,
-        });
-      }
-    }
-  }
+  // FIXME rewrite for DOY
+  // for (let i = 0; i < allData.length; i++) {
+  //   const dailyTotals = allData[i];
+  //   const {date, dayData} = dailyTotals;
+  //
+  //   //build outage lists
+  //   if (!dayData) {
+  //     const yesterday = DateTime.fromFormat(date, HAIKU_DATE_FORMAT)
+  //       .minus({day: 1})
+  //       .toFormat(HAIKU_DATE_FORMAT);
+  //     const ongoingOutage = outages.find((o) => o.endDate == yesterday);
+  //     if (ongoingOutage) {
+  //       ongoingOutage.endDate = date;
+  //       ongoingOutage.endPos = i;
+  //     } else {
+  //       outages.push({
+  //         startDate: date,
+  //         startPos: i, // FIXME should be DOY
+  //         endDate: date,
+  //         endPos: i,
+  //       });
+  //     }
+  //   }
+  // }
 
   function outPathForSpecies(species: string, speciesCount: number) {
     return `${__dirname}/tmp/${species} (${speciesCount}).png`;
