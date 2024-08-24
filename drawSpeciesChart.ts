@@ -42,7 +42,7 @@ function smooth(data: LineChartPoint[], window: number): LineChartPoint[] {
     outData.push({
       date: data[i].date,
       count: total / dataPoints,
-      xIndex: data[i].xIndex
+      xIndex: data[i].xIndex,
     });
   }
   return outData;
@@ -87,7 +87,7 @@ class LineChart {
     canvasHeight: number,
     data: MultiYearData,
     title: string,
-    outages: Outage[] = [],
+    outages: Outage[] = []
   ) {
     this.canvasWidth = canvasWidth;
     this.canvasHeight = canvasHeight;
@@ -104,9 +104,9 @@ class LineChart {
 
     this.data = data;
 
-    let linearData:LineChartPoint[] = [];
-    for(const year in data)   {
-      linearData=[...linearData, ...data[year]]
+    let linearData: LineChartPoint[] = [];
+    for (const year in data) {
+      linearData = [...linearData, ...data[year]];
     }
 
     let values = linearData.map((d) => d.count);
@@ -143,23 +143,21 @@ class LineChart {
     ctx.fillRect(this.graphOffset.x, this.graphOffset.y, this.graphWidth, this.graphHeight);
 
     // TODO build color array dynamically, draw averages with higher gamma & wider
-    const colors = [
-      "rgb(100,150,220)",
-      "rgb(100,200,100)",
-    ]
+    const colors = ["rgb(100,150,220)", "rgb(100,200,100)"];
 
-    const years = Object.keys(this.data)
+    const years = Object.keys(this.data);
     // Draw data
-    for(let i=0;i<years.length;i++) {
+    for (let i = 0; i < years.length; i++) {
       const year = years[i];
       const lineChartPoints = [...this.data[year]];
       // this.plotPoints(ctx, lineChartPoints, this.dataColor);
       // this.plotPoints(ctx, smooth(lineChartPoints, 7), this.avgColor, this.avgDash);
       this.plotPoints(ctx, smooth(lineChartPoints, 7), colors[i]);
       // Draw x-labels
-      // FIXME only run this once
-      this.drawColumnLabels(10, lineChartPoints, ctx);
     }
+    // FIXME only run this once
+    this.drawMonthLabels(ctx);
+
     // Draw any outage gaps
     for (const outage of this.outages) {
       ctx.fillStyle = this.bgColor;
@@ -282,9 +280,33 @@ class LineChart {
   private graphYtoCanvasY(y: number) {
     return this.graphOffset.y + this.graphHeight - (y / this.maxValue) * this.graphHeight;
   }
+
+  private drawMonthLabels(ctx: CanvasRenderingContext2D) {
+    // any year will do, we'll us the one at coding time. Slight hack to use month 0 for last day of year
+    for (let month = 0; month <= 12; month++) {
+      const firstOfMonth = DateTime.local(2024, month, 1);
+      const dayOfYear = dateToLeapYearDayOfYear(firstOfMonth);
+      const label = month ? `- ${month}/1` : "- 12/31";
+      ctx.translate(
+        this.graphXtoCanvasX(month ? dayOfYear : 366) - 4, // subtract half label font height, allowing for hyphen midpoint
+        this.graphYtoCanvasY(0) + 2
+      );
+      ctx.rotate(Math.PI / 2);
+      ctx.fillStyle = this.textColor;
+      ctx.fillText(label, 0, 0);
+      ctx.setTransform(new DOMMatrix([1, 0, 0, 1, 0, 0])); // counter rotate?
+    }
+  }
 }
 
 type MultiYearData = Record<string, LineChartPoint[]>;
+
+function dateToLeapYearDayOfYear(date: DateTime) {
+  // use 2024 as a standard leap year
+  const leapYearDate = DateTime.local(2024, date.month, date.day);
+  const startOfLeapYear = DateTime.local(2024, 1, 1);
+  return Interval.fromDateTimes(startOfLeapYear, leapYearDate).count("days") + 1;
+}
 
 /**
  * Draw graph for a single species
@@ -303,7 +325,7 @@ function drawSpeciesGraph(
   const speciesDayCount: DatedCount[] = [];
 
   for (const dailyTotals of allData) {
-    const {date, dayData} = dailyTotals;
+    const { date, dayData } = dailyTotals;
 
     let count: number | null = null;
     if (dayData) {
@@ -329,17 +351,15 @@ function drawSpeciesGraph(
   speciesDayCount.forEach((d) => {
     const dateObject = DateTime.fromFormat(d.date, HAIKU_DATE_FORMAT);
     const year = dateObject.year;
+    const dayOfYear = dateToLeapYearDayOfYear(dateObject);
+    const datum: LineChartPoint = { date: d.date, count: d.count, xIndex: dayOfYear };
+    // TODO xIndex could actually be dayOfYear + 1 if it's NOT a leap year, but it is a date from March onwards
+    // labels need to act like a leap year (if we do the above, they *will*)
     if (!dataByYear[year]) {
       dataByYear[year] = [];
     }
-    const startOfYear = DateTime.local(year, 1, 1);
-    const dayOfYear = Interval.fromDateTimes(startOfYear, dateObject).count('days');
-    const datum: LineChartPoint = {date: d.date, count: d.count, xIndex: dayOfYear};
-    // TODO xIndex could actually be dayOfYear + 1 if it's NOT a leap year, but it is a date from March onwards
-    // labels need to act like a leap year (if we do the above, they *will*)
-    dataByYear[year].push(datum)
+    dataByYear[year].push(datum);
   });
-
 
   const graph = new LineChart(800, 600, dataByYear, targetSpecies || "All species", outages);
   graph.writeToPng(outFile);
@@ -354,9 +374,9 @@ function main(): void {
   const target = process.argv[2];
 
   let minObservations = 10;
-  let targetSpecies: string|null = null;
-  if(target) {
-    if(target.match(/^\d+$/)) {
+  let targetSpecies: string | null = null;
+  if (target) {
+    if (target.match(/^\d+$/)) {
       minObservations = parseInt(target, 10);
     } else {
       targetSpecies = target;

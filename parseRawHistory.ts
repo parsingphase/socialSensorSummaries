@@ -35,7 +35,9 @@ async function main(): Promise<void> {
       if (foundDay.length == 0) {
         row.push(0);
       } else {
-        const foundRecord: BirdRecord[] = (foundDay[0]?.dayData||[]).filter((d) => d.bird == bird);
+        const foundRecord: BirdRecord[] = (foundDay[0]?.dayData || []).filter(
+          (d) => d.bird == bird
+        );
         // console.log({bird,foundRecord});
         row.push(foundRecord.length > 0 ? foundRecord[0].count : 0);
       }

@@ -9,6 +9,7 @@
     "test:static:lint": "eslint . --ext ts --ext js",
     "test:static:tsc": "tsc --pretty --noEmit",
     "test:static:prettier": "prettier -c .",
+    "fix:prettier": "prettier --write .",
     "lambda:build": "./build/buildLambda.sh",
     "lambda:deploy:dev": "npm run lambda:build && npm run cdk:deploy:dev",
     "lambda:deploy:prod": "npm run lambda:build && npm run cdk:deploy:prod",
