@@ -22,7 +22,7 @@ function buildBirdPost(
   birds.sort((a, b) => b.count - a.count);
 
   let postText = "#YesterdaysYardBirds 🤖 (NE MA):\n";
-  let fixedTags = "\n\n#Birds #BirdsongDetection";
+  const fixedTags = "\n\n#Birds #BirdsongDetection";
   let unverifiedBirds = 0;
   let firstUnverifiedBirdIndex: number | null = null;
   let caveat = "";

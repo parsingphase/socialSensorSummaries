@@ -49,6 +49,12 @@ function smooth(data: LineChartPoint[], window: number): LineChartPoint[] {
   return outData;
 }
 
+/**
+ * Filter out nulls.
+ *
+ * Raw array.filter() doesn't return types well
+ * @param values
+ */
 function stripNulls<T>(values: (T | null)[]): T[] {
   const numbers: T[] = [];
   values.forEach((d) => {
@@ -76,12 +82,11 @@ class LineChart {
 
   protected bgColor = "rgb(230,230,230)";
   protected fgColor = "rgb(245,245,230)";
-  protected dataColor = "rgb(210,210,210)";
-  protected avgColor = "rgb(63,63,127)";
   protected textColor = "rgb(0,0,0)";
-  protected avgDash = [4, 4];
   protected titleFont = "20px Impact";
   protected labelFont = "12px Impact";
+
+  protected legendBarLength = 60;
 
   constructor(
     canvasWidth: number,
@@ -110,7 +115,7 @@ class LineChart {
       linearData = [...linearData, ...data[year]];
     }
 
-    let values = linearData.map((d) => d.count);
+    const values = linearData.map((d) => d.count);
     this.maxValue = Math.max(...stripNulls(values));
     this.numValues = linearData.length;
   }
@@ -142,25 +147,64 @@ class LineChart {
 
     ctx.fillStyle = this.fgColor;
     ctx.fillRect(this.graphOffset.x, this.graphOffset.y, this.graphWidth, this.graphHeight);
+    ctx.strokeStyle = "rgb(100,100,100)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(this.graphOffset.x, this.graphOffset.y, this.graphWidth, this.graphHeight);
 
     const years = Object.keys(this.data);
 
     // TODO build color array dynamically, draw averages with higher gamma & wider
     // For now, manually set base colors until we add a color-theory based library for harmonious colors
-    const colors = ["rgb(100,150,220)", "rgb(100,200,100)"].map(c=> new TinyColor(c));
+    const colors = ["rgb(100,150,220)", "rgb(100,200,100)"].map((c) => new TinyColor(c));
 
     // Draw data
     for (let i = 0; i < years.length; i++) {
       const year = years[i];
       const lineChartPoints = [...this.data[year]];
 
-      const lineColor = (new TinyColor(colors[i].toRgbString())).setAlpha(0.4);
-      const avgColor = (new TinyColor(colors[i].toRgbString())).brighten(10).setAlpha(0.6);
+      const lineColor = new TinyColor(colors[i].toRgbString()).setAlpha(0.4);
+      const avgColor = new TinyColor(colors[i].toRgbString()).brighten(10).setAlpha(0.6);
 
       ctx.lineWidth = 5;
       this.plotPoints(ctx, smooth(lineChartPoints, 7), avgColor.toRgbString());
       ctx.lineWidth = 1;
       this.plotPoints(ctx, lineChartPoints, lineColor.toRgbString());
+
+      // draw legend
+      const yearLegendLeft =
+        this.graphOffset.x + (i * (this.graphWidth - this.graphOffset.x * 2)) / years.length;
+
+      ctx.fillStyle = "black";
+      let ybase = 44;
+      ctx.fillText(year, yearLegendLeft, this.canvasHeight - ybase);
+
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = lineColor.toRgbString();
+      ctx.beginPath();
+      ybase = 32;
+      ctx.moveTo(yearLegendLeft, this.canvasHeight - ybase);
+      ctx.lineTo(yearLegendLeft + this.legendBarLength, this.canvasHeight - ybase);
+      ctx.stroke();
+
+      ctx.fillText(
+        "daily",
+        yearLegendLeft + this.legendBarLength + 5,
+        this.canvasHeight - ybase + 3
+      );
+
+      ybase = 16;
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = avgColor.toRgbString();
+      ctx.beginPath();
+      ctx.moveTo(yearLegendLeft, this.canvasHeight - ybase);
+      ctx.lineTo(yearLegendLeft + this.legendBarLength, this.canvasHeight - ybase);
+      ctx.stroke();
+
+      ctx.fillText(
+        "7d avg",
+        yearLegendLeft + this.legendBarLength + 5,
+        this.canvasHeight - ybase + 3
+      );
     }
     this.drawMonthLabels(ctx);
 
@@ -204,12 +248,12 @@ class LineChart {
     let label = 0;
     do {
       const labelYPos = (label / this.maxValue) * this.graphHeight;
-      const labelString = label.toString();
+      const labelString = label.toString() + " -";
       const labelWidth = ctx.measureText(labelString).width;
       ctx.fillText(
         labelString,
-        this.graphOffset.x - labelWidth - 10,
-        this.graphOffset.y + this.graphHeight - labelYPos + 6
+        this.graphOffset.x - labelWidth - 2,
+        this.graphOffset.y + this.graphHeight - labelYPos + 2
       );
       step++;
       label = step * stepSize;
