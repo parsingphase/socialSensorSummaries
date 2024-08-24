@@ -4,6 +4,7 @@ import { aggregateAllDays, BirdRecord, DayRecord, loadCachedDailyData } from "./
 import { CanvasRenderingContext2D, createCanvas, DOMMatrix } from "canvas";
 import fs from "fs";
 import { DateTime, Interval } from "luxon";
+import { TinyColor } from "@ctrl/tinycolor";
 
 const rawDir = `${__dirname}/rawHaikuData`;
 const HAIKU_DATE_FORMAT = "yyyy-MM-dd";
@@ -142,20 +143,25 @@ class LineChart {
     ctx.fillStyle = this.fgColor;
     ctx.fillRect(this.graphOffset.x, this.graphOffset.y, this.graphWidth, this.graphHeight);
 
-    // TODO build color array dynamically, draw averages with higher gamma & wider
-    const colors = ["rgb(100,150,220)", "rgb(100,200,100)"];
-
     const years = Object.keys(this.data);
+
+    // TODO build color array dynamically, draw averages with higher gamma & wider
+    // For now, manually set base colors until we add a color-theory based library for harmonious colors
+    const colors = ["rgb(100,150,220)", "rgb(100,200,100)"].map(c=> new TinyColor(c));
+
     // Draw data
     for (let i = 0; i < years.length; i++) {
       const year = years[i];
       const lineChartPoints = [...this.data[year]];
-      // this.plotPoints(ctx, lineChartPoints, this.dataColor);
-      // this.plotPoints(ctx, smooth(lineChartPoints, 7), this.avgColor, this.avgDash);
-      this.plotPoints(ctx, smooth(lineChartPoints, 7), colors[i]);
-      // Draw x-labels
+
+      const lineColor = (new TinyColor(colors[i].toRgbString())).setAlpha(0.4);
+      const avgColor = (new TinyColor(colors[i].toRgbString())).brighten(10).setAlpha(0.6);
+
+      ctx.lineWidth = 5;
+      this.plotPoints(ctx, smooth(lineChartPoints, 7), avgColor.toRgbString());
+      ctx.lineWidth = 1;
+      this.plotPoints(ctx, lineChartPoints, lineColor.toRgbString());
     }
-    // FIXME only run this once
     this.drawMonthLabels(ctx);
 
     // Draw any outage gaps
