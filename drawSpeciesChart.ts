@@ -1,4 +1,4 @@
-#!/usr/bin/env npx ts-node --esm -r tsconfig-paths/register
+#!/usr/bin/env npx tsx -r tsconfig-paths/register
 
 import { aggregateAllDays, BirdRecord, DayRecord, loadCachedDailyData } from "./lib/haiku";
 import { CanvasRenderingContext2D, createCanvas, DOMMatrix } from "canvas";

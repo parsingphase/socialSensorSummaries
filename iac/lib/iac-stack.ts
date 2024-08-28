@@ -29,7 +29,7 @@ export class IacStack extends cdk.Stack {
 
     const lambdaFunction = new Lambda.Function(this, `DailyYardSummaryLambda`, {
       functionName: `daily-yard-summary-lambda-${deployEnv}`,
-      runtime: Lambda.Runtime.NODEJS_18_X,
+      runtime: Lambda.Runtime.NODEJS_20_X,
       handler: "lambda.handler",
       code: Lambda.Code.fromAsset(lambdaAssetPath),
       memorySize: 512,

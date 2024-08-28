@@ -1,9 +1,10 @@
-#!/usr/bin/env npx ts-node --esm -r tsconfig-paths/register
+#!/usr/bin/env npx tsx -r tsconfig-paths/register
 
 import { DateTime, Duration } from "luxon";
 import { config } from "./config/config";
 import { buildBirdPost, postToMastodon } from "./core/haiku2masto";
 import { fetchDailyCount } from "./lib/haiku";
+import { seenBirds } from "./lib/sightings";
 
 /**
  * CLI main loop
@@ -17,7 +18,7 @@ async function main(): Promise<void> {
 
   const listLength = 20;
   const { apiClientToken, apiBaseUrl: mastoBaseUrl, maxPostLength } = config.mastodon;
-  const postString = buildBirdPost(birds || [], listLength, maxPostLength, 3);
+  const postString = buildBirdPost(birds || [], listLength, maxPostLength, 3, seenBirds);
 
   console.log({ birds, postString, length: postString.length });
 
