@@ -66,6 +66,7 @@ const seenBirds = [
   "House Wren",
   "Broad-winged Hawk",
   "Red-breasted Nuthatch",
+  "Eastern Kingbird",
 ];
 
 export { seenBirds };
