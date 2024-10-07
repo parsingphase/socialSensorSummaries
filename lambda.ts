@@ -32,7 +32,7 @@ export const handler = async (_event: ScheduledEvent, _context: Context): Promis
     .toFormat("yyyy-MM-dd");
   const birds = await fetchDailyCount(haikuBaseUrl, serialNumber, when);
 
-  const postString = buildBirdPost(birds || [], 20, 500, 3, seenBirds);
+  const postString = buildBirdPost(birds || [], 20, 500, 10, seenBirds);
 
   console.log({ birds, postString, length: postString.length });
 

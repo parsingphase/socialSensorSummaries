@@ -67,6 +67,9 @@ const seenBirds = [
   "Broad-winged Hawk",
   "Red-breasted Nuthatch",
   "Eastern Kingbird",
+  "Common Yellowthroat",
+  "Black-and-white Warbler",
+  "Nashville Warbler"
 ];
 
 export { seenBirds };
