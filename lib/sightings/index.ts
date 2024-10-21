@@ -69,7 +69,8 @@ const seenBirds = [
   "Eastern Kingbird",
   "Common Yellowthroat",
   "Black-and-white Warbler",
-  "Nashville Warbler"
+  "Nashville Warbler",
+  "Palm Warbler",
 ];
 
 export { seenBirds };
