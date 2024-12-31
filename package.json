@@ -26,6 +26,7 @@
     "@types/eslint__js": "^8.42.3",
     "@types/luxon": "^3.1.0",
     "@types/node": "^22",
+    "@types/suncalc": "^1.9.2",
     "@types/ws": "^8.5.8",
     "aws-cdk": "^2.102.0",
     "aws-cdk-lib": "^2.102.0",
@@ -46,6 +47,7 @@
     "@ctrl/tinycolor": "^4.1.0",
     "canvas": "^2.11.2",
     "luxon": "^3.1.1",
-    "masto": "4.9.1"
+    "masto": "4.9.1",
+    "suncalc": "^1.9.0"
   }
 }
