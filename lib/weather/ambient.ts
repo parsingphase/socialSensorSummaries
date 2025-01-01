@@ -54,7 +54,7 @@ type AmbientWeatherApiDeviceQueryParams = {
   endDate?: string;
 };
 
-async function fetchRecentWeatherRecords(
+async function fetchDeviceWeatherRecords(
   ambientWeatherConfig: AmbientWeatherApiConfig,
   queryParams: AmbientWeatherApiDeviceQueryParams
 ) {
@@ -69,5 +69,5 @@ async function fetchRecentWeatherRecords(
   return weatherData;
 }
 
-export { fetchRecentWeatherRecords };
+export { fetchDeviceWeatherRecords };
 export type { AmbientWeatherInterval, AmbientWeatherApiConfig, AmbientWeatherApiDeviceQueryParams };
