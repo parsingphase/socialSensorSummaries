@@ -3,20 +3,13 @@
 import SunCalc from "suncalc";
 import { DateTime } from "luxon";
 import { config } from "../config/config";
-
-const endpoint = "/v1/devices/";
-
-function objectToQueryString(obj: { [key: string]: number | string | undefined }): string {
-  return Object.keys(obj)
-    .filter((key) => typeof obj[key] !== "undefined")
-    .map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(obj[key]!)}`)
-    .join("&");
-}
+import { fetchRecentWeatherRecords } from "../lib/ambientWeather";
 
 async function main(): Promise<void> {
-  const yesterday = DateTime.now().minus({ days: 1 }).toJSDate();
-  const { latitude, longitude } = config.location;
-  const { apiBaseUrl, apiKey, applicationKey, deviceMac } = config.ambientWeather;
+  const yesterday = DateTime.now().minus({ days: 0 }).toJSDate();
+  const location = config.location;
+
+  const { latitude, longitude } = location;
   const envTimes = SunCalc.getTimes(yesterday, latitude, longitude);
   const { sunrise, sunset } = envTimes;
 
@@ -24,29 +17,53 @@ async function main(): Promise<void> {
   const sunsetLuxon = DateTime.fromJSDate(sunset);
   const sunsetEpochMs = sunsetLuxon.toUnixInteger() + "000";
 
-  const daylightMinutes = sunsetLuxon.diff(sunriseLuxon, "minutes").as("minutes");
+  const daylightMinutes = sunsetLuxon.diff(sunriseLuxon).as("minutes");
   const intervals = Math.ceil(daylightMinutes / 5);
-  const daylightHours = Math.round(daylightMinutes / 6) / 10;
+  const daylightHoursRaw = daylightMinutes / 60;
+  const daylightHours = daylightHoursRaw.toFixed(1);
+
+  const ambientWeatherConfig = config.ambientWeather;
 
   const queryParams = {
-    apiKey,
-    applicationKey,
     limit: intervals,
-    // Number of intervals to return. Interval is determined by API / user account level? (5 or 30 mins)
-    // Default 228 (24 hrs of 5 minutes)
     endDate: sunsetEpochMs, //epochMs
   };
+  const weatherData = await fetchRecentWeatherRecords(ambientWeatherConfig, queryParams);
 
-  const queryUrl = `${apiBaseUrl}${endpoint}${deviceMac}?${objectToQueryString(queryParams)}`;
-  const weatherData = await (await fetch(queryUrl)).json();
+  const intervalsReceived = weatherData.length;
 
-  const temperatures = weatherData.map(d => d.tempf);
+  const temperatures = weatherData.map((d) => d.tempf);
   const maxTemp = Math.max(...temperatures);
   const minTemp = Math.min(...temperatures);
 
-  console.log({ sunrise, sunset, daylightHours, maxTemp, minTemp });
+  const peakGust = Math.max(...weatherData.map((d) => d.windgustmph)).toFixed(1);
+
+  const rainByHour = weatherData.map((d) => d.hourlyrainin ?? 0);
+  const sumOfHourlyRainMeasurements = rainByHour.reduce((a, c) => a + c, 0);
+  const estPeriodRain = (sumOfHourlyRainMeasurements / intervalsReceived) * daylightHoursRaw;
+
+  console.log({
+    intervalsReceived,
+    sunrise,
+    sunset,
+    daylightHours,
+    maxTemp,
+    minTemp,
+    estPeriodRain,
+    peakGust,
+  });
+
+  const summary = `Daylight weather conditions:
+  ${daylightHours} hours daylight
+  Temp ${minTemp}ºF - ${maxTemp}ºF
+  Approx rainfall: ${estPeriodRain.toFixed(2)} inches
+  Max wind: ${peakGust} mph
+  `.replace(/\n +/g, "\n");
+
+  console.log(summary);
+  console.log(summary.length);
 }
 
 main()
   .catch((e) => console.error(e))
-  .finally(() => console.log("Done"));
+  .finally(() => console.error("Done"));
