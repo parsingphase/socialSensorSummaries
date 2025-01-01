@@ -86,12 +86,14 @@ function buildBirdPost(
  * @param apiClientToken
  * @param postString
  * @param postVisibility
+ * @param inReplyToId
  */
 async function postToMastodon(
   mastoBaseUrl: string,
   apiClientToken: string,
   postString: string,
-  postVisibility: string
+  postVisibility: string,
+  inReplyToId?: string
 ): Promise<Status> {
   const masto = await login({
     url: mastoBaseUrl,
@@ -102,6 +104,7 @@ async function postToMastodon(
   const statusParams: CreateStatusParams = {
     status: postString,
     visibility: postVisibility as StatusVisibility,
+    ...(inReplyToId ? { inReplyToId } : {}),
   };
   return masto.statuses.create(statusParams);
 }

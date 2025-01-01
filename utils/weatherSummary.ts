@@ -5,7 +5,7 @@ import { config } from "../config/config";
 import { buildDaylightWeatherSummaryForDay, fetchDeviceWeatherRecords } from "../lib/weather";
 
 async function main(): Promise<void> {
-  const yesterday = DateTime.now().minus({ days: 0 }).toJSDate();
+  const yesterday = DateTime.now().minus({ days: 1 }).toJSDate();
   const location = config.location;
   const ambientWeatherConfig = config.ambientWeather;
   const summary = await buildDaylightWeatherSummaryForDay(

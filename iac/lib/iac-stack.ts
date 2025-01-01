@@ -23,7 +23,7 @@ export class IacStack extends cdk.Stack {
 
     const lambdaAssetPath = `${__dirname}/../../build/output/lambda.zip`;
 
-    const { mastodon, haikubox, lambda } = config;
+    const { mastodon, haikubox, lambda, ambientWeather, location } = config;
 
     const lambdaEnv = lambda[deployEnv];
 
@@ -37,9 +37,19 @@ export class IacStack extends cdk.Stack {
       environment: {
         MASTO_CLIENT_TOKEN: mastodon.apiClientToken,
         MASTO_BASE_URL: mastodon.apiBaseUrl,
+
         POST_VISIBILITY: lambdaEnv.postVisibility,
+
         HAIKU_BASE_URL: haikubox.apiBaseUrl,
         HAIKU_SERIAL_NUMBER: haikubox.serialNumber,
+
+        AWN_BASE_URL: ambientWeather.apiBaseUrl,
+        AWN_API_KEY: ambientWeather.apiKey,
+        AWN_APPLICATION_KEY: ambientWeather.applicationKey,
+        AWN_DEVICE_MAC: ambientWeather.deviceMac,
+
+        SITE_LATITUDE: "" + location.latitude,
+        SITE_LONGITUDE: "" + location.longitude,
       },
     });
 

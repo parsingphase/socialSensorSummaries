@@ -38,7 +38,9 @@ async function buildDaylightWeatherSummaryForDay(
   const sumOfHourlyRainMeasurements = rainByHour.reduce((a, c) => a + c, 0);
   const estPeriodRain = (sumOfHourlyRainMeasurements / intervalsReceived) * daylightHoursRaw;
 
-  const summary = `Daylight weather conditions:
+  const dateString = DateTime.fromJSDate(day).toFormat("yyyy-MM-dd");
+
+  const summary = `Daylight weather conditions for ${dateString}:
   ${daylightHours} hours daylight
   Temp ${minTemp}ºF - ${maxTemp}ºF
   Approx rainfall: ${estPeriodRain.toFixed(2)} inches
