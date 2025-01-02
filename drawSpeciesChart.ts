@@ -165,7 +165,7 @@ class LineChart {
 
     // TODO build color array dynamically, draw averages with higher gamma & wider
     // For now, manually set base colors until we add a color-theory based library for harmonious colors
-    const colors = ["rgb(100,150,220)", "rgb(100,200,100)"].map((c) => new TinyColor(c));
+    const colors = ["rgb(223,193,98)", "rgb(100,200,100)", "rgb(100,150,220)"].map((c) => new TinyColor(c));
 
     // Draw data
     for (let i = 0; i < years.length; i++) {
@@ -312,13 +312,17 @@ class LineChart {
       ctx.moveTo(startPoint.x, startPoint.y);
 
       let lastDrawnXIndex = startDatum.xIndex;
-      for (let i = 1; i < lineChartPoints.length; i++) {
+      for (let i = 0; i < lineChartPoints.length; i++) {
         const datum = lineChartPoints[i];
         const count = datum.count;
         if (count !== null) {
           const drewLastPoint = lastDrawnXIndex == datum.xIndex - 1;
           const nextPoint = this.graphPointToCanvasXY(datum.xIndex, count);
-          if (drewLastPoint) {
+          // special case to make sure the first point gets on the chart, even if it's the only one
+          if (i == 0 && lineChartPoints.length == 1) {
+            ctx.lineTo(nextPoint.x + 1, nextPoint.y);
+          }
+          if (drewLastPoint || i == 0) {
             ctx.lineTo(nextPoint.x, nextPoint.y);
           } else {
             ctx.moveTo(nextPoint.x, nextPoint.y);

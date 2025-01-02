@@ -40,7 +40,7 @@ async function buildDaylightWeatherSummaryForDay(
 
   const dateString = DateTime.fromJSDate(day).toFormat("yyyy-MM-dd");
 
-  const summary = `Daylight weather conditions for ${dateString}:
+  const summary = `Daylight weather conditions for ${dateString} 🤖:
   ${daylightHours} hours daylight
   Temp ${minTemp}ºF - ${maxTemp}ºF
   Approx rainfall: ${estPeriodRain.toFixed(2)} inches
