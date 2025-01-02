@@ -6,7 +6,7 @@ import { objectToQueryString } from "../utils";
  * See https://github.com/ambient-weather/api-docs/wiki/Device-Data-Specs for other options
  */
 type AmbientWeatherInterval = {
-  dateutc: number; // int
+  dateutc: number; // int, epochMs
   tempf: number; // float
   humidity: number; // int
   windspeedmph: number; // float

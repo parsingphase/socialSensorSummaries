@@ -165,7 +165,9 @@ class LineChart {
 
     // TODO build color array dynamically, draw averages with higher gamma & wider
     // For now, manually set base colors until we add a color-theory based library for harmonious colors
-    const colors = ["rgb(223,193,98)", "rgb(100,200,100)", "rgb(100,150,220)"].map((c) => new TinyColor(c));
+    const colors = ["rgb(223,193,98)", "rgb(100,200,100)", "rgb(100,150,220)"].map(
+      (c) => new TinyColor(c)
+    );
 
     // Draw data
     for (let i = 0; i < years.length; i++) {

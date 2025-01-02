@@ -5,12 +5,15 @@ import { config } from "./config/config";
 import { buildBirdPost, postToMastodon } from "./core/haiku2masto";
 import { fetchDailyCount } from "./lib/haiku";
 import { seenBirds } from "./lib/sightings";
-import { buildDaylightWeatherSummaryForDay } from "./lib/weather";
+import { buildWeatherSummaryForDay } from "./lib/weather";
+import { Status } from "masto";
 
 /**
  * CLI main loop
  */
 async function main(): Promise<void> {
+  const post = true;
+
   const whenLuxon = DateTime.now().minus(Duration.fromObject({ days: 1 }));
   const when = whenLuxon.toFormat("yyyy-MM-dd");
   const { serialNumber, apiBaseUrl: haikuBaseUrl } = config.haikubox;
@@ -20,34 +23,37 @@ async function main(): Promise<void> {
   const { apiClientToken, apiBaseUrl: mastoBaseUrl, maxPostLength } = config.mastodon;
   const postString = buildBirdPost(birds || [], listLength, maxPostLength, 3, seenBirds);
 
-  console.log({ birds, postString, length: postString.length });
-
   const { postVisibility } = config.lambda.dev;
-  const birdsStatus = await postToMastodon(
-    mastoBaseUrl,
-    apiClientToken,
-    postString,
-    postVisibility
-  );
 
-  console.log(`Posted bird list to ${birdsStatus.url} / ${birdsStatus.id}`);
+  let birdsStatus: Status | null = null;
+  if (post) {
+    birdsStatus = await postToMastodon(mastoBaseUrl, apiClientToken, postString, postVisibility);
+
+    console.log(`Posted bird list to ${birdsStatus.url} / ${birdsStatus.id}`);
+  } else {
+    console.log({ postString });
+  }
 
   const location = config.location;
   const ambientWeatherConfig = config.ambientWeather;
-  const weatherSummary = await buildDaylightWeatherSummaryForDay(
+  const weatherSummary = await buildWeatherSummaryForDay(
     ambientWeatherConfig,
     location,
     whenLuxon.toJSDate()
   );
 
-  const weatherStatus = await postToMastodon(
-    mastoBaseUrl,
-    apiClientToken,
-    weatherSummary,
-    postVisibility,
-    birdsStatus.id
-  );
-  console.log(`Posted weather status to ${weatherStatus.url} / ${weatherStatus.id}`);
+  if (post) {
+    const weatherStatus = await postToMastodon(
+      mastoBaseUrl,
+      apiClientToken,
+      weatherSummary,
+      postVisibility,
+      birdsStatus?.id || "unused"
+    );
+    console.log(`Posted weather status to ${weatherStatus.url} / ${weatherStatus.id}`);
+  } else {
+    console.log({ weatherSummary });
+  }
 }
 
 main().finally(() => console.log("DONE"));

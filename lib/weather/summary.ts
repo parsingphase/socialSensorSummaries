@@ -1,8 +1,28 @@
 import SunCalc from "suncalc";
 import { DateTime } from "luxon";
-import { AmbientWeatherApiConfig, fetchDeviceWeatherRecords } from "./ambient";
+import { AmbientWeatherApiConfig, AmbientWeatherInterval, fetchDeviceWeatherRecords, } from "./ambient";
 
-async function buildDaylightWeatherSummaryForDay(
+function analyzeWeatherData(weatherData: AmbientWeatherInterval[]) {
+  const intervalsReceived = weatherData.length;
+
+  const timesEpochMs = weatherData.map((d) => d.dateutc);
+  const maxTime = Math.max(...timesEpochMs);
+  const minTime = Math.min(...timesEpochMs);
+  const duration = DateTime.fromMillis(maxTime).diff(DateTime.fromMillis(minTime)).as("hours");
+
+  const temperatures = weatherData.map((d) => d.tempf);
+  const maxTemp = Math.max(...temperatures);
+  const minTemp = Math.min(...temperatures);
+
+  const peakGust = Math.max(...weatherData.map((d) => d.windgustmph)).toFixed(1);
+
+  const rainByHour = weatherData.map((d) => d.hourlyrainin ?? 0);
+  const sumOfHourlyRainMeasurements = rainByHour.reduce((a, c) => a + c, 0);
+  const estPeriodRain = ((sumOfHourlyRainMeasurements / intervalsReceived) * duration).toFixed(2);
+  return { maxTemp, minTemp, peakGust, estPeriodRain };
+}
+
+async function buildWeatherSummaryForDay(
   ambientWeatherConfig: AmbientWeatherApiConfig,
   location: { latitude: number; longitude: number },
   day: Date
@@ -13,51 +33,43 @@ async function buildDaylightWeatherSummaryForDay(
 
   const sunriseLuxon = DateTime.fromJSDate(sunrise);
   const sunsetLuxon = DateTime.fromJSDate(sunset);
-  const sunsetEpochMs = sunsetLuxon.toUnixInteger() + "000";
+  // const sunsetEpochMs = sunsetLuxon.toUnixInteger() + "000";
+  const midnightMs = DateTime.now().startOf("day").toUnixInteger() + "000";
 
   const daylightMinutes = sunsetLuxon.diff(sunriseLuxon).as("minutes");
-  const intervals = Math.ceil(daylightMinutes / 5);
+  // const intervals = Math.ceil(daylightMinutes / 5);
+  const intervals = 24 * (60 / 5);
+
   const daylightHoursRaw = daylightMinutes / 60;
   const daylightHours = daylightHoursRaw.toFixed(1);
 
   const queryParams = {
     limit: intervals,
-    endDate: sunsetEpochMs, //epochMs
+    endDate: midnightMs, //epochMs
   };
   const weatherData = await fetchDeviceWeatherRecords(ambientWeatherConfig, queryParams);
 
-  const intervalsReceived = weatherData.length;
+  const wholeDaySummary = analyzeWeatherData(weatherData);
 
-  const temperatures = weatherData.map((d) => d.tempf);
-  const maxTemp = Math.max(...temperatures);
-  const minTemp = Math.min(...temperatures);
-
-  const peakGust = Math.max(...weatherData.map((d) => d.windgustmph)).toFixed(1);
-
-  const rainByHour = weatherData.map((d) => d.hourlyrainin ?? 0);
-  const sumOfHourlyRainMeasurements = rainByHour.reduce((a, c) => a + c, 0);
-  const estPeriodRain = (sumOfHourlyRainMeasurements / intervalsReceived) * daylightHoursRaw;
+  const sunlightHoursData = weatherData.filter(
+    (d) => d.dateutc >= sunrise.valueOf() && d.dateutc <= sunset.valueOf()
+  );
+  const daylightSummary = analyzeWeatherData(sunlightHoursData);
 
   const dateString = DateTime.fromJSDate(day).toFormat("yyyy-MM-dd");
 
-  const summary = `Daylight weather conditions for ${dateString} 🤖:
-  ${daylightHours} hours daylight
-  Temp ${minTemp}ºF - ${maxTemp}ºF
-  Approx rainfall: ${estPeriodRain.toFixed(2)} inches
-  Max wind: ${peakGust} mph
+  return `Weather conditions for ${dateString} 🤖:
+  
+  Sunrise - sunset (${daylightHours} hours):
+  Temp ${daylightSummary.minTemp}ºF - ${daylightSummary.maxTemp}ºF
+  Approx rainfall: ${daylightSummary.estPeriodRain} inches
+  Max wind: ${daylightSummary.peakGust} mph
+  
+  24 hours:
+  Temp ${wholeDaySummary.minTemp}ºF - ${wholeDaySummary.maxTemp}ºF
+  Approx rainfall: ${wholeDaySummary.estPeriodRain} inches
+  Max wind: ${wholeDaySummary.peakGust} mph
   `.replace(/\n +/g, "\n");
-
-  console.log({
-    intervalsReceived,
-    sunrise,
-    sunset,
-    daylightHours,
-    maxTemp,
-    minTemp,
-    estPeriodRain,
-    peakGust,
-  });
-  return summary;
 }
 
-export { buildDaylightWeatherSummaryForDay };
+export { buildWeatherSummaryForDay };

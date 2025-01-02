@@ -4,7 +4,7 @@ import { buildBirdPost, postToMastodon } from "./core/haiku2masto";
 import { DateTime, Duration } from "luxon";
 import { fetchDailyCount } from "./lib/haiku";
 import { seenBirds } from "./lib/sightings";
-import { AmbientWeatherApiConfig, buildDaylightWeatherSummaryForDay } from "./lib/weather";
+import { AmbientWeatherApiConfig, buildWeatherSummaryForDay } from "./lib/weather";
 
 /**
  * Return an ENV value, object if it's missing
@@ -54,7 +54,7 @@ export const handler = async (_event: ScheduledEvent, _context: Context): Promis
     deviceMac: AWNDeviceMac,
   };
 
-  const weatherSummary = await buildDaylightWeatherSummaryForDay(
+  const weatherSummary = await buildWeatherSummaryForDay(
     ambientWeatherConfig,
     { latitude, longitude },
     when.toJSDate()
