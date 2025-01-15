@@ -1,6 +1,10 @@
 import SunCalc from "suncalc";
 import { DateTime } from "luxon";
-import { AmbientWeatherApiConfig, AmbientWeatherInterval, fetchDeviceWeatherRecords, } from "./ambient";
+import {
+  AmbientWeatherApiConfig,
+  AmbientWeatherInterval,
+  fetchDeviceWeatherRecords,
+} from "./ambient";
 
 function analyzeWeatherData(weatherData: AmbientWeatherInterval[]) {
   const intervalsReceived = weatherData.length;
@@ -34,7 +38,7 @@ async function buildWeatherSummaryForDay(
   const sunriseLuxon = DateTime.fromJSDate(sunrise);
   const sunsetLuxon = DateTime.fromJSDate(sunset);
   // const sunsetEpochMs = sunsetLuxon.toUnixInteger() + "000";
-  const startOfDay = DateTime.now().setZone('US/Eastern').startOf("day");
+  const startOfDay = DateTime.now().setZone("US/Eastern").startOf("day");
   const midnightMs = startOfDay.toUnixInteger() + "000";
   console.log({ startOfDay });
 
@@ -60,6 +64,10 @@ async function buildWeatherSummaryForDay(
 
   const dateString = DateTime.fromJSDate(day).toFormat("yyyy-MM-dd");
 
+  const moonPhase = SunCalc.getMoonIllumination(day).phase;
+  console.log({ moonPhase });
+  const lunarIcon = String.fromCodePoint(Math.round(8 * moonPhase) + 0x1f311);
+
   return `Weather conditions for ${dateString} 🤖:
   
   Sunrise - sunset (${daylightHours} hours):
@@ -67,7 +75,7 @@ async function buildWeatherSummaryForDay(
   Approx rainfall: ${daylightSummary.estPeriodRain} inches
   Max wind: ${daylightSummary.peakGust} mph
   
-  24 hours:
+  24 hours ${lunarIcon}:
   Temp ${wholeDaySummary.minTemp}ºF - ${wholeDaySummary.maxTemp}ºF
   Approx rainfall: ${wholeDaySummary.estPeriodRain} inches
   Max wind: ${wholeDaySummary.peakGust} mph
