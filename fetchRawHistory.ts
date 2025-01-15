@@ -30,7 +30,7 @@ async function main(): Promise<void> {
     if (!fs.existsSync(file)) {
       const dayData = await fetchDailyCount(haikuBaseUrl, serialNumber, when);
       fs.writeFileSync(file, JSON.stringify(dayData, null, 2));
-      await sleep(5000);
+      await sleep(1000);
     }
 
     day = day.plus({ day: 1 });

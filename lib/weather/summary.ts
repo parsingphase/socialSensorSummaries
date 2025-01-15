@@ -34,7 +34,9 @@ async function buildWeatherSummaryForDay(
   const sunriseLuxon = DateTime.fromJSDate(sunrise);
   const sunsetLuxon = DateTime.fromJSDate(sunset);
   // const sunsetEpochMs = sunsetLuxon.toUnixInteger() + "000";
-  const midnightMs = DateTime.now().startOf("day").toUnixInteger() + "000";
+  const startOfDay = DateTime.now().setZone('US/Eastern').startOf("day");
+  const midnightMs = startOfDay.toUnixInteger() + "000";
+  console.log({ startOfDay });
 
   const daylightMinutes = sunsetLuxon.diff(sunriseLuxon).as("minutes");
   // const intervals = Math.ceil(daylightMinutes / 5);
