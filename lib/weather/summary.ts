@@ -14,11 +14,13 @@ function analyzeWeatherData(weatherData: AmbientWeatherInterval[]) {
   const minTime = Math.min(...timesEpochMs);
   const duration = DateTime.fromMillis(maxTime).diff(DateTime.fromMillis(minTime)).as("hours");
 
-  const temperatures = weatherData.map((d) => d.tempf);
+  // If not all sensors are responding for a given time period, fields can be missing / undefined. Filter these out.
+  const temperatures = weatherData.map((d) => d.tempf).filter((d) => Number.isFinite(d));
   const maxTemp = Math.max(...temperatures);
   const minTemp = Math.min(...temperatures);
 
-  const peakGust = Math.max(...weatherData.map((d) => d.windgustmph)).toFixed(1);
+  const windGusts = weatherData.map((d) => d.windgustmph).filter((d) => Number.isFinite(d));
+  const peakGust = Math.max(...windGusts).toFixed(1);
 
   const rainByHour = weatherData.map((d) => d.hourlyrainin ?? 0);
   const sumOfHourlyRainMeasurements = rainByHour.reduce((a, c) => a + c, 0);
