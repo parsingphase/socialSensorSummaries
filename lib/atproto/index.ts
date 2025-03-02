@@ -49,7 +49,7 @@ async function getAtprotoAgent(
  * @param postText
  * @param logger
  */
-function buildHashtagMap(postText: string, logger?: Logger): AppBskyRichtextFacet.Main[] {
+function buildHashtagFacets(postText: string, logger?: Logger): AppBskyRichtextFacet.Main[] {
   const hashtags = [...postText.matchAll(/#\w+/g)].map((h) => {
     return {
       index: {
@@ -69,22 +69,66 @@ function buildHashtagMap(postText: string, logger?: Logger): AppBskyRichtextFace
   return hashtags;
 }
 
+type Link = {
+  text: string;
+  uri: string;
+};
+
+/**
+ * Create map of first occurrence of a given string to a paired URL. Use with care!
+ * @param postText
+ * @param matches
+ * @param logger
+ */
+function buildLinkFacets(
+  postText: string,
+  matches: Link[],
+  logger?: Logger
+): AppBskyRichtextFacet.Main[] {
+  const facets: AppBskyRichtextFacet.Main[] = [];
+  for (const h of matches) {
+    const { text, uri } = h;
+    const index = postText.indexOf(text);
+    const length = postText.length;
+
+    if (index) {
+      facets.push({
+        index: {
+          byteStart: bytesBeforeUtf8Offset(postText, index),
+          byteEnd: bytesBeforeUtf8Offset(postText, index + length),
+        },
+        features: [
+          {
+            uri: uri,
+            $type: "app.bsky.richtext.facet#link",
+          },
+        ],
+      });
+    }
+  }
+
+  logger?.debug({ facets });
+  return facets;
+}
+
 /**
  * Post plain text to ATProto with configured client
  *
  * @param agent
  * @param text
  * @param replyRef
+ * @param linkSpecs
  * @param logger
  */
 async function postToAtproto(
   agent: AtpAgent,
   text: string,
   replyRef?: StrongPostRef,
+  linkSpecs: Link[] = [],
   logger?: Logger
 ): Promise<StrongPostRef> {
   // Publish!
-  const hashtags = buildHashtagMap(text);
+  const hashtags = buildHashtagFacets(text);
   let fullReplyReference = {};
   if (replyRef) {
     fullReplyReference = {
@@ -95,10 +139,12 @@ async function postToAtproto(
     };
   }
 
+  const linkFacets = buildLinkFacets(text, linkSpecs, logger);
+
   const statusParams: Postable = {
     text: text,
     createdAt: new Date().toISOString(),
-    facets: hashtags,
+    facets: [...hashtags, ...linkFacets],
     ...fullReplyReference,
   };
 
@@ -108,5 +154,5 @@ async function postToAtproto(
   return status;
 }
 
-export { buildHashtagMap, getAtprotoAgent, postToAtproto };
-export type { StrongPostRef };
+export { buildHashtagFacets, buildLinkFacets, getAtprotoAgent, postToAtproto };
+export type { Link, StrongPostRef };

@@ -6,7 +6,7 @@
  * @param maxPostLength
  * @param minObservationCount
  * @param confirmedObservations
- * @param caveatUrl
+ * @param caveatText
  */
 function buildTopBirdsPost(
   birds: { bird: string; count: number }[],
@@ -14,7 +14,7 @@ function buildTopBirdsPost(
   maxPostLength: number,
   minObservationCount: number,
   confirmedObservations: string[] | undefined,
-  caveatUrl: string | null
+  caveatText: string | null
 ): string {
   // sorted by default, but let's be sure
   birds.sort((a, b) => b.count - a.count);
@@ -23,7 +23,7 @@ function buildTopBirdsPost(
   const fixedTags = "\n\n#Birds #BirdsongDetection";
   let unverifiedBirds = 0;
   let firstUnverifiedBirdIndex: number | null = null;
-  let caveat = "";
+  let caveatAppendedText = "";
 
   const optionalTag = " #HaikuBox";
   const candidateLines: string[] = [];
@@ -37,7 +37,7 @@ function buildTopBirdsPost(
    */
   function buildLine(index: number, bird: string): string {
     let line = `${index + 1} ${bird}`;
-    if (caveatUrl && !normalizedSeenBirds.includes(normalizeBirdName(bird))) {
+    if (caveatText && !normalizedSeenBirds.includes(normalizeBirdName(bird))) {
       line += " ^";
       unverifiedBirds++;
       if (!firstUnverifiedBirdIndex) {
@@ -52,14 +52,14 @@ function buildTopBirdsPost(
     .slice(0, maxBirds)
     .forEach(({ bird }, index) => candidateLines.push(buildLine(index, bird)));
 
-  if (unverifiedBirds > 0 && caveatUrl) {
-    caveat = `\n\n ^ caveat: ${caveatUrl}`;
+  if (unverifiedBirds > 0 && caveatText) {
+    caveatAppendedText = caveatText;
   }
 
   let maxBirdIndexIncluded = 0;
   for (let i = 0; i < candidateLines.length; i++) {
     if (
-      postText.length + candidateLines[i].length + fixedTags.length + caveat.length <
+      postText.length + candidateLines[i].length + fixedTags.length + caveatAppendedText.length <
       maxPostLength
     ) {
       postText += `\n${candidateLines[i]}`;
@@ -70,7 +70,7 @@ function buildTopBirdsPost(
   }
 
   if (firstUnverifiedBirdIndex !== null && maxBirdIndexIncluded >= firstUnverifiedBirdIndex) {
-    postText += caveat;
+    postText += caveatAppendedText;
   }
 
   postText += fixedTags;

@@ -6,7 +6,7 @@ import { fetchDailyCount } from "./lib/haiku";
 import { seenBirds } from "./lib/sightings";
 import { buildWeatherSummaryForDay } from "./lib/weather";
 import { buildBirdPostForBluesky } from "./core/haiku2bluesky";
-import { getAtprotoAgent, postToAtproto, StrongPostRef } from "./lib/atproto";
+import { getAtprotoAgent, Link, postToAtproto, StrongPostRef } from "./lib/atproto";
 import pino from "pino";
 
 /**
@@ -33,7 +33,10 @@ async function main(): Promise<void> {
 
   let birdsStatus: StrongPostRef | null = null;
   if (post) {
-    birdsStatus = await postToAtproto(client, postString, undefined, logger);
+    const links: Link[] = [
+      { uri: "https://bsky.app/profile/parsingphase.dev/post/3ljfn54m4ls23", text: "caveat" },
+    ];
+    birdsStatus = await postToAtproto(client, postString, undefined, links, logger);
 
     console.log(`Posted bird list to ${birdsStatus.uri} / ${birdsStatus.cid}`);
   } else {
@@ -53,6 +56,7 @@ async function main(): Promise<void> {
       client,
       weatherSummary,
       birdsStatus || undefined,
+      undefined,
       logger
     );
     console.log(`Posted weather status to ${weatherStatus.uri} / ${weatherStatus.cid}`);

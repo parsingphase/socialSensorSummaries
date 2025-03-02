@@ -16,15 +16,15 @@ function buildBirdPostForBluesky(
   minObservationCount = 1,
   maxPostLength = 300
 ): string {
-  // const caveatUrl = "https://m.phase.org/@parsingphase/111711558681612429";
-  const caveatUrl = null;
+  const caveatText = `\n\n ^ See caveat`;
+
   return buildTopBirdsPost(
     birds,
     maxBirds,
     maxPostLength,
     minObservationCount,
     confirmedObservations,
-    caveatUrl
+    caveatText
   );
 }
 

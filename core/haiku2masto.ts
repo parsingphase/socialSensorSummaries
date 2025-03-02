@@ -18,13 +18,15 @@ function buildBirdPostForMastodon(
   maxPostLength = 500
 ): string {
   const caveatUrl = "https://m.phase.org/@parsingphase/111711558681612429";
+  const caveatText = `\n\n ^ caveat: ${caveatUrl}`;
+
   return buildTopBirdsPost(
     birds,
     maxBirds,
     maxPostLength,
     minObservationCount,
     confirmedObservations,
-    caveatUrl
+    caveatText
   );
 }
 
