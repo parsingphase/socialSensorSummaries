@@ -8,8 +8,8 @@ const thisDir = path.dirname(thisFile);
 
 const projectRootDir = path.dirname(thisDir);
 const inputDir = projectRootDir;
-const input = inputDir + "/lambda.ts";
-const outDir = projectRootDir + "/dist";
+const input = inputDir + "/lambdaMasto.ts";
+const outDir = projectRootDir + "/dist/masto";
 const outputFile = outDir + "/lambda.js";
 
 export default {

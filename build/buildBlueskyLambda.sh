@@ -11,27 +11,27 @@ get_script_dir () {
 
 SCRIPT_DIR="$( get_script_dir )"
 
-DIST_DIR="${SCRIPT_DIR}/../dist"
+DIST_DIR="${SCRIPT_DIR}/../dist/bluesky"
 BUILD_DIR="${SCRIPT_DIR}"
 OUTPUT_DIR="${BUILD_DIR}/output"
 
 cd "${SCRIPT_DIR}"
-rollup -c
+rollup -c rollup-bluesky.config.mjs
 # rollup writes to DIST_DIR
 
 ## TODO scripts to copy root package.json without scripts / devDeps into build dir, apply fixes in docs/ISSUES.md if needed
 # Then we can safely `npm install --omit=dev` in `dist`
 
-rm -rf "${OUTPUT_DIR}/lambda.zip"
+rm -rf "${OUTPUT_DIR}/blueskyLambda.zip"
 
 cd "${DIST_DIR}"
 npm ci --omit=dev
 
-rm -rf "${OUTPUT_DIR}"
+rm -rf "${OUTPUT_DIR}/blueskyLambda.zip"
 mkdir -p "${OUTPUT_DIR}"
-zip -r "${OUTPUT_DIR}/lambda.zip" * > /dev/null
+zip -r "${OUTPUT_DIR}/blueskyLambda.zip" * > /dev/null
 
-ls -lh "${OUTPUT_DIR}/lambda.zip"
+ls -lh "${OUTPUT_DIR}/blueskyLambda.zip"
 
 echo DONE
 

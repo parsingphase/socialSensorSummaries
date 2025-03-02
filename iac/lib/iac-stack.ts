@@ -1,7 +1,7 @@
 import * as cdk from "aws-cdk-lib";
+import { Duration, StackProps } from "aws-cdk-lib";
 import { Construct } from "constructs";
 import * as Lambda from "aws-cdk-lib/aws-lambda";
-import { Duration, StackProps } from "aws-cdk-lib";
 import { config } from "../../config/config";
 import * as Events from "aws-cdk-lib/aws-events";
 import * as Targets from "aws-cdk-lib/aws-events-targets";
@@ -20,23 +20,70 @@ export function ucFirst(text: string): string {
 export class IacStack extends cdk.Stack {
   constructor(scope: Construct, id: string, deployEnv: "prod" | "dev", props?: StackProps) {
     super(scope, id, props);
+    const lambdaEnv = config.lambda[deployEnv];
 
-    const lambdaAssetPath = `${__dirname}/../../build/output/lambda.zip`;
+    // MASTODON
+    const mastoLambdaFunction = this.buildLambda(
+      deployEnv,
+      `DailyYardSummaryLambda`,
+      `daily-yard-summary-lambda-${deployEnv}`,
+      `${__dirname}/../../build/output/mastoLambda.zip`,
+      {
+        MASTO_CLIENT_TOKEN: config.mastodon.apiClientToken,
+        MASTO_BASE_URL: config.mastodon.apiBaseUrl,
+      }
+    );
 
-    const { mastodon, haikubox, lambda, ambientWeather, location } = config;
+    const mastoPostSchedule = lambdaEnv.postSchedule;
+    const mastoEventRule = new Events.Rule(this, "DailyYardSummaryScheduleRule", {
+      schedule: Events.Schedule.cron(mastoPostSchedule),
+      enabled: lambdaEnv.enable,
+    });
+    mastoEventRule.addTarget(new Targets.LambdaFunction(mastoLambdaFunction));
 
+    // Bluesky
+    const blueskyLambdaFunction = this.buildLambda(
+      deployEnv,
+      `DailyYardSummaryLambdaBluesky`,
+      `daily-yard-summary-lambda-bluesky-${deployEnv}`,
+      `${__dirname}/../../build/output/blueskyLambda.zip`,
+      {
+        BLUESKY_USERNAME: config.blueSky.username,
+        BLUESKY_PASSWORD: config.blueSky.password,
+        BLUESKY_BASE_URL: config.blueSky.serviceUrl,
+      }
+    );
+
+    const bluePostSchedule = lambdaEnv.postSchedule;
+    bluePostSchedule.minute = "" + (Number(bluePostSchedule.minute) + 2); // offset to support AWN bandwidth
+    const blueEventRule = new Events.Rule(this, "DailyYardSummaryScheduleRuleBluesky", {
+      schedule: Events.Schedule.cron(bluePostSchedule),
+      enabled: lambdaEnv.enable,
+    });
+    blueEventRule.addTarget(new Targets.LambdaFunction(blueskyLambdaFunction));
+  }
+
+  private buildLambda(
+    deployEnv: "prod" | "dev",
+    lambdaResourceId: string,
+    lambdaFunctionName: string,
+    lambdaAssetPath: string,
+    serviceConfig: {
+      [key: string]: string;
+    }
+  ): Lambda.Function {
+    const { haikubox, ambientWeather, location, lambda } = config;
     const lambdaEnv = lambda[deployEnv];
 
-    const lambdaFunction = new Lambda.Function(this, `DailyYardSummaryLambda`, {
-      functionName: `daily-yard-summary-lambda-${deployEnv}`,
-      runtime: Lambda.Runtime.NODEJS_20_X,
+    const lambdaFunction = new Lambda.Function(this, lambdaResourceId, {
+      functionName: lambdaFunctionName,
+      runtime: Lambda.Runtime.NODEJS_22_X,
       handler: "lambda.handler",
       code: Lambda.Code.fromAsset(lambdaAssetPath),
       memorySize: 512,
       timeout: Duration.seconds(30),
       environment: {
-        MASTO_CLIENT_TOKEN: mastodon.apiClientToken,
-        MASTO_BASE_URL: mastodon.apiBaseUrl,
+        ...serviceConfig,
 
         POST_VISIBILITY: lambdaEnv.postVisibility,
 
@@ -53,15 +100,9 @@ export class IacStack extends cdk.Stack {
       },
     });
 
-    new cdk.CfnOutput(this, "LamdbaName", {
+    new cdk.CfnOutput(this, `${lambdaFunctionName}Name`, {
       value: lambdaFunction.functionName,
     });
-
-    const postSchedule = lambdaEnv.postSchedule;
-    const eventRule = new Events.Rule(this, "DailyYardSummaryScheduleRule", {
-      schedule: Events.Schedule.cron(postSchedule),
-      enabled: lambdaEnv.enable,
-    });
-    eventRule.addTarget(new Targets.LambdaFunction(lambdaFunction));
+    return lambdaFunction;
   }
 }

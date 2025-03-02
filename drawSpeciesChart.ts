@@ -434,7 +434,6 @@ function main(): void {
 
   const allData = loadCachedDailyData(rawDir);
   const aggregate = aggregateAllDays(allData, 1, minObservations);
-  // const aggregate = aggregateAllDays(allData, 1, 1000);
 
   let drawSpecies: string[] = [];
   if (targetSpecies) {
