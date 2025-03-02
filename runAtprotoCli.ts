@@ -21,7 +21,7 @@ async function main(): Promise<void> {
   const birds = await fetchDailyCount(haikuBaseUrl, serialNumber, when);
 
   const listLength = 10;
-  const postString = buildBirdPostForBluesky(birds || [], seenBirds, listLength, 3);
+  const postString = buildBirdPostForBluesky(birds || [], seenBirds, listLength);
   const logger = pino({});
 
   const client = await getAtprotoAgent(

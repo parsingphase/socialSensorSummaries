@@ -13,7 +13,7 @@ function buildBirdPostForBluesky(
   birds: { bird: string; count: number }[],
   confirmedObservations?: string[],
   maxBirds = 10,
-  minObservationCount = 1,
+  minObservationCount = 10,
   maxPostLength = 300
 ): string {
   const caveatText = `\n\n ^ See caveat`;

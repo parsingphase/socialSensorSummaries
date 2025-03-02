@@ -21,7 +21,7 @@ async function main(): Promise<void> {
 
   const listLength = 10;
   const { apiClientToken, apiBaseUrl: mastoBaseUrl, maxPostLength } = config.mastodon;
-  const postString = buildBirdPostForMastodon(birds || [], seenBirds, listLength, 3, maxPostLength);
+  const postString = buildBirdPostForMastodon(birds || [], seenBirds, listLength, 10, maxPostLength);
 
   const { postVisibility } = config.lambda.dev;
 
