@@ -2,7 +2,7 @@
 
 import { DateTime, Duration } from "luxon";
 import { config } from "./config/config";
-import { buildBirdPost, postToMastodon } from "./core/haiku2masto";
+import { buildBirdPostForMastodon, postToMastodon } from "./core/haiku2masto";
 import { fetchDailyCount } from "./lib/haiku";
 import { seenBirds } from "./lib/sightings";
 import { buildWeatherSummaryForDay } from "./lib/weather";
@@ -12,16 +12,16 @@ import { Status } from "masto";
  * CLI main loop
  */
 async function main(): Promise<void> {
-  const post = true;
+  const post = false;
 
   const whenLuxon = DateTime.now().minus(Duration.fromObject({ days: 1 }));
   const when = whenLuxon.toFormat("yyyy-MM-dd");
   const { serialNumber, apiBaseUrl: haikuBaseUrl } = config.haikubox;
   const birds = await fetchDailyCount(haikuBaseUrl, serialNumber, when);
 
-  const listLength = 20;
+  const listLength = 10;
   const { apiClientToken, apiBaseUrl: mastoBaseUrl, maxPostLength } = config.mastodon;
-  const postString = buildBirdPost(birds || [], listLength, maxPostLength, 3, seenBirds);
+  const postString = buildBirdPostForMastodon(birds || [], seenBirds, listLength, 3, maxPostLength);
 
   const { postVisibility } = config.lambda.dev;
 

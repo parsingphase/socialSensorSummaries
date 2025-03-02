@@ -1,5 +1,5 @@
 import { Context, ScheduledEvent } from "aws-lambda";
-import { buildBirdPost, postToMastodon } from "./core/haiku2masto";
+import { buildBirdPostForMastodon, postToMastodon } from "./core/haiku2masto";
 
 import { DateTime, Duration } from "luxon";
 import { fetchDailyCount } from "./lib/haiku";
@@ -39,7 +39,7 @@ export const handler = async (_event: ScheduledEvent, _context: Context): Promis
   const when = DateTime.now().minus(Duration.fromObject({ days: 1 }));
   const birds = await fetchDailyCount(haikuBaseUrl, serialNumber, when.toFormat("yyyy-MM-dd"));
 
-  const postString = buildBirdPost(birds || [], 20, 500, 10, seenBirds);
+  const postString = buildBirdPostForMastodon(birds || [], seenBirds, 20, 10, 500);
 
   console.log({ birds, postString, length: postString.length });
 

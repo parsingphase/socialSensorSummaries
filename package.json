@@ -44,10 +44,12 @@
     "typescript-eslint": "^8.3.0"
   },
   "dependencies": {
+    "@atproto/api": "^0.14.7",
     "@ctrl/tinycolor": "^4.1.0",
     "canvas": "^2.11.2",
     "luxon": "^3.1.1",
     "masto": "4.9.1",
+    "pino": "^9.6.0",
     "suncalc": "^1.9.0"
   }
 }

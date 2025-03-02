@@ -4,6 +4,11 @@ const config = {
     apiBaseUrl: "",
     maxPostLength: 500,
   },
+  blueSky: {
+    serviceUrl: "",
+    username: "",
+    password: "",
+  },
   cdk: {
     region: "us-east-1",
     account: "YOURACCOUNT",
