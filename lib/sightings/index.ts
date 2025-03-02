@@ -72,6 +72,7 @@ const seenBirds = [
   "Nashville Warbler",
   "Palm Warbler",
   "Canada Goose",
+  "Fox Sparrow",
 ];
 
 export { seenBirds };

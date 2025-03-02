@@ -3,3 +3,4 @@ build/output
 config.ts
 dist
 rawHaikuData
+node_modules
