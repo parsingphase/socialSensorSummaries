@@ -73,6 +73,9 @@ const seenBirds = [
   "Palm Warbler",
   "Canada Goose",
   "Fox Sparrow",
+  "Great Blue Heron", // Flyby
+  "Yellow-rumped Warbler",
+  "Indigo Bunting",
 ];
 
 export { seenBirds };
