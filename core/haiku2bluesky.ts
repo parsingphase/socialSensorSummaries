@@ -24,7 +24,8 @@ function buildBirdPostForBluesky(
     maxPostLength,
     minObservationCount,
     confirmedObservations,
-    caveatText
+    caveatText,
+    true,
   );
 }
 

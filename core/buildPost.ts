@@ -7,6 +7,7 @@
  * @param minObservationCount
  * @param confirmedObservations
  * @param caveatText
+ * @param topXnote
  */
 function buildTopBirdsPost(
   birds: { bird: string; count: number }[],
@@ -14,12 +15,14 @@ function buildTopBirdsPost(
   maxPostLength: number,
   minObservationCount: number,
   confirmedObservations: string[] | undefined,
-  caveatText: string | null
+  caveatText: string | null,
+  topXnote = false
 ): string {
   // sorted by default, but let's be sure
   birds.sort((a, b) => b.count - a.count);
 
-  let postText = "#YesterdaysYardBirds 🤖 (NE MA):\n";
+  const topNoteString = topXnote ? ` top ${maxBirds}` : "";
+  let postText = `#YesterdaysYardBirds${topNoteString} 🤖 (NE MA):\n`;
   const fixedTags = "\n\n#Birds #BirdsongDetection";
   let unverifiedBirds = 0;
   let firstUnverifiedBirdIndex: number | null = null;
