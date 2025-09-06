@@ -6,7 +6,19 @@ import {
   fetchDeviceWeatherRecords,
 } from "./ambient";
 
-function analyzeWeatherData(weatherData: AmbientWeatherInterval[]) {
+type IntervalSummary = {
+  maxTemp: number;
+  minTemp: number;
+  peakGust: number;
+  estPeriodRain: number;
+  lightningCount: number;
+};
+
+/**
+ * Collect key data from a set of intervals
+ * @param weatherData
+ */
+function analyzeWeatherData(weatherData: AmbientWeatherInterval[]): IntervalSummary {
   const intervalsReceived = weatherData.length;
 
   const timesEpochMs = weatherData.map((d) => d.dateutc);
@@ -20,19 +32,33 @@ function analyzeWeatherData(weatherData: AmbientWeatherInterval[]) {
   const minTemp = Math.min(...temperatures);
 
   const windGusts = weatherData.map((d) => d.windgustmph).filter((d) => Number.isFinite(d));
-  const peakGust = Math.max(...windGusts).toFixed(1);
+  const peakGust = parseFloat(Math.max(...windGusts).toFixed(1));
 
   const rainByHour = weatherData.map((d) => d.hourlyrainin ?? 0);
   const sumOfHourlyRainMeasurements = rainByHour.reduce((a, c) => a + c, 0);
-  const estPeriodRain = ((sumOfHourlyRainMeasurements / intervalsReceived) * duration).toFixed(2);
-  return { maxTemp, minTemp, peakGust, estPeriodRain };
+  const estPeriodRain = parseFloat(
+    ((sumOfHourlyRainMeasurements / intervalsReceived) * duration).toFixed(2)
+  );
+
+  const lightningCount = Math.max(...weatherData.map((d) => d.lightning_day));
+
+  return { maxTemp, minTemp, peakGust, estPeriodRain, lightningCount };
 }
 
+/**
+ * Build summary post for a given day
+ *
+ * @param ambientWeatherConfig
+ * @param location
+ * @param location.latitude
+ * @param location.longitude
+ * @param day
+ */
 async function buildWeatherSummaryForDay(
   ambientWeatherConfig: AmbientWeatherApiConfig,
   location: { latitude: number; longitude: number },
   day: Date
-) {
+): Promise<string> {
   const { latitude, longitude } = location;
   const envTimes = SunCalc.getTimes(day, latitude, longitude);
   const { sunrise, sunset } = envTimes;
@@ -40,9 +66,11 @@ async function buildWeatherSummaryForDay(
   const sunriseLuxon = DateTime.fromJSDate(sunrise);
   const sunsetLuxon = DateTime.fromJSDate(sunset);
   // const sunsetEpochMs = sunsetLuxon.toUnixInteger() + "000";
-  const startOfDay = DateTime.now().setZone("US/Eastern").startOf("day");
-  const midnightMs = startOfDay.toUnixInteger() + "000";
-  console.log({ startOfDay });
+  const startOfNextDay = DateTime.fromJSDate(day)
+    .plus({ day: 1 })
+    .setZone("US/Eastern")
+    .startOf("day");
+  const midnightMs = startOfNextDay.toUnixInteger() + "000";
 
   const daylightMinutes = sunsetLuxon.diff(sunriseLuxon).as("minutes");
   // const intervals = Math.ceil(daylightMinutes / 5);
@@ -70,18 +98,25 @@ async function buildWeatherSummaryForDay(
   console.log({ moonPhase });
   const lunarIcon = String.fromCodePoint(Math.round(8 * moonPhase) + 0x1f311);
 
-  return `Weather conditions for ${dateString} 🤖:
+  const description = `Weather conditions for ${dateString} 🤖:
   
   Sunrise - sunset (${daylightHours} hours):
   Temp ${daylightSummary.minTemp}ºF - ${daylightSummary.maxTemp}ºF
-  Approx rainfall: ${daylightSummary.estPeriodRain} inches
+  Approx rainfall: ${daylightSummary.estPeriodRain} inch${
+    daylightSummary.estPeriodRain == 1 ? "" : "es"
+  }
   Max wind: ${daylightSummary.peakGust} mph
-  
+  ${daylightSummary.lightningCount ? `Lightning: ${daylightSummary.lightningCount} strikes\n` : ""}
   24 hours ${lunarIcon}:
   Temp ${wholeDaySummary.minTemp}ºF - ${wholeDaySummary.maxTemp}ºF
-  Approx rainfall: ${wholeDaySummary.estPeriodRain} inches
+  Approx rainfall: ${wholeDaySummary.estPeriodRain} inch${
+    wholeDaySummary.estPeriodRain == 1 ? "" : "es"
+  }
   Max wind: ${wholeDaySummary.peakGust} mph
+  ${wholeDaySummary.lightningCount ? `Lightning: ${daylightSummary.lightningCount} strikes` : ""}
   `.replace(/\n +/g, "\n");
+  console.log({ description, length: description.length });
+  return description;
 }
 
 export { buildWeatherSummaryForDay };

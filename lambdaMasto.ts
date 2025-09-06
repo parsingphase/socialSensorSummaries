@@ -20,6 +20,9 @@ function assertedEnvVar(key: string): string {
 }
 
 export const handler = async (_event: ScheduledEvent, _context: Context): Promise<void> => {
+  void _event;
+  void _context;
+
   const mastoToken = assertedEnvVar("MASTO_CLIENT_TOKEN");
   const mastoBaseUrl = assertedEnvVar("MASTO_BASE_URL");
 

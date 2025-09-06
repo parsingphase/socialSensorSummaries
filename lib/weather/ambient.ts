@@ -37,6 +37,11 @@ type AmbientWeatherInterval = {
 
   lastRain: string; // ISO format "2025-01-01T12:40:00.000Z",
   date: string; // ISO format
+
+  lightning_day: number; //int, count
+  lightning_time: number; //int, epochMs
+  lightning_distance: number; //float, miles
+  lightning_hour: number; //int, count
 };
 
 type AmbientWeatherApiConfig = {
@@ -54,10 +59,15 @@ type AmbientWeatherApiDeviceQueryParams = {
   endDate?: string;
 };
 
+/**
+ * Fetch data from AWN API per config
+ * @param ambientWeatherConfig
+ * @param queryParams
+ */
 async function fetchDeviceWeatherRecords(
   ambientWeatherConfig: AmbientWeatherApiConfig,
   queryParams: AmbientWeatherApiDeviceQueryParams
-) {
+): Promise<AmbientWeatherInterval[]> {
   const { apiBaseUrl, apiKey, applicationKey, deviceMac } = ambientWeatherConfig;
   const endpoint = "/v1/devices/";
   const queryUrl = `${apiBaseUrl}${endpoint}${deviceMac}?${objectToQueryString({
@@ -65,8 +75,8 @@ async function fetchDeviceWeatherRecords(
     apiKey,
     applicationKey,
   })}`;
-  const weatherData: AmbientWeatherInterval[] = await (await fetch(queryUrl)).json();
-  return weatherData;
+
+  return await (await fetch(queryUrl)).json();
 }
 
 export { fetchDeviceWeatherRecords };

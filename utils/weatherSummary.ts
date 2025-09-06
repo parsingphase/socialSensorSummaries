@@ -2,8 +2,11 @@
 
 import { DateTime } from "luxon";
 import { config } from "../config/config";
-import { buildWeatherSummaryForDay, fetchDeviceWeatherRecords } from "../lib/weather";
+import { buildWeatherSummaryForDay } from "../lib/weather";
 
+/**
+ * buildWeatherSummaryForDay from CLI
+ */
 async function main(): Promise<void> {
   const yesterday = DateTime.now().minus({ days: 1 }).toJSDate();
   const location = config.location;

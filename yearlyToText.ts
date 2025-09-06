@@ -2,7 +2,10 @@
 
 import { config } from "./config/config";
 
-async function main() {
+/**
+ * Dump bird count for year
+ */
+async function main(): Promise<void> {
   const { serialNumber, apiBaseUrl: haikuBaseUrl } = config.haikubox;
 
   const queryUrl = `${haikuBaseUrl}haikubox/${serialNumber}/yearly-count?year=2023`;

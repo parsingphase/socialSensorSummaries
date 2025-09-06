@@ -15,13 +15,20 @@ async function main(): Promise<void> {
   const post = false;
 
   const whenLuxon = DateTime.now().minus(Duration.fromObject({ days: 1 }));
+  // const whenLuxon = DateTime.now(); // for testing
   const when = whenLuxon.toFormat("yyyy-MM-dd");
   const { serialNumber, apiBaseUrl: haikuBaseUrl } = config.haikubox;
   const birds = await fetchDailyCount(haikuBaseUrl, serialNumber, when);
 
   const listLength = 10;
   const { apiClientToken, apiBaseUrl: mastoBaseUrl, maxPostLength } = config.mastodon;
-  const postString = buildBirdPostForMastodon(birds || [], seenBirds, listLength, 10, maxPostLength);
+  const postString = buildBirdPostForMastodon(
+    birds || [],
+    seenBirds,
+    listLength,
+    10,
+    maxPostLength
+  );
 
   const { postVisibility } = config.lambda.dev;
 

@@ -24,10 +24,10 @@ async function main(): Promise<void> {
 
   const allDays = allData.map((a) => a.date);
   const topBirds = aggregate.map((d) => d.bird);
-  const csvData: any[][] = [["", ...allDays]];
+  const csvData: (string | number)[][] = [["", ...allDays]];
   for (const bird of topBirds) {
     // console.log({ bird });
-    const row: any[] = [bird];
+    const row: (string | number)[] = [bird];
     for (const day of allDays) {
       // console.log({ day });
       const foundDay: DayRecord[] = allData.filter((ad) => ad.date == day);
