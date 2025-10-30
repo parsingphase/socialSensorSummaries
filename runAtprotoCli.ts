@@ -36,7 +36,7 @@ async function main(): Promise<void> {
     const links: Link[] = [
       { uri: "https://bsky.app/profile/parsingphase.dev/post/3ljfn54m4ls23", text: "caveat" },
     ];
-    birdsStatus = await postToAtproto(client, postString, undefined, links, logger);
+    birdsStatus = await postToAtproto(client, postString, undefined, links, undefined, logger);
 
     console.log(`Posted bird list to ${birdsStatus.uri} / ${birdsStatus.cid}`);
   } else {
@@ -56,6 +56,7 @@ async function main(): Promise<void> {
       client,
       weatherSummary,
       birdsStatus || undefined,
+      undefined,
       undefined,
       logger
     );

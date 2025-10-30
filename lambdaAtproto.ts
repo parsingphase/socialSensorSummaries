@@ -5,8 +5,9 @@ import { fetchDailyCount } from "./lib/haiku";
 import { seenBirds } from "./lib/sightings";
 import { AmbientWeatherApiConfig, buildWeatherSummaryForDay } from "./lib/weather";
 import { buildBirdPostForBluesky } from "./core/haiku2bluesky";
-import { getAtprotoAgent, Link, postToAtproto } from "./lib/atproto";
+import { getAtprotoAgent, ImageSpecFromBuffer, Link, postToAtproto } from "./lib/atproto";
 import pino from "pino";
+import { drawChartFromDailySongData } from "./lib/charts/barChart";
 
 /**
  * Return an ENV value, object if it's missing
@@ -39,13 +40,23 @@ export const handler = async (_event: ScheduledEvent, _context: Context): Promis
   const longitude = Number(assertedEnvVar("SITE_LONGITUDE"));
 
   const when = DateTime.now().minus(Duration.fromObject({ days: 1 }));
-  const birds = await fetchDailyCount(haikuBaseUrl, serialNumber, when.toFormat("yyyy-MM-dd"));
+  const whenString = when.toFormat("yyyy-MM-dd");
+  const birds = await fetchDailyCount(haikuBaseUrl, serialNumber, whenString);
 
-  const postString = buildBirdPostForBluesky(birds || [], seenBirds);
+  const maxBirds = 10;
+  const postString = buildBirdPostForBluesky(birds || [], seenBirds, maxBirds);
 
   const logger = pino({});
 
   logger.info({ birds, postString, length: postString.length });
+
+  let images: ImageSpecFromBuffer[] = [];
+  if (birds && birds.length > 0) {
+    const imageBuffer = drawChartFromDailySongData(birds.slice(0,maxBirds), whenString);
+    const alt = "Bar chart of the above data";
+    images = [{ data: imageBuffer, alt, width: 800, height: 500, mimetype: "image/png" }];
+    logger.info("Image created");
+  }
 
   const client = await getAtprotoAgent(serverBaseUrl, username, password, logger);
 
@@ -53,7 +64,7 @@ export const handler = async (_event: ScheduledEvent, _context: Context): Promis
     { uri: "https://bsky.app/profile/parsingphase.dev/post/3ljfn54m4ls23", text: "caveat" },
   ];
 
-  const birdsStatus = await postToAtproto(client, postString, undefined, links, logger);
+  const birdsStatus = await postToAtproto(client, postString, undefined, links, images, logger);
 
   logger.info(`Posted bird list to ${birdsStatus.uri} / ${birdsStatus.cid}`);
 
@@ -70,6 +81,13 @@ export const handler = async (_event: ScheduledEvent, _context: Context): Promis
     when.toJSDate()
   );
 
-  const weatherStatus = await postToAtproto(client, weatherSummary, birdsStatus, undefined, logger);
+  const weatherStatus = await postToAtproto(
+    client,
+    weatherSummary,
+    birdsStatus,
+    undefined,
+    undefined,
+    logger
+  );
   logger.info(`Posted weather status to ${weatherStatus.uri} / ${weatherStatus.cid}`);
 };

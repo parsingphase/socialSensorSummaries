@@ -111,6 +111,14 @@ function buildLinkFacets(
   return facets;
 }
 
+type ImageSpecFromBuffer = {
+  data: Buffer;
+  alt: string;
+  mimetype: string;
+  width: number;
+  height: number;
+};
+
 /**
  * Post plain text to ATProto with configured client
  *
@@ -119,12 +127,14 @@ function buildLinkFacets(
  * @param replyRef
  * @param linkSpecs
  * @param logger
+ * @param images
  */
 async function postToAtproto(
   agent: AtpAgent,
   text: string,
   replyRef?: StrongPostRef,
   linkSpecs: Link[] = [],
+  images: ImageSpecFromBuffer[] = [],
   logger?: Logger
 ): Promise<StrongPostRef> {
   // Publish!
@@ -148,6 +158,55 @@ async function postToAtproto(
     ...fullReplyReference,
   };
 
+  if (images && images.length > 0) {
+    const imageEmbeds = [];
+    for (const image of images) {
+      const { alt, mimetype, data, height, width } = image;
+
+      // Upload the image
+      const attachment = await agent.uploadBlob(new Blob([data]), {
+        headers: {
+          "Content-Type": mimetype,
+        },
+      });
+      imageEmbeds.push({
+        image: attachment.data.blob,
+        alt,
+        aspectRatio: {
+          width,
+          height,
+        },
+      });
+      logger?.info(`Posted media…`);
+    }
+    // return imageEmbed;
+    statusParams.embed = {
+      $type: "app.bsky.embed.images",
+      images: imageEmbeds,
+    };
+  }
+
+  //
+  // // Publish!
+  // const statusParams: Postable = {
+  //   text: post.text,
+  //   createdAt: new Date().toISOString(),
+  //   embed: {
+  //     $type: "app.bsky.embed.images",
+  //     images: [
+  //       {
+  //         image: attachment.data.blob,
+  //         alt: post.altText,
+  //         aspectRatio: {
+  //           width: mediaObject.media.getWidth(),
+  //           height: mediaObject.media.getHeight(),
+  //         },
+  //       },
+  //     ],
+  //   },
+  //   facets: hashtags,
+  // };
+
   const status = await agent.post(statusParams);
 
   logger?.info({ status }, `Posted to ${status.uri}`);
@@ -155,4 +214,4 @@ async function postToAtproto(
 }
 
 export { buildHashtagFacets, buildLinkFacets, getAtprotoAgent, postToAtproto };
-export type { Link, StrongPostRef };
+export type { ImageSpecFromBuffer, Link, StrongPostRef };

@@ -54,8 +54,17 @@ export abstract class ChartImageBuilder {
   public abstract drawGraph(): Canvas;
 
   public writeToPng(filename: string): void {
-    const fileData = this.canvas.toBuffer("image/png");
+    const fileData = this.canvasAsPng();
     fs.writeFileSync(filename, fileData);
+  }
+
+  /**
+   * Draw canvas and return as a buffer.
+   *
+   * @private
+   */
+  public canvasAsPng(): Buffer {
+    return this.canvas.toBuffer("image/png");
   }
 
   /**
