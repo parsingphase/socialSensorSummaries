@@ -2,6 +2,8 @@
 
 import { ChartImageBuilder, stepSizeForValueRange } from "./lib/charts";
 import { Canvas } from "canvas";
+import { json } from "node:stream/consumers";
+import fs from "fs";
 
 type BarChartData = Record<string, number>;
 
@@ -17,6 +19,7 @@ class BarChart extends ChartImageBuilder {
       0
     );
     this.bgColor = "rgb(250,250,250)";
+    this.fgColor = "rgb(255,255,255)";
     this.titleFont = "18px Impact";
     this.labelFont = "14px Impact";
   }
@@ -101,54 +104,16 @@ class BarChart extends ChartImageBuilder {
  * CLI payload - draw chart for one day's topX birds
  */
 async function main(): Promise<void> {
-  const dummyData = [
-    {
-      bird: "American Goldfinch",
-      count: 286,
-    },
-    {
-      bird: "Northern Cardinal",
-      count: 272,
-    },
-    {
-      bird: "Common Grackle",
-      count: 172,
-    },
-    {
-      bird: "Tufted Titmouse",
-      count: 143,
-    },
-    {
-      bird: "House Finch",
-      count: 115,
-    },
-    {
-      bird: "Carolina Wren",
-      count: 89,
-    },
-    {
-      bird: "Chipping Sparrow",
-      count: 74,
-    },
-    {
-      bird: "Mourning Dove",
-      count: 59,
-    },
-    {
-      bird: "White-breasted Nuthatch",
-      count: 44,
-    },
-    {
-      bird: "Hairy Woodpecker",
-      count: 40,
-    },
-  ];
   const dateString = "2025-10-29";
+  const dayData: { count: number; bird: string }[] = JSON.parse(
+    fs.readFileSync(`rawHaikuData/${dateString}.json`).toString()
+  );
+  const rawData = dayData.slice(0, 10);
 
   const canvasWidth = 800;
   const canvasHeight = 500;
   const chartData: BarChartData = {};
-  for (const row of dummyData) {
+  for (const row of rawData) {
     chartData[row.bird] = row.count;
   }
 
@@ -161,7 +126,7 @@ async function main(): Promise<void> {
   chart.drawGraph();
   const outPath = __dirname + "/tmp/bar.png";
   chart.writeToPng(outPath);
-  console.log(`Drew ${dummyData.length} bars to ${outPath}`);
+  console.log(`Drew ${rawData.length} bars to ${outPath}`);
 }
 
 main().finally(() => console.log("DONE"));
