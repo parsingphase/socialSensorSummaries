@@ -72,7 +72,12 @@ export abstract class ChartImageBuilder {
     ctx.fillStyle = this.textColor;
     ctx.font = this.titleFont;
     const textMeasure = ctx.measureText(this.title);
-    ctx.fillText(this.title, (this.canvasWidth - textMeasure.width) / 2, 35);
+    const textHeight = textMeasure.actualBoundingBoxAscent + textMeasure.actualBoundingBoxDescent;
+    ctx.fillText(
+      this.title,
+      (this.canvasWidth - textMeasure.width) / 2,
+      textHeight / 2 + this.graphOffset.y / 2
+    );
   }
 
   /**

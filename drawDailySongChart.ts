@@ -4,17 +4,21 @@ import { ChartImageBuilder } from "./lib/charts";
 import { Canvas } from "canvas";
 
 type BarChartData = Record<string, number>;
+
 class BarChart extends ChartImageBuilder {
   private chartData: BarChartData;
   private maxCount: number;
 
   constructor(canvasWidth: number, canvasHeight: number, title: string, chartData: BarChartData) {
-    super(canvasWidth, canvasHeight, title, { top: 60, left: 60, bottom: 40, right: 40 });
+    super(canvasWidth, canvasHeight, title, { top: 50, left: 170, bottom: 40, right: 20 });
     this.chartData = chartData;
     this.maxCount = Object.keys(this.chartData).reduce(
       (max, current) => (this.chartData[current] > max ? this.chartData[current] : max),
       0
     );
+    this.bgColor = "rgb(250,250,250)";
+    this.titleFont = "18px Impact";
+    this.labelFont = "14px Impact";
   }
 
   drawGraph(): Canvas {
@@ -22,21 +26,44 @@ class BarChart extends ChartImageBuilder {
     this.drawInnerFrame();
     const ctx = this.context2d;
 
-    const barFullHeight = this.graphHeight / 10;
-    const barHeight = barFullHeight-4;
+    const chartFrameStrokeWidth = 1;
+    const padding = 4; // one side
+
+    //barFullHeight includes one set of padding
+    const barFullHeight =
+      (this.graphHeight - padding - 2 * chartFrameStrokeWidth) / Object.keys(this.chartData).length;
+
+    const barHeight = barFullHeight - padding;
+    const barFillColor = "rgb(240,240,240)";
+    const chartWidthScale =
+      (this.graphWidth - padding * 2 - 2 * chartFrameStrokeWidth) / this.maxCount;
 
     let offset = 0;
+    const barLeft = this.graphOffset.x + chartFrameStrokeWidth + padding;
     for (const species in this.chartData) {
-      const barCount = this.chartData[species];
-      const chartWidthScale = (this.graphWidth - 4) / this.maxCount;
-      const barWidth = barCount * chartWidthScale;
-      ctx.fillStyle = "rgb(255,0,0)";
-      ctx.fillRect(
-        this.graphOffset.x + 2,
-        this.graphOffset.y + offset * barFullHeight + 2,
-        barWidth,
-        barHeight
+      const songCount = this.chartData[species];
+      const barWidth = songCount * chartWidthScale;
+      const barTop = this.graphOffset.y + chartFrameStrokeWidth + offset * barFullHeight + padding;
+
+      ctx.fillStyle = barFillColor;
+      ctx.fillRect(barLeft, barTop, barWidth, barHeight);
+      ctx.strokeStyle = "rgb(200,200,200)";
+      ctx.strokeRect(barLeft, barTop, barWidth, barHeight);
+
+      ctx.fillStyle = this.textColor;
+      ctx.font = this.labelFont;
+      const textMeasure = ctx.measureText(species);
+
+      // label
+      ctx.fillText(
+        species,
+        this.graphOffset.x - textMeasure.width - padding,
+        barTop + 6 + barHeight / 2
       );
+
+      // number
+
+      ctx.fillText("" + songCount, barLeft + padding, barTop + 6 + barHeight / 2);
 
       offset++;
     }
@@ -82,7 +109,16 @@ async function main(): Promise<void> {
       bird: "Mourning Dove",
       count: 59,
     },
+    {
+      bird: "White-breasted Nuthatch",
+      count: 44,
+    },
+    {
+      bird: "Hairy Woodpecker",
+      count: 40,
+    },
   ];
+  const dateString = "2025-10-29";
 
   const canvasWidth = 800;
   const canvasHeight = 500;
@@ -91,9 +127,16 @@ async function main(): Promise<void> {
     chartData[row.bird] = row.count;
   }
 
-  const chart = new BarChart(canvasWidth, canvasHeight, "Top songs", chartData);
+  const chart = new BarChart(
+    canvasWidth,
+    canvasHeight,
+    `Songs by species, ${dateString}`,
+    chartData
+  );
   chart.drawGraph();
-  chart.writeToPng(__dirname + "/tmp/bar.png");
+  const outPath = __dirname + "/tmp/bar.png";
+  chart.writeToPng(outPath);
+  console.log(`Drew ${dummyData.length} bars to ${outPath}`);
 }
 
 main().finally(() => console.log("DONE"));
