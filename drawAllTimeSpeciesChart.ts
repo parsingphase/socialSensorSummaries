@@ -1,10 +1,10 @@
 #!/usr/bin/env npx tsx -r tsconfig-paths/register
 
 import { aggregateAllDays, BirdRecord, DayRecord, loadCachedDailyData } from "./lib/haiku";
-import { CanvasRenderingContext2D, createCanvas, DOMMatrix } from "canvas";
-import fs from "fs";
+import { Canvas, CanvasRenderingContext2D, DOMMatrix } from "canvas";
 import { DateTime, Interval } from "luxon";
 import { TinyColor } from "@ctrl/tinycolor";
+import { ChartImageBuilder } from "./lib/charts";
 
 const rawDir = `${__dirname}/rawHaikuData`;
 const HAIKU_DATE_FORMAT = "yyyy-MM-dd";
@@ -65,26 +65,12 @@ function stripNulls<T>(values: (T | null)[]): T[] {
   return numbers;
 }
 
-class LineChart {
-  protected canvasWidth: number;
-  protected canvasHeight: number;
-  protected graphOffset: { x: number; y: number };
-
-  protected graphWidth: number;
-  protected graphHeight: number;
-
+class LineChart extends ChartImageBuilder {
   protected dailyData: MultiYearData;
   protected smoothData: MultiYearData;
   protected maxValue: number;
 
-  protected title: string;
   protected outages: Outage[];
-
-  protected bgColor = "rgb(230,230,230)";
-  protected fgColor = "rgb(245,245,230)";
-  protected textColor = "rgb(0,0,0)";
-  protected titleFont = "20px Impact";
-  protected labelFont = "12px Impact";
 
   protected legendBarLength = 60;
 
@@ -95,18 +81,10 @@ class LineChart {
     title: string,
     outages: Outage[] = []
   ) {
-    this.canvasWidth = canvasWidth;
-    this.canvasHeight = canvasHeight;
-    this.title = title;
+    super(canvasWidth, canvasHeight, title);
+
     this.outages = outages;
 
-    this.graphOffset = {
-      x: 60,
-      y: 60,
-    };
-
-    this.graphWidth = Math.floor(canvasWidth - 100);
-    this.graphHeight = Math.floor(canvasHeight - 150);
     this.maxValue = Math.max(...stripNulls(speciesData.map((s) => s.count)));
     this.dailyData = this.mapDataToYears(speciesData);
     this.smoothData = this.mapDataToYears(smoothCount<DatedCount>(speciesData, 7));
@@ -130,37 +108,15 @@ class LineChart {
     return dataByYear;
   }
 
-  public writeToPng(filename: string) {
-    const canvas = this.drawGraph();
-
-    const fileData = canvas.toBuffer("image/png");
-    fs.writeFileSync(filename, fileData);
-  }
-
-  private drawGraph() {
-    // Setup key context
-    const canvas = createCanvas(this.canvasWidth, this.canvasHeight);
-    const ctx: CanvasRenderingContext2D = canvas.getContext("2d");
-
-    // Set core colors, fonts
-    ctx.fillStyle = this.bgColor;
-    ctx.fillRect(0, 0, this.canvasWidth, this.canvasHeight);
-
-    ctx.fillStyle = this.textColor;
-    ctx.font = this.titleFont;
-    const textMeasure = ctx.measureText(this.title);
-    ctx.fillText(this.title, (this.canvasWidth - textMeasure.width) / 2, 35);
+  public drawGraph(): Canvas {
+    this.drawTitleAndBackground();
 
     // Draw y-labels
-    ctx.font = this.labelFont;
-    this.drawValueLabels(ctx);
+    this.drawValueLabels();
 
-    ctx.fillStyle = this.fgColor;
-    ctx.fillRect(this.graphOffset.x, this.graphOffset.y, this.graphWidth, this.graphHeight);
-    ctx.strokeStyle = "rgb(100,100,100)";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(this.graphOffset.x, this.graphOffset.y, this.graphWidth, this.graphHeight);
+    this.drawInnerFrame();
 
+    const ctx = this.context2d;
     const years = Object.keys(this.dailyData);
 
     // TODO build color array dynamically, draw averages with higher gamma & wider
@@ -230,15 +186,16 @@ class LineChart {
       );
     }
 
-    return canvas;
+    return this.canvas;
   }
 
   /**
    * Draw y-axis ticks, auto-scaled
-   * @param ctx
    * @private
    */
-  private drawValueLabels(ctx: CanvasRenderingContext2D) {
+  private drawValueLabels(): void {
+    const ctx = this.context2d;
+    ctx.font = this.labelFont;
     const numSteps = 10;
     let stepSize = 1;
     let exponent = 0;
@@ -272,7 +229,7 @@ class LineChart {
   }
 
   /**
-   * Draw x-axis lables
+   * Draw x-axis labels
    * @param numColumLabels
    * @param lineChartPoints
    * @param ctx
@@ -282,7 +239,7 @@ class LineChart {
     numColumLabels: number,
     lineChartPoints: LineChartPoint[],
     ctx: CanvasRenderingContext2D
-  ) {
+  ): void {
     for (let numerator = 0; numerator <= numColumLabels; numerator++) {
       // LHS date label
       const labelColumn = Math.floor((numerator * (lineChartPoints.length - 1)) / numColumLabels);
@@ -337,23 +294,29 @@ class LineChart {
     ctx.setLineDash([]);
   }
 
-  private graphPointToCanvasXY(i: number, count: number) {
+  /**
+   * Map point in graph coordinates (0,0 = bottom left) to canvas coordinates (0,0 = top left)
+   * @param i
+   * @param count
+   * @private
+   */
+  private graphPointToCanvasXY(i: number, count: number): { x: number; y: number } {
     return {
       x: this.graphXtoCanvasX(i),
       y: this.graphYtoCanvasY(count),
     };
   }
 
-  private graphXtoCanvasX(x: number) {
+  private graphXtoCanvasX(x: number): number {
     const maxXValue = 366;
     return this.graphOffset.x + ((x + 0.5) / maxXValue) * this.graphWidth;
   }
 
-  private graphYtoCanvasY(y: number) {
+  private graphYtoCanvasY(y: number): number {
     return this.graphOffset.y + this.graphHeight - (y / this.maxValue) * this.graphHeight;
   }
 
-  private drawMonthLabels(ctx: CanvasRenderingContext2D) {
+  private drawMonthLabels(ctx: CanvasRenderingContext2D): void {
     // any year will do, we'll us the one at coding time. Slight hack to use month 0 for last day of year
     for (let month = 0; month <= 12; month++) {
       const firstOfMonth = DateTime.local(2024, month, 1);
@@ -373,7 +336,11 @@ class LineChart {
 
 type MultiYearData = Record<string, LineChartPoint[]>;
 
-function dateToLeapYearDayOfYear(date: DateTime) {
+/**
+ * Map a full date to the day of the year it would be in a leap year
+ * @param date
+ */
+function dateToLeapYearDayOfYear(date: DateTime): number {
   // use 2024 as a standard leap year
   const leapYearDate = DateTime.local(2024, date.month, date.day);
   const startOfLeapYear = DateTime.local(2024, 1, 1);
@@ -387,7 +354,11 @@ function dateToLeapYearDayOfYear(date: DateTime) {
  * @param targetSpecies
  * @param outFile
  */
-function drawSpeciesGraph(allData: DayRecord[], targetSpecies: string | null, outFile: string) {
+function drawSpeciesGraph(
+  allData: DayRecord[],
+  targetSpecies: string | null,
+  outFile: string
+): void {
   const speciesDayCount: DatedCount[] = [];
 
   for (const dailyTotals of allData) {
@@ -411,6 +382,8 @@ function drawSpeciesGraph(allData: DayRecord[], targetSpecies: string | null, ou
   }
 
   const graph = new LineChart(800, 600, speciesDayCount, targetSpecies || "All species");
+  graph.drawGraph();
+
   graph.writeToPng(outFile);
 
   console.log(`Wrote ${speciesDayCount.length} points to ${outFile}`);
@@ -442,7 +415,12 @@ function main(): void {
     drawSpecies = aggregate.map((a) => a.bird);
   }
 
-  function outPathForSpecies(species: string, speciesCount: number) {
+  /**
+   * Generate a full output filename based on species name and count
+   * @param species
+   * @param speciesCount
+   */
+  function outPathForSpecies(species: string, speciesCount: number): string {
     return `${__dirname}/tmp/${species} (${speciesCount}).png`;
   }
 
