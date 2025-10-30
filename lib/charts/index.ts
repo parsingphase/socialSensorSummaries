@@ -94,3 +94,27 @@ export abstract class ChartImageBuilder {
     ctx.strokeRect(this.graphOffset.x, this.graphOffset.y, this.graphWidth, this.graphHeight);
   }
 }
+
+
+/**
+ * Get the smallest step size where the number of steps won't exceed maxSteps over range
+ * @param range
+ * @param maxSteps
+ */
+export function stepSizeForValueRange(range: number, maxSteps: number): number {
+  let stepSize = 1;
+  let exponent = 0;
+
+  stepGen: while (true) {
+    let nextStep;
+    for (const multiple of [1, 2, 5]) {
+      nextStep = multiple * Math.pow(10, exponent);
+      if (nextStep >= range / maxSteps) {
+        break stepGen;
+      }
+      stepSize = nextStep;
+    }
+    exponent++;
+  }
+  return stepSize;
+}

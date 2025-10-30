@@ -1,6 +1,6 @@
 #!/usr/bin/env npx tsx
 
-import { ChartImageBuilder } from "./lib/charts";
+import { ChartImageBuilder, stepSizeForValueRange } from "./lib/charts";
 import { Canvas } from "canvas";
 
 type BarChartData = Record<string, number>;
@@ -62,12 +62,37 @@ class BarChart extends ChartImageBuilder {
       );
 
       // number
-
       ctx.fillText("" + songCount, barLeft + padding, barTop + 6 + barHeight / 2);
 
       offset++;
     }
 
+    // draw x-marks
+    const maxSteps = 10;
+    const stepSize = stepSizeForValueRange(this.maxCount, maxSteps);
+
+    let step = 0;
+    let label = 0;
+    do {
+      const labelString = "" + label;
+      const labelWidth = ctx.measureText(labelString).width;
+      const markerPositionX =
+        this.graphOffset.x + chartFrameStrokeWidth + padding + chartWidthScale * label;
+      ctx.fillText(
+        labelString,
+        markerPositionX - labelWidth / 2,
+        this.graphOffset.y + this.graphHeight + 18
+      );
+
+      ctx.strokeStyle = this.textColor;
+      ctx.beginPath();
+      ctx.moveTo(markerPositionX, this.graphOffset.y + this.graphHeight);
+      ctx.lineTo(markerPositionX, this.graphOffset.y + this.graphHeight + 4);
+      ctx.stroke();
+
+      step++;
+      label = step * stepSize;
+    } while (label <= this.maxCount);
     return this.canvas;
   }
 }

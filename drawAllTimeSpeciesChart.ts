@@ -4,7 +4,7 @@ import { aggregateAllDays, BirdRecord, DayRecord, loadCachedDailyData } from "./
 import { Canvas, CanvasRenderingContext2D, DOMMatrix } from "canvas";
 import { DateTime, Interval } from "luxon";
 import { TinyColor } from "@ctrl/tinycolor";
-import { ChartImageBuilder } from "./lib/charts";
+import { ChartImageBuilder, stepSizeForValueRange } from "./lib/charts";
 
 const rawDir = `${__dirname}/rawHaikuData`;
 const HAIKU_DATE_FORMAT = "yyyy-MM-dd";
@@ -197,20 +197,8 @@ class LineChart extends ChartImageBuilder {
     const ctx = this.context2d;
     ctx.font = this.labelFont;
     const numSteps = 10;
-    let stepSize = 1;
-    let exponent = 0;
-
-    stepGen: while (true) {
-      let nextStep;
-      for (const multiple of [1, 2, 5]) {
-        nextStep = multiple * Math.pow(10, exponent);
-        if (nextStep >= this.maxValue / numSteps) {
-          break stepGen;
-        }
-        stepSize = nextStep;
-      }
-      exponent++;
-    }
+    const maxValue = this.maxValue;
+    const stepSize = stepSizeForValueRange(maxValue, numSteps);
 
     let step = 0;
     let label = 0;
