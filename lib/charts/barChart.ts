@@ -20,10 +20,7 @@ class BarChart extends ChartImageBuilder {
     this.titleFont = "24px SourceSansPro";
     this.labelFont = "14px SourceSansPro";
 
-    const fnt = PImage.registerFont(
-      "data/fonts/SourceSansPro-Regular.ttf",
-      "SourceSansPro",
-    );
+    const fnt = PImage.registerFont("data/fonts/SourceSansPro-Regular.ttf", "SourceSansPro");
     fnt.loadSync();
   }
 
@@ -57,6 +54,8 @@ class BarChart extends ChartImageBuilder {
       ctx.strokeRect(barLeft, barTop, barWidth, barHeight);
 
       ctx.fillStyle = this.textColor;
+      ctx.strokeStyle = this.textColor;
+
       ctx.font = this.labelFont;
       const textMeasure = ctx.measureText(species);
 
@@ -68,7 +67,11 @@ class BarChart extends ChartImageBuilder {
       );
 
       // number
-      ctx.fillText("" + songCount, barLeft + padding, barTop + 6 + barHeight / 2);
+      ctx.fillText(
+        "" + songCount,
+        Math.round(barLeft + padding),
+        Math.round(barTop + 6 + barHeight / 2)
+      );
 
       offset++;
     }

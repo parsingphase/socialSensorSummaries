@@ -24,6 +24,16 @@ function assertedEnvVar(key: string): string {
   return token;
 }
 
+/**
+ * Hack to get a bitmap into a buffer
+ * @param bitmap
+ */
+async function bufferFromBitmap(bitmap: PImage.Bitmap): Promise<Buffer> {
+  const stream = fs.createWriteStream("/tmp/bar.png"); // fixme use a temp file
+  await PImage.encodePNGToStream(bitmap, stream);
+  return fs.readFileSync("/tmp/bar.png");
+}
+
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const handler = async (_event: ScheduledEvent, _context: Context): Promise<void> => {
   const username = assertedEnvVar("BLUESKY_USERNAME");
@@ -56,9 +66,7 @@ export const handler = async (_event: ScheduledEvent, _context: Context): Promis
   if (birds && birds.length > 0) {
     const imageBuffer = drawChartFromDailySongData(birds.slice(0, maxBirds), whenString);
     const alt = "Bar chart of the above data";
-    const stream = fs.createWriteStream("/tmp/bar.png");
-    await PImage.encodePNGToStream(imageBuffer, stream);
-    const data = fs.readFileSync("/tmp/bar.png");
+    const data = await bufferFromBitmap(imageBuffer);
     // https://developer.mozilla.org/en-US/docs/Web/API/WritableStream/WritableStream
     images = [{ data, alt, width: 800, height: 500, mimetype: "image/png" }];
     logger.info("Image created");
