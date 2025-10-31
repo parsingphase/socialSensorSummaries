@@ -7,7 +7,7 @@ import { AmbientWeatherApiConfig, buildWeatherSummaryForDay } from "./lib/weathe
 import { buildBirdPostForBluesky } from "./core/haiku2bluesky";
 import { getAtprotoAgent, ImageSpecFromBuffer, Link, postToAtproto } from "./lib/atproto";
 import pino from "pino";
-import { drawChartFromDailySongData } from "./lib/charts/barChart";
+import { drawChartFromDailySongData, Offsets } from "./lib/charts/barChart";
 
 /**
  * Return an ENV value, object if it's missing
@@ -52,9 +52,25 @@ export const handler = async (_event: ScheduledEvent, _context: Context): Promis
 
   let images: ImageSpecFromBuffer[] = [];
   if (birds && birds.length > 0) {
-    const imageBuffer = drawChartFromDailySongData(birds.slice(0, maxBirds), whenString);
-    const alt = "Bar chart of the above data";
-    images = [{ data: imageBuffer, alt, width: 800, height: 500, mimetype: "image/png" }];
+    const dayData = birds.slice(0, maxBirds);
+
+    const width = 1200;
+    const height = 800;
+    // { top: 50, left: 170, bottom: 40, right: 20 }
+    const offsets: Offsets = {
+      top: Math.round(height / 10),
+      left: Math.round(width / 4),
+      bottom: Math.round(height / 12.5),
+      right: Math.round(width / 25),
+    };
+
+    const imageBuffer = drawChartFromDailySongData(dayData, whenString, width, height, offsets);
+    const alt = ["Bar chart of the above data:", ""];
+
+    for (const bird of birds) {
+      alt.push(`${bird.bird}: ${bird.count} calls`);
+    }
+    images = [{ data: imageBuffer, alt: alt.join("\n"), width, height, mimetype: "image/png" }];
     logger.info("Image created");
   }
 

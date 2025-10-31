@@ -2,13 +2,23 @@ import { ChartImageBuilder, stepSizeForValueRange } from "./canvasChartBuilder";
 import { Canvas } from "canvas";
 
 type BarChartData = Record<string, number>;
+type Offsets = { top: number; left: number; bottom: number; right: number };
 
 class BarChart extends ChartImageBuilder {
   private chartData: BarChartData;
   private maxCount: number;
 
-  constructor(canvasWidth: number, canvasHeight: number, title: string, chartData: BarChartData) {
-    super(canvasWidth, canvasHeight, title, { top: 50, left: 170, bottom: 40, right: 20 });
+  private titleFontSize: number;
+  private labelFontSize: number;
+
+  constructor(
+    canvasWidth: number,
+    canvasHeight: number,
+    title: string,
+    chartData: BarChartData,
+    chartOffsets: Offsets = { top: 50, left: 170, bottom: 40, right: 20 }
+  ) {
+    super(canvasWidth, canvasHeight, title, chartOffsets);
     this.chartData = chartData;
     this.maxCount = Object.keys(this.chartData).reduce(
       (max, current) => (this.chartData[current] > max ? this.chartData[current] : max),
@@ -16,8 +26,10 @@ class BarChart extends ChartImageBuilder {
     );
     this.bgColor = "rgb(250,250,250)";
     this.fgColor = "rgb(255,255,255)";
-    this.titleFont = "18px Impact";
-    this.labelFont = "14px Impact";
+    this.titleFontSize = Math.floor(canvasWidth/40);
+    this.titleFont = `${this.titleFontSize}px Impact`;
+    this.labelFontSize = Math.floor(canvasWidth/50);
+    this.labelFont = `${this.labelFontSize}px Impact`;
   }
 
   drawGraph(): Canvas {
@@ -26,7 +38,7 @@ class BarChart extends ChartImageBuilder {
     const ctx = this.context2d;
 
     const chartFrameStrokeWidth = 1;
-    const padding = 4; // one side
+    const padding = Math.ceil(this.labelFontSize/4); // one side
 
     //barFullHeight includes one set of padding
     const barFullHeight =
@@ -54,14 +66,15 @@ class BarChart extends ChartImageBuilder {
       const textMeasure = ctx.measureText(species);
 
       // label
+      const baselineCoefficient = 2.7;
       ctx.fillText(
         species,
         this.graphOffset.x - textMeasure.width - padding,
-        barTop + 6 + barHeight / 2
+        barTop + this.labelFontSize/ baselineCoefficient + barHeight / 2
       );
 
       // number
-      ctx.fillText("" + songCount, barLeft + padding, barTop + 6 + barHeight / 2);
+      ctx.fillText("" + songCount, barLeft + padding, barTop + this.labelFontSize/baselineCoefficient + barHeight / 2);
 
       offset++;
     }
@@ -80,7 +93,7 @@ class BarChart extends ChartImageBuilder {
       ctx.fillText(
         labelString,
         markerPositionX - labelWidth / 2,
-        this.graphOffset.y + this.graphHeight + 18
+        this.graphOffset.y + this.graphHeight + this.labelFontSize*1.2
       );
 
       ctx.strokeStyle = this.textColor;
@@ -101,27 +114,29 @@ class BarChart extends ChartImageBuilder {
  *
  * @param dayData
  * @param dateString
+ * @param width
+ * @param height
+ * @param offsets
  */
-export function drawChartFromDailySongData(
+function drawChartFromDailySongData(
   dayData: { count: number; bird: string }[],
-  dateString: string
+  dateString: string,
+  width: number,
+  height: number,
+  offsets: Offsets
 ): Buffer {
   const rawData = dayData.slice(0, 10);
 
-  const canvasWidth = 800;
-  const canvasHeight = 500;
   const chartData: BarChartData = {};
   for (const row of rawData) {
     chartData[row.bird] = row.count;
   }
 
-  const chart = new BarChart(
-    canvasWidth,
-    canvasHeight,
-    `Calls and songs by species, ${dateString}`,
-    chartData
-  );
+  const chart = new BarChart(width, height, `Calls and songs by species, ${dateString}`, chartData, offsets);
   chart.drawGraph();
 
   return chart.canvasAsPng();
 }
+
+export { drawChartFromDailySongData };
+export type { Offsets };
