@@ -1,5 +1,6 @@
 import { ChartImageBuilder, stepSizeForValueRange } from "./index";
-import { Canvas } from "canvas";
+// import { Canvas } from "canvas";
+import * as PImage from "pureimage";
 
 type BarChartData = Record<string, number>;
 
@@ -16,11 +17,17 @@ class BarChart extends ChartImageBuilder {
     );
     this.bgColor = "rgb(250,250,250)";
     this.fgColor = "rgb(255,255,255)";
-    this.titleFont = "18px Impact";
-    this.labelFont = "14px Impact";
+    this.titleFont = "24px SourceSansPro";
+    this.labelFont = "14px SourceSansPro";
+
+    const fnt = PImage.registerFont(
+      "data/fonts/SourceSansPro-Regular.ttf",
+      "SourceSansPro",
+    );
+    fnt.loadSync();
   }
 
-  drawGraph(): Canvas {
+  drawGraph(): PImage.Bitmap {
     this.drawTitleAndBackground();
     this.drawInnerFrame();
     const ctx = this.context2d;
@@ -56,8 +63,8 @@ class BarChart extends ChartImageBuilder {
       // label
       ctx.fillText(
         species,
-        this.graphOffset.x - textMeasure.width - padding,
-        barTop + 6 + barHeight / 2
+        Math.round(this.graphOffset.x - textMeasure.width - padding),
+        Math.round(barTop + 6 + barHeight / 2)
       );
 
       // number
@@ -105,7 +112,7 @@ class BarChart extends ChartImageBuilder {
 export function drawChartFromDailySongData(
   dayData: { count: number; bird: string }[],
   dateString: string
-): Buffer {
+): PImage.Bitmap {
   const rawData = dayData.slice(0, 10);
 
   const canvasWidth = 800;
@@ -121,7 +128,7 @@ export function drawChartFromDailySongData(
     `Calls and songs by species, ${dateString}`,
     chartData
   );
-  chart.drawGraph();
+  return chart.drawGraph();
 
-  return chart.canvasAsPng();
+  // return chart.canvasAsPng();
 }

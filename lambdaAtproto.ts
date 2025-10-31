@@ -8,6 +8,8 @@ import { buildBirdPostForBluesky } from "./core/haiku2bluesky";
 import { getAtprotoAgent, ImageSpecFromBuffer, Link, postToAtproto } from "./lib/atproto";
 import pino from "pino";
 import { drawChartFromDailySongData } from "./lib/charts/barChart";
+import * as PImage from "pureimage";
+import fs from "fs";
 
 /**
  * Return an ENV value, object if it's missing
@@ -52,9 +54,13 @@ export const handler = async (_event: ScheduledEvent, _context: Context): Promis
 
   let images: ImageSpecFromBuffer[] = [];
   if (birds && birds.length > 0) {
-    const imageBuffer = drawChartFromDailySongData(birds.slice(0,maxBirds), whenString);
+    const imageBuffer = drawChartFromDailySongData(birds.slice(0, maxBirds), whenString);
     const alt = "Bar chart of the above data";
-    images = [{ data: imageBuffer, alt, width: 800, height: 500, mimetype: "image/png" }];
+    const stream = fs.createWriteStream("/tmp/bar.png");
+    await PImage.encodePNGToStream(imageBuffer, stream);
+    const data = fs.readFileSync("/tmp/bar.png");
+    // https://developer.mozilla.org/en-US/docs/Web/API/WritableStream/WritableStream
+    images = [{ data, alt, width: 800, height: 500, mimetype: "image/png" }];
     logger.info("Image created");
   }
 

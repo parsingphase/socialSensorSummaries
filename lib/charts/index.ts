@@ -1,5 +1,6 @@
-import { Canvas, CanvasRenderingContext2D, createCanvas } from "canvas";
+// import { Canvas, CanvasRenderingContext2D, createCanvas } from "canvas";
 import fs from "fs";
+import * as PImage from "pureimage";
 
 type Margins = { top: number; left: number; bottom: number; right: number };
 
@@ -23,8 +24,8 @@ export abstract class ChartImageBuilder {
   protected titleFont = "20px Impact";
   protected labelFont = "12px Impact";
 
-  protected canvas: Canvas;
-  protected context2d: CanvasRenderingContext2D;
+  protected canvas: PImage.Bitmap;
+  protected context2d: PImage.Context;
 
   constructor(canvasWidth: number, canvasHeight: number, title: string, graphFrame?: Margins) {
     this.canvasWidth = canvasWidth;
@@ -44,28 +45,27 @@ export abstract class ChartImageBuilder {
     this.graphHeight = Math.floor(canvasHeight - graphFrame.top - graphFrame.bottom);
 
     // Setup key context
-    this.canvas = createCanvas(this.canvasWidth, this.canvasHeight);
+    this.canvas = PImage.make(this.canvasWidth, this.canvasHeight);
     this.context2d = this.canvas.getContext("2d");
   }
 
   /**
    * Draw the chart to its canvas
    */
-  public abstract drawGraph(): Canvas;
+  public abstract drawGraph(): PImage.Bitmap;
 
-  public writeToPng(filename: string): void {
-    const fileData = this.canvasAsPng();
-    fs.writeFileSync(filename, fileData);
+  public async writeToPng(filename: string): Promise<void> {
+    await PImage.encodePNGToStream(this.canvas, fs.createWriteStream(filename));
   }
 
-  /**
-   * Draw canvas and return as a buffer.
-   *
-   * @private
-   */
-  public canvasAsPng(): Buffer {
-    return this.canvas.toBuffer("image/png");
-  }
+  // /**
+  //  * Draw canvas and return as a buffer.
+  //  *
+  //  * @private
+  //  */
+  // public canvasAsPng(): Buffer {
+  //   // return this.canvas.toBuffer("image/png");
+  // }
 
   /**
    * Fill background and draw title
@@ -81,11 +81,11 @@ export abstract class ChartImageBuilder {
     ctx.fillStyle = this.textColor;
     ctx.font = this.titleFont;
     const textMeasure = ctx.measureText(this.title);
-    const textHeight = textMeasure.actualBoundingBoxAscent + textMeasure.actualBoundingBoxDescent;
+    const textHeight = textMeasure.emHeightAscent + textMeasure.emHeightDescent;
     ctx.fillText(
       this.title,
-      (this.canvasWidth - textMeasure.width) / 2,
-      textHeight / 2 + this.graphOffset.y / 2
+      Math.round((this.canvasWidth - textMeasure.width) / 2),
+      Math.round(textHeight / 2 + this.graphOffset.y / 2)
     );
   }
 
@@ -103,7 +103,6 @@ export abstract class ChartImageBuilder {
     ctx.strokeRect(this.graphOffset.x, this.graphOffset.y, this.graphWidth, this.graphHeight);
   }
 }
-
 
 /**
  * Get the smallest step size where the number of steps won't exceed maxSteps over range

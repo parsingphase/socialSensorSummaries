@@ -20,13 +20,17 @@ export default {
         { src: inputDir + "/package.json", dest: outDir },
         { src: inputDir + "/package-lock.json", dest: outDir },
         { src: inputDir + "/.npmrc", dest: outDir },
-      ],
-    }),
+        {
+          src: inputDir + "/data/fonts/SourceSansPro-Regular.ttf",
+          dest: outDir + "/data/fonts"
+        }
+      ]
+    })
   ],
   input: input,
   output: {
     file: outputFile,
-    format: "cjs",
+    format: "cjs"
   },
-  external: ["fs", "luxon", "masto", "path"],
+  external: ["fs", "luxon", "masto", "path"]
 };
