@@ -56,7 +56,7 @@ export const handler = async (_event: ScheduledEvent, _context: Context): Promis
 
     const width = 1200;
     const height = 800;
-    // { top: 50, left: 170, bottom: 40, right: 20 }
+
     const offsets: Offsets = {
       top: Math.round(height / 10),
       left: Math.round(width / 4),
@@ -67,8 +67,8 @@ export const handler = async (_event: ScheduledEvent, _context: Context): Promis
     const imageBuffer = drawChartFromDailySongData(dayData, whenString, width, height, offsets);
     const alt = ["Bar chart of the above data:", ""];
 
-    for (const bird of birds) {
-      alt.push(`${bird.bird}: ${bird.count} calls`);
+    for (const bird of dayData) {
+      alt.push(`${bird.bird}: ${bird.count} call${bird.count == 1 ? "" : "s"}`);
     }
     images = [{ data: imageBuffer, alt: alt.join("\n"), width, height, mimetype: "image/png" }];
     logger.info("Image created");
