@@ -4,7 +4,7 @@ import { aggregateAllDays, BirdRecord, DayRecord, loadCachedDailyData } from "./
 import { Canvas, CanvasRenderingContext2D, DOMMatrix } from "canvas";
 import { DateTime, Interval } from "luxon";
 import { TinyColor } from "@ctrl/tinycolor";
-import { ChartImageBuilder, stepSizeForValueRange } from "./lib/charts";
+import { ChartImageBuilder, stepSizeForValueRange } from "./lib/charts/canvasChartBuilder";
 
 const rawDir = `${__dirname}/rawHaikuData`;
 const HAIKU_DATE_FORMAT = "yyyy-MM-dd";
