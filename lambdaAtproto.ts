@@ -8,8 +8,6 @@ import { buildBirdPostForBluesky } from "./core/haiku2bluesky";
 import { getAtprotoAgent, ImageSpecFromBuffer, Link, postToAtproto } from "./lib/atproto";
 import pino from "pino";
 import { drawChartFromDailySongData } from "./lib/charts/barChart";
-import * as PImage from "pureimage";
-import fs from "fs";
 
 /**
  * Return an ENV value, object if it's missing
@@ -22,16 +20,6 @@ function assertedEnvVar(key: string): string {
     throw new Error("Must set " + key);
   }
   return token;
-}
-
-/**
- * Hack to get a bitmap into a buffer
- * @param bitmap
- */
-async function bufferFromBitmap(bitmap: PImage.Bitmap): Promise<Buffer> {
-  const stream = fs.createWriteStream("/tmp/bar.png"); // fixme use a temp file
-  await PImage.encodePNGToStream(bitmap, stream);
-  return fs.readFileSync("/tmp/bar.png");
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -66,9 +54,7 @@ export const handler = async (_event: ScheduledEvent, _context: Context): Promis
   if (birds && birds.length > 0) {
     const imageBuffer = drawChartFromDailySongData(birds.slice(0, maxBirds), whenString);
     const alt = "Bar chart of the above data";
-    const data = await bufferFromBitmap(imageBuffer);
-    // https://developer.mozilla.org/en-US/docs/Web/API/WritableStream/WritableStream
-    images = [{ data, alt, width: 800, height: 500, mimetype: "image/png" }];
+    images = [{ data: imageBuffer, alt, width: 800, height: 500, mimetype: "image/png" }];
     logger.info("Image created");
   }
 

@@ -102,5 +102,5 @@
       "*": ["./@types/*"]
     }
   },
-  "exclude": ["node_modules", "dist", "tmp", "test", "iac"]
+  "exclude": ["node_modules", "dist", "tmp", "test", "iac", "cdk.out"]
 }

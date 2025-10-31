@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# This is impossibly slow if cdk.out is present (issues with tsc checking?) so clean that before running!
+
 set -euo pipefail
 
 get_script_dir () {
@@ -15,8 +17,10 @@ DIST_DIR="${SCRIPT_DIR}/../dist/bluesky"
 BUILD_DIR="${SCRIPT_DIR}"
 OUTPUT_DIR="${BUILD_DIR}/output"
 
+#so slow… debug it…
+set -x
 cd "${SCRIPT_DIR}"
-rollup -c rollup-bluesky.config.mjs
+npx rollup -c rollup-bluesky.config.mjs
 # rollup writes to DIST_DIR
 
 ## TODO scripts to copy root package.json without scripts / devDeps into build dir, apply fixes in docs/ISSUES.md if needed

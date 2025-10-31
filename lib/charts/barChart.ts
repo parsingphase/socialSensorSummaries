@@ -1,6 +1,5 @@
-import { ChartImageBuilder, stepSizeForValueRange } from "./index";
-// import { Canvas } from "canvas";
-import * as PImage from "pureimage";
+import { ChartImageBuilder, stepSizeForValueRange } from "./canvasChartBuilder";
+import { Canvas } from "canvas";
 
 type BarChartData = Record<string, number>;
 
@@ -17,14 +16,11 @@ class BarChart extends ChartImageBuilder {
     );
     this.bgColor = "rgb(250,250,250)";
     this.fgColor = "rgb(255,255,255)";
-    this.titleFont = "24px SourceSansPro";
-    this.labelFont = "14px SourceSansPro";
-
-    const fnt = PImage.registerFont("data/fonts/SourceSansPro-Regular.ttf", "SourceSansPro");
-    fnt.loadSync();
+    this.titleFont = "18px Impact";
+    this.labelFont = "14px Impact";
   }
 
-  drawGraph(): PImage.Bitmap {
+  drawGraph(): Canvas {
     this.drawTitleAndBackground();
     this.drawInnerFrame();
     const ctx = this.context2d;
@@ -54,24 +50,18 @@ class BarChart extends ChartImageBuilder {
       ctx.strokeRect(barLeft, barTop, barWidth, barHeight);
 
       ctx.fillStyle = this.textColor;
-      ctx.strokeStyle = this.textColor;
-
       ctx.font = this.labelFont;
       const textMeasure = ctx.measureText(species);
 
       // label
       ctx.fillText(
         species,
-        Math.round(this.graphOffset.x - textMeasure.width - padding),
-        Math.round(barTop + 6 + barHeight / 2)
+        this.graphOffset.x - textMeasure.width - padding,
+        barTop + 6 + barHeight / 2
       );
 
       // number
-      ctx.fillText(
-        "" + songCount,
-        Math.round(barLeft + padding),
-        Math.round(barTop + 6 + barHeight / 2)
-      );
+      ctx.fillText("" + songCount, barLeft + padding, barTop + 6 + barHeight / 2);
 
       offset++;
     }
@@ -115,7 +105,7 @@ class BarChart extends ChartImageBuilder {
 export function drawChartFromDailySongData(
   dayData: { count: number; bird: string }[],
   dateString: string
-): PImage.Bitmap {
+): Buffer {
   const rawData = dayData.slice(0, 10);
 
   const canvasWidth = 800;
@@ -131,7 +121,7 @@ export function drawChartFromDailySongData(
     `Calls and songs by species, ${dateString}`,
     chartData
   );
-  return chart.drawGraph();
+  chart.drawGraph();
 
-  // return chart.canvasAsPng();
+  return chart.canvasAsPng();
 }

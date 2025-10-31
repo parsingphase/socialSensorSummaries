@@ -104,7 +104,6 @@ export abstract class ChartImageBuilder {
   }
 }
 
-
 /**
  * Get the smallest step size where the number of steps won't exceed maxSteps over range
  * @param range

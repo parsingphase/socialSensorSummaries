@@ -28,5 +28,5 @@ export default {
     file: outputFile,
     format: "cjs",
   },
-  external: ["fs", "luxon", "masto", "path"],
+  external: ["fs", "luxon", "masto", "path", "suncalc"],
 };

@@ -10,12 +10,14 @@
     "test:static:tsc": "tsc --pretty --noEmit",
     "test:static:prettier": "prettier -c .",
     "fix:prettier": "prettier --write .",
-    "lambda:build": "./build/buildMastoLambda.sh && ./build/buildBlueskyLambda.sh",
+    "lambda:build": "npm run clean:cdk.out && ./build/buildMastoLambda.sh && ./build/buildBlueskyLambda.sh",
     "lambda:deploy:dev": "npm run lambda:build && npm run cdk:deploy:dev",
     "lambda:deploy:prod": "npm run lambda:build && npm run cdk:deploy:prod",
     "cdk:synth": "cdk synth",
     "cdk:deploy:dev": "cdk deploy --require-approval broadening",
-    "cdk:deploy:prod": "DEPLOY_ENV=prod cdk deploy --require-approval broadening"
+    "cdk:deploy:prod": "DEPLOY_ENV=prod cdk deploy --require-approval broadening",
+    "clean:cdk.out": "rm -rf cdk.out",
+    "clean": "npm run clean:cdk.out"
   },
   "author": "Richard George <richard@phase.org>",
   "license": "ISC",
@@ -44,13 +46,12 @@
     "typescript-eslint": "^8.3.0"
   },
   "dependencies": {
-    "@atproto/api": "^0.14.7",
+    "@atproto/api": "^0.17.7",
     "@ctrl/tinycolor": "^4.1.0",
     "canvas": "^3.2.0",
     "luxon": "^3.1.1",
     "masto": "4.9.1",
     "pino": "^9.6.0",
-    "pureimage": "^0.4.18",
     "suncalc": "^1.9.0"
   }
 }

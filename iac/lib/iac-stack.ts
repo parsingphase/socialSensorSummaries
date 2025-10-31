@@ -5,6 +5,7 @@ import * as Lambda from "aws-cdk-lib/aws-lambda";
 import { config } from "../../config/config";
 import * as Events from "aws-cdk-lib/aws-events";
 import * as Targets from "aws-cdk-lib/aws-events-targets";
+import * as path from "node:path";
 
 /**
  * Upper-case first letter
@@ -42,16 +43,25 @@ export class IacStack extends cdk.Stack {
     mastoEventRule.addTarget(new Targets.LambdaFunction(mastoLambdaFunction));
 
     // Bluesky
+    const blueskyConfig = {
+      BLUESKY_USERNAME: config.blueSky.username,
+      BLUESKY_PASSWORD: config.blueSky.password,
+      BLUESKY_BASE_URL: config.blueSky.serviceUrl,
+    };
     const blueskyLambdaFunction = this.buildLambda(
       deployEnv,
       `DailyYardSummaryLambdaBluesky`,
       `daily-yard-summary-lambda-bluesky-${deployEnv}`,
       `${__dirname}/../../build/output/blueskyLambda.zip`,
-      {
-        BLUESKY_USERNAME: config.blueSky.username,
-        BLUESKY_PASSWORD: config.blueSky.password,
-        BLUESKY_BASE_URL: config.blueSky.serviceUrl,
-      }
+      blueskyConfig
+    );
+
+    const blueskyDockerLambdaFunction = this.buildDockerLambda(
+      deployEnv,
+      `DailyYardSummaryLambdaBlueskyDocker`,
+      `daily-yard-summary-lambda-bluesky-docker-${deployEnv}`,
+      `${__dirname}/../../Dockerfile-bluesky-lambda`,
+      blueskyConfig
     );
 
     const bluePostSchedule = lambdaEnv.postSchedule;
@@ -60,7 +70,10 @@ export class IacStack extends cdk.Stack {
       schedule: Events.Schedule.cron(bluePostSchedule),
       enabled: lambdaEnv.enable,
     });
-    blueEventRule.addTarget(new Targets.LambdaFunction(blueskyLambdaFunction));
+    // blueEventRule.addTarget(new Targets.LambdaFunction(blueskyLambdaFunction));
+    void blueskyLambdaFunction;
+    void blueskyDockerLambdaFunction;
+    blueEventRule.addTarget(new Targets.LambdaFunction(blueskyDockerLambdaFunction));
   }
 
   private buildLambda(
@@ -80,6 +93,52 @@ export class IacStack extends cdk.Stack {
       runtime: Lambda.Runtime.NODEJS_22_X,
       handler: "lambda.handler",
       code: Lambda.Code.fromAsset(lambdaAssetPath),
+      memorySize: 512,
+      timeout: Duration.seconds(30),
+      environment: {
+        ...serviceConfig,
+
+        POST_VISIBILITY: lambdaEnv.postVisibility,
+
+        HAIKU_BASE_URL: haikubox.apiBaseUrl,
+        HAIKU_SERIAL_NUMBER: haikubox.serialNumber,
+
+        AWN_BASE_URL: ambientWeather.apiBaseUrl,
+        AWN_API_KEY: ambientWeather.apiKey,
+        AWN_APPLICATION_KEY: ambientWeather.applicationKey,
+        AWN_DEVICE_MAC: ambientWeather.deviceMac,
+
+        SITE_LATITUDE: "" + location.latitude,
+        SITE_LONGITUDE: "" + location.longitude,
+      },
+    });
+
+    new cdk.CfnOutput(this, `${lambdaFunctionName}Name`, {
+      value: lambdaFunction.functionName,
+    });
+    return lambdaFunction;
+  }
+
+  private buildDockerLambda(
+    deployEnv: "prod" | "dev",
+    lambdaResourceId: string,
+    lambdaFunctionName: string,
+    lambdaAssetPath: string,
+    serviceConfig: {
+      [key: string]: string;
+    }
+  ): Lambda.Function {
+    const { haikubox, ambientWeather, location, lambda } = config;
+    const lambdaEnv = lambda[deployEnv];
+
+    const dockerDir = path.dirname(lambdaAssetPath);
+    const dockerFile = path.basename(lambdaAssetPath);
+
+    const lambdaFunction = new Lambda.DockerImageFunction(this, lambdaResourceId, {
+      functionName: lambdaFunctionName,
+      // runtime: Lambda.Runtime.NODEJS_22_X,
+      // handler: "lambda.handler",
+      code: Lambda.DockerImageCode.fromImageAsset(dockerDir, { assetName: dockerFile }),
       memorySize: 512,
       timeout: Duration.seconds(30),
       environment: {
