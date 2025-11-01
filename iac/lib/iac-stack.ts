@@ -24,16 +24,27 @@ export class IacStack extends cdk.Stack {
     const lambdaEnv = config.lambda[deployEnv];
 
     // MASTODON
+    const mastoConfig = {
+      MASTO_CLIENT_TOKEN: config.mastodon.apiClientToken,
+      MASTO_BASE_URL: config.mastodon.apiBaseUrl,
+    };
     const mastoLambdaFunction = this.buildLambda(
       deployEnv,
       `DailyYardSummaryLambda`,
       `daily-yard-summary-lambda-${deployEnv}`,
       `${__dirname}/../../build/output/mastoLambda.zip`,
-      {
-        MASTO_CLIENT_TOKEN: config.mastodon.apiClientToken,
-        MASTO_BASE_URL: config.mastodon.apiBaseUrl,
-      }
+      mastoConfig
     );
+
+    const mastoDockerLambdaFunction = this.buildDockerLambda(
+      deployEnv,
+      `DailyYardSummaryLambdaMastoDocker`,
+      `daily-yard-summary-lambda-masto-docker-${deployEnv}`,
+      `${__dirname}/../../Dockerfile-masto-lambda`,
+      mastoConfig
+    );
+
+    void mastoDockerLambdaFunction;
 
     const mastoPostSchedule = lambdaEnv.postSchedule;
     const mastoEventRule = new Events.Rule(this, "DailyYardSummaryScheduleRule", {
@@ -136,9 +147,10 @@ export class IacStack extends cdk.Stack {
 
     const lambdaFunction = new Lambda.DockerImageFunction(this, lambdaResourceId, {
       functionName: lambdaFunctionName,
-      // runtime: Lambda.Runtime.NODEJS_22_X,
-      // handler: "lambda.handler",
-      code: Lambda.DockerImageCode.fromImageAsset(dockerDir, { assetName: dockerFile }),
+      code: Lambda.DockerImageCode.fromImageAsset(dockerDir, {
+        assetName: dockerFile,
+        file: dockerFile,
+      }),
       memorySize: 512,
       timeout: Duration.seconds(30),
       environment: {
