@@ -1,10 +1,18 @@
 import { Context, ScheduledEvent } from "aws-lambda";
-import { buildBirdPostForMastodon, postToMastodon } from "./core/haiku2masto";
+import {
+  buildAndUploadDailySongChart,
+  buildBirdPostForMastodon,
+  postToMastodon,
+} from "./core/haiku2masto";
 
 import { DateTime, Duration } from "luxon";
-import { fetchDailyCount } from "./lib/haiku";
+import { BirdRecord, fetchDailyCount } from "./lib/haiku";
 import { seenBirds } from "./lib/sightings";
 import { AmbientWeatherApiConfig, buildWeatherSummaryForDay } from "./lib/weather";
+import pino from "pino";
+import { drawChartFromDailySongData, Offsets } from "./lib/charts/barChart";
+import { createRestAPIClient } from "masto";
+import { MastoClient } from "./lib/masto/types";
 
 /**
  * Return an ENV value, object if it's missing
@@ -40,15 +48,38 @@ export const handler = async (_event: ScheduledEvent, _context: Context): Promis
   const visibility = process.env.POST_VISIBILITY || "direct";
 
   const when = DateTime.now().minus(Duration.fromObject({ days: 1 }));
-  const birds = await fetchDailyCount(haikuBaseUrl, serialNumber, when.toFormat("yyyy-MM-dd"));
+  const whenString = when.toFormat("yyyy-MM-dd");
+  const birds = await fetchDailyCount(haikuBaseUrl, serialNumber, whenString);
 
-  const postString = buildBirdPostForMastodon(birds || [], seenBirds, 20, 10, 500);
+  const maxBirds = 20;
+  const minObservationCount = 10;
+  const postString = buildBirdPostForMastodon(birds || [], seenBirds, maxBirds, minObservationCount, 500);
 
-  console.log({ birds, postString, length: postString.length });
+  const logger = pino({});
 
-  const birdsStatus = await postToMastodon(mastoBaseUrl, mastoToken, postString, visibility);
+  logger.info({ birds, postString, length: postString.length });
 
-  console.log(`Posted bird list to ${birdsStatus.url} / ${birdsStatus.id}`);
+  const mastoClient: MastoClient = createRestAPIClient({
+    url: mastoBaseUrl,
+    accessToken: mastoToken,
+  });
+
+  let attachmentIds: string[] = [];
+
+  if (birds && birds.length > 0) {
+    const dayData = birds.slice(0, maxBirds).filter((b) => b.count >= minObservationCount);
+    attachmentIds = [await buildAndUploadDailySongChart(mastoClient, whenString, dayData, logger)];
+  }
+
+  const birdsStatus = await postToMastodon(
+    mastoClient,
+    postString,
+    visibility,
+    undefined,
+    attachmentIds
+  );
+
+  logger.info(`Posted bird list to ${birdsStatus.url} / ${birdsStatus.id}`);
 
   const ambientWeatherConfig: AmbientWeatherApiConfig = {
     apiBaseUrl: AWNBaseUrl,
@@ -64,11 +95,10 @@ export const handler = async (_event: ScheduledEvent, _context: Context): Promis
   );
 
   const weatherStatus = await postToMastodon(
-    mastoBaseUrl,
-    mastoToken,
+    mastoClient,
     weatherSummary,
     visibility,
     birdsStatus.id
   );
-  console.log(`Posted weather status to ${weatherStatus.url} / ${weatherStatus.id}`);
+  logger.info(`Posted weather status to ${weatherStatus.url} / ${weatherStatus.id}`);
 };

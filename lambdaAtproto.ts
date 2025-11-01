@@ -24,6 +24,9 @@ function assertedEnvVar(key: string): string {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 export const handler = async (_event: ScheduledEvent, _context: Context): Promise<void> => {
+  void _event;
+  void _context;
+
   const username = assertedEnvVar("BLUESKY_USERNAME");
   const password = assertedEnvVar("BLUESKY_PASSWORD");
   const serverBaseUrl = assertedEnvVar("BLUESKY_BASE_URL");
@@ -44,7 +47,8 @@ export const handler = async (_event: ScheduledEvent, _context: Context): Promis
   const birds = await fetchDailyCount(haikuBaseUrl, serialNumber, whenString);
 
   const maxBirds = 10;
-  const postString = buildBirdPostForBluesky(birds || [], seenBirds, maxBirds);
+  const minObservationCount = 10;
+  const postString = buildBirdPostForBluesky(birds || [], seenBirds, maxBirds, minObservationCount);
 
   const logger = pino({});
 
@@ -52,7 +56,7 @@ export const handler = async (_event: ScheduledEvent, _context: Context): Promis
 
   let images: ImageSpecFromBuffer[] = [];
   if (birds && birds.length > 0) {
-    const dayData = birds.slice(0, maxBirds);
+    const dayData = birds.slice(0, maxBirds).filter((b) => b.count >= minObservationCount);
 
     const width = 1200;
     const height = 800;

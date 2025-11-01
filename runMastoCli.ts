@@ -2,17 +2,25 @@
 
 import { DateTime, Duration } from "luxon";
 import { config } from "./config/config";
-import { buildBirdPostForMastodon, postToMastodon } from "./core/haiku2masto";
+import {
+  buildAndUploadDailySongChart,
+  buildBirdPostForMastodon,
+  postToMastodon,
+} from "./core/haiku2masto";
 import { fetchDailyCount } from "./lib/haiku";
 import { seenBirds } from "./lib/sightings";
 import { buildWeatherSummaryForDay } from "./lib/weather";
-import { Status } from "masto";
+import { createRestAPIClient } from "masto";
+import { MastoClient, Status } from "./lib/masto/types";
+import pino from "pino";
 
 /**
  * CLI main loop
  */
 async function main(): Promise<void> {
-  const post = false;
+  const logger = pino({});
+
+  const post = true;
 
   const whenLuxon = DateTime.now().minus(Duration.fromObject({ days: 1 }));
   // const whenLuxon = DateTime.now(); // for testing
@@ -20,25 +28,42 @@ async function main(): Promise<void> {
   const { serialNumber, apiBaseUrl: haikuBaseUrl } = config.haikubox;
   const birds = await fetchDailyCount(haikuBaseUrl, serialNumber, when);
 
-  const listLength = 10;
+  const listLength = 20;
   const { apiClientToken, apiBaseUrl: mastoBaseUrl, maxPostLength } = config.mastodon;
+  const minObservationCount = 10;
   const postString = buildBirdPostForMastodon(
     birds || [],
     seenBirds,
     listLength,
-    10,
+    minObservationCount,
     maxPostLength
   );
+
+  const mastoClient: MastoClient = createRestAPIClient({
+    url: mastoBaseUrl,
+    accessToken: apiClientToken,
+  });
 
   const { postVisibility } = config.lambda.dev;
 
   let birdsStatus: Status | null = null;
   if (post) {
-    birdsStatus = await postToMastodon(mastoBaseUrl, apiClientToken, postString, postVisibility);
-
-    console.log(`Posted bird list to ${birdsStatus.url} / ${birdsStatus.id}`);
+    let attachmentIds: string[] = [];
+    if (birds && birds.length > 0) {
+      const dayData = birds.slice(0, listLength).filter((b) => b.count >= minObservationCount);
+      attachmentIds = [await buildAndUploadDailySongChart(mastoClient, when, dayData, logger)];
+      logger.info({ attachmentIds }, "Uploaded attachments");
+    }
+    birdsStatus = await postToMastodon(
+      mastoClient,
+      postString,
+      postVisibility,
+      undefined,
+      attachmentIds
+    );
+    logger.info(`Posted bird list to ${birdsStatus.url} / ${birdsStatus.id}`);
   } else {
-    console.log({ postString });
+    logger.info({ postString });
   }
 
   const location = config.location;
@@ -51,15 +76,14 @@ async function main(): Promise<void> {
 
   if (post) {
     const weatherStatus = await postToMastodon(
-      mastoBaseUrl,
-      apiClientToken,
+      mastoClient,
       weatherSummary,
       postVisibility,
       birdsStatus?.id || "unused"
     );
-    console.log(`Posted weather status to ${weatherStatus.url} / ${weatherStatus.id}`);
+    logger.info(`Posted weather status to ${weatherStatus.url} / ${weatherStatus.id}`);
   } else {
-    console.log({ weatherSummary });
+    logger.info({ weatherSummary });
   }
 }
 

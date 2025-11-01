@@ -125,10 +125,8 @@ function drawChartFromDailySongData(
   height: number,
   offsets: Offsets
 ): Buffer {
-  const rawData = dayData.slice(0, 10);
-
   const chartData: BarChartData = {};
-  for (const row of rawData) {
+  for (const row of dayData) {
     chartData[row.bird] = row.count;
   }
 

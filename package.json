@@ -50,7 +50,7 @@
     "@ctrl/tinycolor": "^4.1.0",
     "canvas": "^3.2.0",
     "luxon": "^3.1.1",
-    "masto": "4.9.1",
+    "masto": "^6.5.1",
     "pino": "^9.6.0",
     "suncalc": "^1.9.0"
   }
