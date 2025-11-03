@@ -44,14 +44,15 @@ export class IacStack extends cdk.Stack {
       mastoConfig
     );
 
-    void mastoDockerLambdaFunction;
 
     const mastoPostSchedule = lambdaEnv.postSchedule;
     const mastoEventRule = new Events.Rule(this, "DailyYardSummaryScheduleRule", {
       schedule: Events.Schedule.cron(mastoPostSchedule),
       enabled: lambdaEnv.enable,
     });
-    mastoEventRule.addTarget(new Targets.LambdaFunction(mastoLambdaFunction));
+
+    void mastoLambdaFunction;
+    mastoEventRule.addTarget(new Targets.LambdaFunction(mastoDockerLambdaFunction));
 
     // Bluesky
     const blueskyConfig = {
@@ -81,9 +82,8 @@ export class IacStack extends cdk.Stack {
       schedule: Events.Schedule.cron(bluePostSchedule),
       enabled: lambdaEnv.enable,
     });
-    // blueEventRule.addTarget(new Targets.LambdaFunction(blueskyLambdaFunction));
+
     void blueskyLambdaFunction;
-    void blueskyDockerLambdaFunction;
     blueEventRule.addTarget(new Targets.LambdaFunction(blueskyDockerLambdaFunction));
   }
 
