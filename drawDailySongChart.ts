@@ -7,7 +7,7 @@ import { drawChartFromDailySongData, Offsets } from "./lib/charts/barChart";
  * CLI payload - draw chart for one day's topX birds
  */
 async function main(): Promise<void> {
-  const dateString = "2025-10-30";
+  const dateString = "2025-11-30";
 
   const width = 1200;
   const height = 800;
@@ -23,7 +23,7 @@ async function main(): Promise<void> {
     fs.readFileSync(`rawHaikuData/${dateString}.json`).toString()
   );
 
-  const fileData = drawChartFromDailySongData(dayData, dateString, width, height, offsets);
+  const fileData = drawChartFromDailySongData(dayData.slice(0,10), dateString, width, height, offsets);
   const outPath = __dirname + "/tmp/bar.png";
   fs.writeFileSync(outPath, fileData);
   console.log(`Wrote PNG to ${outPath}`);

@@ -114,15 +114,17 @@ export function stepSizeForValueRange(range: number, maxSteps: number): number {
   let exponent = 0;
 
   stepGen: while (true) {
-    let nextStep;
     for (const multiple of [1, 2, 5]) {
-      nextStep = multiple * Math.pow(10, exponent);
-      if (nextStep >= range / maxSteps) {
+      stepSize = multiple * Math.pow(10, exponent);
+      const numSteps = range / stepSize;
+      // keep decreasing numSteps until it's lower than maxSteps
+      if (maxSteps >= numSteps) {
         break stepGen;
       }
-      stepSize = nextStep;
     }
     exponent++;
   }
+
+  console.log({ stepSize, range, maxSteps });
   return stepSize;
 }
