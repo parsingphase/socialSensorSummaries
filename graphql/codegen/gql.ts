@@ -1,6 +1,6 @@
 /* eslint-disable */
-import * as types from "./graphql";
-import { TypedDocumentNode as DocumentNode } from "@graphql-typed-document-node/core";
+import * as types from './graphql';
+import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
 
 /**
  * Map of all GraphQL operations in the project.
@@ -14,11 +14,12 @@ import { TypedDocumentNode as DocumentNode } from "@graphql-typed-document-node/
  * Learn more about it here: https://the-guild.dev/graphql/codegen/plugins/presets/preset-client#reducing-bundle-size
  */
 type Documents = {
-  '\n  query DailyDetections($stationId: ID!, $days: Int!) {\n    dailyDetectionCounts(stationIds: [$stationId], period: { count: $days, unit: "day" }) {\n      date\n      dayOfYear\n      counts {\n        count\n        species {\n          alpha\n          commonName\n        }\n      }\n    }\n  }\n': typeof types.DailyDetectionsDocument;
+    "\n  query DailyDetections($stationId: ID!, $days: Int!) {\n    dailyDetectionCounts(stationIds: [$stationId], period: { count: $days, unit: \"day\" }) {\n      date\n      dayOfYear\n      counts {\n        count\n        species {\n          alpha\n          commonName\n        }\n      }\n    }\n  }\n": typeof types.DailyDetectionsDocument,
+    "\n  query AllDetectionsInPeriod($stationId: ID!, $from: ISO8601Date!, $to: ISO8601Date!, $after: String) {\n    detections(stationIds: [$stationId], period: { from: $from, to: $to }, after: $after) {\n      pageInfo {\n        startCursor\n        endCursor\n        hasNextPage\n        hasPreviousPage\n      }\n      edges {\n        cursor\n        node {\n          timestamp\n          species {\n            commonName\n          }\n          confidence\n          probability\n          score\n        }\n      }\n    }\n  }\n": typeof types.AllDetectionsInPeriodDocument,
 };
 const documents: Documents = {
-  '\n  query DailyDetections($stationId: ID!, $days: Int!) {\n    dailyDetectionCounts(stationIds: [$stationId], period: { count: $days, unit: "day" }) {\n      date\n      dayOfYear\n      counts {\n        count\n        species {\n          alpha\n          commonName\n        }\n      }\n    }\n  }\n':
-    types.DailyDetectionsDocument,
+    "\n  query DailyDetections($stationId: ID!, $days: Int!) {\n    dailyDetectionCounts(stationIds: [$stationId], period: { count: $days, unit: \"day\" }) {\n      date\n      dayOfYear\n      counts {\n        count\n        species {\n          alpha\n          commonName\n        }\n      }\n    }\n  }\n": types.DailyDetectionsDocument,
+    "\n  query AllDetectionsInPeriod($stationId: ID!, $from: ISO8601Date!, $to: ISO8601Date!, $after: String) {\n    detections(stationIds: [$stationId], period: { from: $from, to: $to }, after: $after) {\n      pageInfo {\n        startCursor\n        endCursor\n        hasNextPage\n        hasPreviousPage\n      }\n      edges {\n        cursor\n        node {\n          timestamp\n          species {\n            commonName\n          }\n          confidence\n          probability\n          score\n        }\n      }\n    }\n  }\n": types.AllDetectionsInPeriodDocument,
 };
 
 /**
@@ -38,13 +39,14 @@ export function graphql(source: string): unknown;
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(
-  source: '\n  query DailyDetections($stationId: ID!, $days: Int!) {\n    dailyDetectionCounts(stationIds: [$stationId], period: { count: $days, unit: "day" }) {\n      date\n      dayOfYear\n      counts {\n        count\n        species {\n          alpha\n          commonName\n        }\n      }\n    }\n  }\n'
-): (typeof documents)['\n  query DailyDetections($stationId: ID!, $days: Int!) {\n    dailyDetectionCounts(stationIds: [$stationId], period: { count: $days, unit: "day" }) {\n      date\n      dayOfYear\n      counts {\n        count\n        species {\n          alpha\n          commonName\n        }\n      }\n    }\n  }\n'];
+export function graphql(source: "\n  query DailyDetections($stationId: ID!, $days: Int!) {\n    dailyDetectionCounts(stationIds: [$stationId], period: { count: $days, unit: \"day\" }) {\n      date\n      dayOfYear\n      counts {\n        count\n        species {\n          alpha\n          commonName\n        }\n      }\n    }\n  }\n"): (typeof documents)["\n  query DailyDetections($stationId: ID!, $days: Int!) {\n    dailyDetectionCounts(stationIds: [$stationId], period: { count: $days, unit: \"day\" }) {\n      date\n      dayOfYear\n      counts {\n        count\n        species {\n          alpha\n          commonName\n        }\n      }\n    }\n  }\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n  query AllDetectionsInPeriod($stationId: ID!, $from: ISO8601Date!, $to: ISO8601Date!, $after: String) {\n    detections(stationIds: [$stationId], period: { from: $from, to: $to }, after: $after) {\n      pageInfo {\n        startCursor\n        endCursor\n        hasNextPage\n        hasPreviousPage\n      }\n      edges {\n        cursor\n        node {\n          timestamp\n          species {\n            commonName\n          }\n          confidence\n          probability\n          score\n        }\n      }\n    }\n  }\n"): (typeof documents)["\n  query AllDetectionsInPeriod($stationId: ID!, $from: ISO8601Date!, $to: ISO8601Date!, $after: String) {\n    detections(stationIds: [$stationId], period: { from: $from, to: $to }, after: $after) {\n      pageInfo {\n        startCursor\n        endCursor\n        hasNextPage\n        hasPreviousPage\n      }\n      edges {\n        cursor\n        node {\n          timestamp\n          species {\n            commonName\n          }\n          confidence\n          probability\n          score\n        }\n      }\n    }\n  }\n"];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};
 }
 
-export type DocumentType<TDocumentNode extends DocumentNode<any, any>> =
-  TDocumentNode extends DocumentNode<infer TType, any> ? TType : never;
+export type DocumentType<TDocumentNode extends DocumentNode<any, any>> = TDocumentNode extends DocumentNode<  infer TType,  any>  ? TType  : never;
