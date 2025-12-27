@@ -26,9 +26,9 @@ class BarChart extends ChartImageBuilder {
     );
     this.bgColor = "rgb(250,250,250)";
     this.fgColor = "rgb(255,255,255)";
-    this.titleFontSize = Math.floor(canvasWidth/40);
+    this.titleFontSize = Math.floor(canvasWidth / 40);
     this.titleFont = `${this.titleFontSize}px Impact`;
-    this.labelFontSize = Math.floor(canvasWidth/50);
+    this.labelFontSize = Math.floor(canvasWidth / 50);
     this.labelFont = `${this.labelFontSize}px Impact`;
   }
 
@@ -38,7 +38,7 @@ class BarChart extends ChartImageBuilder {
     const ctx = this.context2d;
 
     const chartFrameStrokeWidth = 1;
-    const padding = Math.ceil(this.labelFontSize/4); // one side
+    const padding = Math.ceil(this.labelFontSize / 4); // one side
 
     //barFullHeight includes one set of padding
     const barFullHeight =
@@ -70,11 +70,15 @@ class BarChart extends ChartImageBuilder {
       ctx.fillText(
         species,
         this.graphOffset.x - textMeasure.width - padding,
-        barTop + this.labelFontSize/ baselineCoefficient + barHeight / 2
+        barTop + this.labelFontSize / baselineCoefficient + barHeight / 2
       );
 
       // number
-      ctx.fillText("" + songCount, barLeft + padding, barTop + this.labelFontSize/baselineCoefficient + barHeight / 2);
+      ctx.fillText(
+        "" + songCount,
+        barLeft + padding,
+        barTop + this.labelFontSize / baselineCoefficient + barHeight / 2
+      );
 
       offset++;
     }
@@ -93,7 +97,7 @@ class BarChart extends ChartImageBuilder {
       ctx.fillText(
         labelString,
         markerPositionX - labelWidth / 2,
-        this.graphOffset.y + this.graphHeight + this.labelFontSize*1.2
+        this.graphOffset.y + this.graphHeight + this.labelFontSize * 1.2
       );
 
       ctx.strokeStyle = this.textColor;
@@ -130,7 +134,13 @@ function drawChartFromDailySongData(
     chartData[row.bird] = row.count;
   }
 
-  const chart = new BarChart(width, height, `Calls and songs by species, ${dateString}`, chartData, offsets);
+  const chart = new BarChart(
+    width,
+    height,
+    `Calls and songs by species, ${dateString}`,
+    chartData,
+    offsets
+  );
   chart.drawGraph();
 
   return chart.canvasAsPng();

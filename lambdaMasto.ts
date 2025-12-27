@@ -53,7 +53,13 @@ export const handler = async (_event: ScheduledEvent, _context: Context): Promis
 
   const maxBirds = 20;
   const minObservationCount = 10;
-  const postString = buildBirdPostForMastodon(birds || [], seenBirds, maxBirds, minObservationCount, 500);
+  const postString = buildBirdPostForMastodon(
+    birds || [],
+    seenBirds,
+    maxBirds,
+    minObservationCount,
+    500
+  );
 
   const logger = pino({});
 

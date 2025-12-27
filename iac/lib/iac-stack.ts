@@ -44,7 +44,6 @@ export class IacStack extends cdk.Stack {
       mastoConfig
     );
 
-
     const mastoPostSchedule = lambdaEnv.postSchedule;
     const mastoEventRule = new Events.Rule(this, "DailyYardSummaryScheduleRule", {
       schedule: Events.Schedule.cron(mastoPostSchedule),

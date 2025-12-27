@@ -23,7 +23,13 @@ async function main(): Promise<void> {
     fs.readFileSync(`rawHaikuData/${dateString}.json`).toString()
   );
 
-  const fileData = drawChartFromDailySongData(dayData.slice(0,10), dateString, width, height, offsets);
+  const fileData = drawChartFromDailySongData(
+    dayData.slice(0, 10),
+    dateString,
+    width,
+    height,
+    offsets
+  );
   const outPath = __dirname + "/tmp/bar.png";
   fs.writeFileSync(outPath, fileData);
   console.log(`Wrote PNG to ${outPath}`);
