@@ -1,7 +1,8 @@
 #!/usr/bin/env npx tsx
 
-import { ApolloClient, HttpLink, InMemoryCache, gql } from "@apollo/client";
-import { DailyDetectionsQuery, DailyDetectionsQueryVariables } from "../codegen/gql/graphql";
+import { ApolloClient, HttpLink, InMemoryCache } from "@apollo/client";
+import { dailyDetectionsQuery } from "../graphql/birdWeather/queries";
+import { DailyDetectionsQuery, DailyDetectionsQueryVariables } from "../graphql/codegen/graphql";
 
 /**
  * Tets script
@@ -11,21 +12,7 @@ async function main(): Promise<void> {
     link: new HttpLink({ uri: "https://app.birdweather.com/graphql" }),
     cache: new InMemoryCache(),
   });
-  const dailyDetectionsQuery = gql`
-    query DailyDetections($stationId: ID!, $days: Int!) {
-      dailyDetectionCounts(stationIds: [$stationId], period: { count: $days, unit: "day" }) {
-        date
-        dayOfYear
-        counts {
-          count
-          species {
-            alpha
-            commonName
-          }
-        }
-      }
-    }
-  `;
+
 
   const res = await client.query<DailyDetectionsQuery, DailyDetectionsQueryVariables>({
     query: dailyDetectionsQuery,

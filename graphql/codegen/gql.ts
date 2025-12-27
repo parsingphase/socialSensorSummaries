@@ -14,10 +14,10 @@ import { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/
  * Learn more about it here: https://the-guild.dev/graphql/codegen/plugins/presets/preset-client#reducing-bundle-size
  */
 type Documents = {
-    "\n    query DailyDetections($stationId: ID!, $days: Int!) {\n      dailyDetectionCounts(stationIds: [$stationId], period: { count: $days, unit: \"day\" }) {\n        date\n        dayOfYear\n        counts {\n          count\n          species {\n            alpha\n            commonName\n          }\n        }\n      }\n    }\n  ": typeof types.DailyDetectionsDocument,
+    "\n  query DailyDetections($stationId: ID!, $days: Int!) {\n    dailyDetectionCounts(stationIds: [$stationId], period: { count: $days, unit: \"day\" }) {\n      date\n      dayOfYear\n      counts {\n        count\n        species {\n          alpha\n          commonName\n        }\n      }\n    }\n  }\n": typeof types.DailyDetectionsDocument,
 };
 const documents: Documents = {
-    "\n    query DailyDetections($stationId: ID!, $days: Int!) {\n      dailyDetectionCounts(stationIds: [$stationId], period: { count: $days, unit: \"day\" }) {\n        date\n        dayOfYear\n        counts {\n          count\n          species {\n            alpha\n            commonName\n          }\n        }\n      }\n    }\n  ": types.DailyDetectionsDocument,
+    "\n  query DailyDetections($stationId: ID!, $days: Int!) {\n    dailyDetectionCounts(stationIds: [$stationId], period: { count: $days, unit: \"day\" }) {\n      date\n      dayOfYear\n      counts {\n        count\n        species {\n          alpha\n          commonName\n        }\n      }\n    }\n  }\n": types.DailyDetectionsDocument,
 };
 
 /**
@@ -37,7 +37,7 @@ export function graphql(source: string): unknown;
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
-export function graphql(source: "\n    query DailyDetections($stationId: ID!, $days: Int!) {\n      dailyDetectionCounts(stationIds: [$stationId], period: { count: $days, unit: \"day\" }) {\n        date\n        dayOfYear\n        counts {\n          count\n          species {\n            alpha\n            commonName\n          }\n        }\n      }\n    }\n  "): (typeof documents)["\n    query DailyDetections($stationId: ID!, $days: Int!) {\n      dailyDetectionCounts(stationIds: [$stationId], period: { count: $days, unit: \"day\" }) {\n        date\n        dayOfYear\n        counts {\n          count\n          species {\n            alpha\n            commonName\n          }\n        }\n      }\n    }\n  "];
+export function graphql(source: "\n  query DailyDetections($stationId: ID!, $days: Int!) {\n    dailyDetectionCounts(stationIds: [$stationId], period: { count: $days, unit: \"day\" }) {\n      date\n      dayOfYear\n      counts {\n        count\n        species {\n          alpha\n          commonName\n        }\n      }\n    }\n  }\n"): (typeof documents)["\n  query DailyDetections($stationId: ID!, $days: Int!) {\n    dailyDetectionCounts(stationIds: [$stationId], period: { count: $days, unit: \"day\" }) {\n      date\n      dayOfYear\n      counts {\n        count\n        species {\n          alpha\n          commonName\n        }\n      }\n    }\n  }\n"];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};
