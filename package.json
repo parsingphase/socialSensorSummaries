@@ -17,13 +17,16 @@
     "cdk:deploy:dev": "cdk deploy --require-approval broadening",
     "cdk:deploy:prod": "DEPLOY_ENV=prod cdk deploy --require-approval broadening",
     "clean:cdk.out": "rm -rf cdk.out",
-    "clean": "npm run clean:cdk.out"
+    "clean": "npm run clean:cdk.out",
+    "generate:graphql:client": "graphql-codegen"
   },
   "author": "Richard George <richard@phase.org>",
   "license": "ISC",
   "devDependencies": {
     "@eslint/eslintrc": "^3.1.0",
     "@eslint/js": "^9.9.1",
+    "@graphql-codegen/cli": "^6.1.0",
+    "@graphql-codegen/typescript": "^5.0.7",
     "@types/aws-lambda": "^8.10.109",
     "@types/eslint__js": "^8.42.3",
     "@types/luxon": "^3.1.0",
@@ -46,9 +49,11 @@
     "typescript-eslint": "^8.3.0"
   },
   "dependencies": {
+    "@apollo/client": "^4.0.11",
     "@atproto/api": "^0.17.7",
     "@ctrl/tinycolor": "^4.1.0",
     "canvas": "^3.2.0",
+    "graphql": "^16.12.0",
     "luxon": "^3.1.1",
     "masto": "^6.5.1",
     "pino": "^9.6.0",
