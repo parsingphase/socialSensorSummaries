@@ -1,10 +1,10 @@
 #!/usr/bin/env npx tsx -r tsconfig-paths/register
 
-import { aggregateAllDays, BirdRecord, DayRecord, loadCachedDailyData } from "./lib/haiku";
+import { aggregateAllDays, BirdRecord, DayRecord, loadCachedDailyData } from "../lib/haiku";
 import { Canvas, CanvasRenderingContext2D, DOMMatrix } from "canvas";
 import { DateTime, Interval } from "luxon";
 import { TinyColor } from "@ctrl/tinycolor";
-import { ChartImageBuilder, stepSizeForValueRange } from "./lib/charts/canvasChartBuilder";
+import { ChartImageBuilder, stepSizeForValueRange } from "../lib/charts/canvasChartBuilder";
 
 const rawDir = `${__dirname}/rawHaikuData`;
 const HAIKU_DATE_FORMAT = "yyyy-MM-dd";

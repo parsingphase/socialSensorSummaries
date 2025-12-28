@@ -29,5 +29,9 @@ const config = {
     apiBaseUrl: "https://api.haikubox.com/",
     serialNumber: "",
   },
+  birdWeather: {
+    apiBaseUrl: "https://app.birdweather.com/graphql",
+    stationId: "", // Your PUC number, digits only
+  },
 };
 export { config };

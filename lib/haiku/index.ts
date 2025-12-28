@@ -1,6 +1,6 @@
 import fs from "fs";
 
-type BirdRecord = { bird: string; count: number };
+type BirdRecord = { bird: string; count: number }; // NB: Common Names
 
 type DayRecord = { date: string; dayData: BirdRecord[] | null };
 

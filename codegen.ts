@@ -2,9 +2,9 @@ import type { CodegenConfig } from "@graphql-codegen/cli";
 
 const config: CodegenConfig = {
   schema: "https://app.birdweather.com/graphql",
-  documents: ["graphql/**/queries.ts"],
+  documents: ["lib/birdWeather/queries.ts"],
   generates: {
-    "./graphql/codegen/": {
+    "./lib/birdWeather/codegen/": {
       preset: "client",
     },
   },

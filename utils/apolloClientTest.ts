@@ -4,8 +4,6 @@ import { dailyDetectionsQuery } from "../graphql/birdWeather/queries";
 import { DailyDetectionsQuery, DailyDetectionsQueryVariables } from "../graphql/codegen/graphql";
 import { initBirdWeatherClient } from "../graphql/birdWeather/client";
 
-
-
 /**
  * Tets script
  */
