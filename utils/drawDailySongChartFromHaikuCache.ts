@@ -1,7 +1,7 @@
 #!/usr/bin/env npx tsx
 
 import fs from "fs";
-import { drawChartFromDailySongData, Offsets } from "./lib/charts/barChart";
+import { drawChartFromDailySongData, Offsets } from "../lib/charts/barChart";
 
 /**
  * CLI payload - draw chart for one day's topX birds
@@ -30,7 +30,7 @@ async function main(): Promise<void> {
     height,
     offsets
   );
-  const outPath = __dirname + "/tmp/bar.png";
+  const outPath = __dirname + `/../tmp/${dateString}-haikubox.png`;
   fs.writeFileSync(outPath, fileData);
   console.log(`Wrote PNG to ${outPath}`);
 }
