@@ -10,6 +10,7 @@ class BarChart extends ChartImageBuilder {
 
   private titleFontSize: number;
   private labelFontSize: number;
+  private _note: string | undefined;
 
   constructor(
     canvasWidth: number,
@@ -32,9 +33,39 @@ class BarChart extends ChartImageBuilder {
     this.labelFont = `${this.labelFontSize}px Impact`;
   }
 
+  get note(): string | undefined {
+    return this._note;
+  }
+
+  set note(value: string) {
+    this._note = value;
+  }
+
+  protected drawNote(): void {
+    if (this.note) {
+      console.log(`drawnote: ${this.note}`);
+      const ctx = this.context2d;
+
+      ctx.fillStyle = this.textColor;
+      ctx.font = this.labelFont;
+
+      const textMeasure = ctx.measureText(this.note);
+      const textHeight = textMeasure.actualBoundingBoxAscent + textMeasure.actualBoundingBoxDescent;
+      ctx.fillText(
+        this.note,
+        this.canvasWidth - textMeasure.width - this.graphOffset.right,
+        textHeight + this.canvasHeight - this.graphOffset.bottom / 2
+      );
+    }
+  }
+
   drawGraph(): Canvas {
     this.drawTitleAndBackground();
     this.drawInnerFrame();
+    if (this.note) {
+      this.drawNote();
+    }
+
     const ctx = this.context2d;
 
     const chartFrameStrokeWidth = 1;
@@ -121,13 +152,15 @@ class BarChart extends ChartImageBuilder {
  * @param width
  * @param height
  * @param offsets
+ * @param note
  */
 function drawChartFromDailySongData(
   dayData: { count: number; bird: string }[],
   dateString: string,
   width: number,
   height: number,
-  offsets: Offsets
+  offsets: Offsets,
+  note?: string
 ): Buffer {
   const chartData: BarChartData = {};
   for (const row of dayData) {
@@ -141,6 +174,10 @@ function drawChartFromDailySongData(
     chartData,
     offsets
   );
+
+  if (note) {
+    chart.note = note;
+  }
   chart.drawGraph();
 
   return chart.canvasAsPng();

@@ -11,7 +11,7 @@ export abstract class ChartImageBuilder {
    * Offset from top-left
    * @protected
    */
-  protected graphOffset: { x: number; y: number };
+  protected graphOffset: { x: number; y: number; bottom: number; right: number };
 
   protected graphWidth: number;
   protected graphHeight: number;
@@ -38,6 +38,8 @@ export abstract class ChartImageBuilder {
     this.graphOffset = {
       x: graphFrame.left,
       y: graphFrame.top,
+      bottom: graphFrame.bottom,
+      right: graphFrame.right,
     };
 
     this.graphWidth = Math.floor(canvasWidth - graphFrame.left - graphFrame.right);

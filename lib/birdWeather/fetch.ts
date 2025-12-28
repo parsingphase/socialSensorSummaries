@@ -10,11 +10,13 @@ import { allDetectionsInPeriodQuery } from "./queries";
  * @param apiUrl
  * @param stationId
  * @param dateOfInterest
+ * @param minConfidence
  */
 async function fetchDailyCount(
   apiUrl: string,
   stationId: string,
-  dateOfInterest: string
+  dateOfInterest: string,
+  minConfidence: number = 0
 ): Promise<BirdRecord[]> {
   const client = initBirdWeatherClient(apiUrl);
   const countBySpecies: Record<string, number> = {};
@@ -40,7 +42,7 @@ async function fetchDailyCount(
       const { pageInfo, edges } = detectionResult;
       const observationEdges = edges ?? [];
       observationEdges.forEach((e) => {
-        if (e?.node) {
+        if (e?.node && e.node.confidence >= minConfidence) {
           countBySpecies[e.node.species.commonName] =
             (countBySpecies[e.node.species.commonName] ?? 0) + 1;
         }
