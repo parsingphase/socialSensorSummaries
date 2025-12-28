@@ -1,8 +1,8 @@
 #!/usr/bin/env npx tsx
 
-import { dailyDetectionsQuery } from "../graphql/birdWeather/queries";
-import { DailyDetectionsQuery, DailyDetectionsQueryVariables } from "../graphql/codegen/graphql";
-import { initBirdWeatherClient } from "../graphql/birdWeather/client";
+import { dailyDetectionsQuery } from "../lib/birdWeather/queries";
+import { DailyDetectionsQuery, DailyDetectionsQueryVariables } from "../lib/birdWeather/codegen/graphql";
+import { initBirdWeatherClient } from "../lib/birdWeather/client";
 
 /**
  * Tets script

@@ -1,7 +1,7 @@
 #!/usr/bin/env npx tsx -r tsconfig-paths/register
 
 import * as fs from "fs";
-import { aggregateAllDays, BirdRecord, DayRecord, loadCachedDailyData } from "./lib/haiku";
+import { aggregateAllDays, BirdRecord, DayRecord, loadCachedDailyData } from "../lib/haiku";
 
 const rawDir = `${__dirname}/rawHaikuData`;
 

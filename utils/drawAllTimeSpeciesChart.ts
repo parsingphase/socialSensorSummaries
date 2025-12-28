@@ -6,7 +6,7 @@ import { DateTime, Interval } from "luxon";
 import { TinyColor } from "@ctrl/tinycolor";
 import { ChartImageBuilder, stepSizeForValueRange } from "../lib/charts/canvasChartBuilder";
 
-const rawDir = `${__dirname}/rawHaikuData`;
+const rawDir = `${__dirname}/../rawHaikuData`;
 const HAIKU_DATE_FORMAT = "yyyy-MM-dd";
 
 type DatedCount = { bird: string; date: string; count: number | null };
@@ -409,7 +409,7 @@ function main(): void {
    * @param speciesCount
    */
   function outPathForSpecies(species: string, speciesCount: number): string {
-    return `${__dirname}/tmp/${species} (${speciesCount}).png`;
+    return `${__dirname}/../tmp/${species} (${speciesCount}).png`;
   }
 
   // we want an ordered list of [ { bird: SPECIES, date: YYYY-MM-DD, count: number }]

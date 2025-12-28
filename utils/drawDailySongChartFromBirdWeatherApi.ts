@@ -32,7 +32,7 @@ async function main(): Promise<void> {
   );
 
   const fileData = drawChartFromDailySongData(
-    dayData?.slice(0, 20) || [],
+    dayData?.slice(0, 10) || [],
     dateString,
     width,
     height,

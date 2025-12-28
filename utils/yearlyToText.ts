@@ -1,6 +1,6 @@
 #!/usr/bin/env npx tsx -r tsconfig-paths/register
 
-import { config } from "./config/config";
+import { config } from "../config/config";
 
 /**
  * Dump bird count for year

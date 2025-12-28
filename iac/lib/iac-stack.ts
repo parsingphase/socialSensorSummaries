@@ -28,13 +28,13 @@ export class IacStack extends cdk.Stack {
       MASTO_CLIENT_TOKEN: config.mastodon.apiClientToken,
       MASTO_BASE_URL: config.mastodon.apiBaseUrl,
     };
-    const mastoLambdaFunction = this.buildLambda(
-      deployEnv,
-      `DailyYardSummaryLambda`,
-      `daily-yard-summary-lambda-${deployEnv}`,
-      `${__dirname}/../../build/output/mastoLambda.zip`,
-      mastoConfig
-    );
+    // const mastoLambdaFunction = this.buildLambda(
+    //   deployEnv,
+    //   `DailyYardSummaryLambda`,
+    //   `daily-yard-summary-lambda-${deployEnv}`,
+    //   `${__dirname}/../../build/output/mastoLambda.zip`,
+    //   mastoConfig
+    // );
 
     const mastoDockerLambdaFunction = this.buildDockerLambda(
       deployEnv,
@@ -50,7 +50,7 @@ export class IacStack extends cdk.Stack {
       enabled: lambdaEnv.enable,
     });
 
-    void mastoLambdaFunction;
+    // void mastoLambdaFunction;
     mastoEventRule.addTarget(new Targets.LambdaFunction(mastoDockerLambdaFunction));
 
     // Bluesky
@@ -59,13 +59,13 @@ export class IacStack extends cdk.Stack {
       BLUESKY_PASSWORD: config.blueSky.password,
       BLUESKY_BASE_URL: config.blueSky.serviceUrl,
     };
-    const blueskyLambdaFunction = this.buildLambda(
-      deployEnv,
-      `DailyYardSummaryLambdaBluesky`,
-      `daily-yard-summary-lambda-bluesky-${deployEnv}`,
-      `${__dirname}/../../build/output/blueskyLambda.zip`,
-      blueskyConfig
-    );
+    // const blueskyLambdaFunction = this.buildLambda(
+    //   deployEnv,
+    //   `DailyYardSummaryLambdaBluesky`,
+    //   `daily-yard-summary-lambda-bluesky-${deployEnv}`,
+    //   `${__dirname}/../../build/output/blueskyLambda.zip`,
+    //   blueskyConfig
+    // );
 
     const blueskyDockerLambdaFunction = this.buildDockerLambda(
       deployEnv,
@@ -82,7 +82,7 @@ export class IacStack extends cdk.Stack {
       enabled: lambdaEnv.enable,
     });
 
-    void blueskyLambdaFunction;
+    // void blueskyLambdaFunction;
     blueEventRule.addTarget(new Targets.LambdaFunction(blueskyDockerLambdaFunction));
   }
 
@@ -95,7 +95,7 @@ export class IacStack extends cdk.Stack {
       [key: string]: string;
     }
   ): Lambda.Function {
-    const { haikubox, ambientWeather, location, lambda } = config;
+    const { haikubox, ambientWeather, location, lambda, birdWeather } = config;
     const lambdaEnv = lambda[deployEnv];
 
     const lambdaFunction = new Lambda.Function(this, lambdaResourceId, {
@@ -104,7 +104,7 @@ export class IacStack extends cdk.Stack {
       handler: "lambda.handler",
       code: Lambda.Code.fromAsset(lambdaAssetPath),
       memorySize: 512,
-      timeout: Duration.seconds(30),
+      timeout: Duration.seconds(60),
       environment: {
         ...serviceConfig,
 
@@ -112,6 +112,9 @@ export class IacStack extends cdk.Stack {
 
         HAIKU_BASE_URL: haikubox.apiBaseUrl,
         HAIKU_SERIAL_NUMBER: haikubox.serialNumber,
+
+        BIRDWEATHER_BASE_URL: birdWeather.apiBaseUrl,
+        BIRDWEATHER_STATION_ID: "" + birdWeather.stationId,
 
         AWN_BASE_URL: ambientWeather.apiBaseUrl,
         AWN_API_KEY: ambientWeather.apiKey,
@@ -138,7 +141,7 @@ export class IacStack extends cdk.Stack {
       [key: string]: string;
     }
   ): Lambda.Function {
-    const { haikubox, ambientWeather, location, lambda } = config;
+    const { haikubox, ambientWeather, location, lambda, birdWeather } = config;
     const lambdaEnv = lambda[deployEnv];
 
     const dockerDir = path.dirname(lambdaAssetPath);
@@ -159,6 +162,9 @@ export class IacStack extends cdk.Stack {
 
         HAIKU_BASE_URL: haikubox.apiBaseUrl,
         HAIKU_SERIAL_NUMBER: haikubox.serialNumber,
+
+        BIRDWEATHER_BASE_URL: birdWeather.apiBaseUrl,
+        BIRDWEATHER_STATION_ID: "" + birdWeather.stationId,
 
         AWN_BASE_URL: ambientWeather.apiBaseUrl,
         AWN_API_KEY: ambientWeather.apiKey,
