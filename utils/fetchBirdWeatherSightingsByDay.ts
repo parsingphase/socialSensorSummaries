@@ -24,9 +24,12 @@ async function main(): Promise<void> {
 
   const startString = start.toISO();
   const endString = end.toISO();
+
+  const dateOfInterest = start.toISODate()
+
   const validPeriod = Interval.fromDateTimes(start,end);
 
-  console.log({ startString, endString });
+  console.log({ startString, endString, dateOfInterest });
 
   const countBySpecies: Record<string, number> = {};
 
@@ -37,8 +40,13 @@ async function main(): Promise<void> {
   do {
     res = await client.query<AllDetectionsInPeriodQuery, AllDetectionsInPeriodQueryVariables>({
       query: allDetectionsInPeriodQuery,
-      variables: { stationId: "20191", from: startString, to: endString, after: previousEndCursor },
-      // FIXME not applying from/to params?
+      variables: {
+        stationId: "20191",
+        from: dateOfInterest,
+        to: dateOfInterest,
+        after: previousEndCursor,
+      },
+      // NOTE: from, to are DATE not DATE-TIME!
     });
     const detectionResult = res.data?.detections;
 
