@@ -10,7 +10,7 @@ class BarChart extends ChartImageBuilder {
 
   private titleFontSize: number;
   private labelFontSize: number;
-  private _note: string | undefined;
+  private _footnote: string | undefined;
 
   constructor(
     canvasWidth: number,
@@ -27,32 +27,34 @@ class BarChart extends ChartImageBuilder {
     );
     this.bgColor = "rgb(250,250,250)";
     this.fgColor = "rgb(255,255,255)";
-    this.titleFontSize = Math.floor(canvasWidth / 40);
+    this.titleFontSize = Math.floor((1.5 * canvasWidth) / title.length);
     this.titleFont = `${this.titleFontSize}px Impact`;
     this.labelFontSize = Math.floor(canvasWidth / 50);
     this.labelFont = `${this.labelFontSize}px Impact`;
+
+    console.log({ titleFontSize: this.titleFontSize, labelFontSize: this.labelFontSize });
   }
 
-  get note(): string | undefined {
-    return this._note;
+  get footnote(): string | undefined {
+    return this._footnote;
   }
 
-  set note(value: string) {
-    this._note = value;
+  set footnote(value: string) {
+    this._footnote = value;
   }
 
-  protected drawNote(): void {
-    if (this.note) {
-      console.log(`drawnote: ${this.note}`);
+  protected drawFootnote(): void {
+    if (this.footnote) {
+      console.log(`drawnote: ${this.footnote}`);
       const ctx = this.context2d;
 
       ctx.fillStyle = this.textColor;
       ctx.font = this.labelFont;
 
-      const textMeasure = ctx.measureText(this.note);
+      const textMeasure = ctx.measureText(this.footnote);
       const textHeight = textMeasure.actualBoundingBoxAscent + textMeasure.actualBoundingBoxDescent;
       ctx.fillText(
-        this.note,
+        this.footnote,
         this.canvasWidth - textMeasure.width - this.graphOffset.right,
         textHeight + this.canvasHeight - this.graphOffset.bottom / 2
       );
@@ -62,8 +64,8 @@ class BarChart extends ChartImageBuilder {
   drawGraph(): Canvas {
     this.drawTitleAndBackground();
     this.drawInnerFrame();
-    if (this.note) {
-      this.drawNote();
+    if (this.footnote) {
+      this.drawFootnote();
     }
 
     const ctx = this.context2d;
@@ -167,17 +169,15 @@ function drawChartFromDailySongData(
     chartData[row.bird] = row.count;
   }
 
-  const chart = new BarChart(
-    width,
-    height,
-    `Calls and songs by species, ${dateString}`,
-    chartData,
-    offsets
-  );
-
+  let title = `Calls and songs by species, ${dateString}`;
   if (note) {
-    chart.note = note;
+    title = `${title}, ${note}`;
   }
+  const chart = new BarChart(width, height, title, chartData, offsets);
+
+  // if (note) {
+  //   chart.footnote = note;
+  // }
   chart.drawGraph();
 
   return chart.canvasAsPng();

@@ -37,7 +37,7 @@ async function main(): Promise<void> {
     width,
     height,
     offsets,
-    "Source: BirdWeather PUC"
+    "from BirdWeather PUC"
   );
   const outPath = __dirname + `/../tmp/${dateString}-birdweather-${minConfidence}.png`;
   fs.writeFileSync(outPath, fileData);
