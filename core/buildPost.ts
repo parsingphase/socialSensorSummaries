@@ -7,6 +7,7 @@
  * @param minObservationCount
  * @param confirmedObservations
  * @param caveatText
+ * @param sourceTag
  * @param topXnote
  */
 function buildTopBirdsPost(
@@ -16,6 +17,7 @@ function buildTopBirdsPost(
   minObservationCount: number,
   confirmedObservations: string[] | undefined,
   caveatText: string | null,
+  sourceTag?: string,
   topXnote = false
 ): string {
   // sorted by default, but let's be sure
@@ -28,7 +30,7 @@ function buildTopBirdsPost(
   let firstUnverifiedBirdIndex: number | null = null;
   let caveatAppendedText = "";
 
-  const optionalTag = " #HaikuBox";
+  const optionalTag = sourceTag ? ` ${sourceTag}` : null;
   const candidateLines: string[] = [];
   const normalizeBirdName = (n: string): string => n.replace(/^[a-z]+/g, "").toLowerCase();
   const normalizedSeenBirds = (confirmedObservations || []).map(normalizeBirdName);

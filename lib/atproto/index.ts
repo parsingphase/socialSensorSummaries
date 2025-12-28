@@ -186,27 +186,6 @@ async function postToAtproto(
     };
   }
 
-  //
-  // // Publish!
-  // const statusParams: Postable = {
-  //   text: post.text,
-  //   createdAt: new Date().toISOString(),
-  //   embed: {
-  //     $type: "app.bsky.embed.images",
-  //     images: [
-  //       {
-  //         image: attachment.data.blob,
-  //         alt: post.altText,
-  //         aspectRatio: {
-  //           width: mediaObject.media.getWidth(),
-  //           height: mediaObject.media.getHeight(),
-  //         },
-  //       },
-  //     ],
-  //   },
-  //   facets: hashtags,
-  // };
-
   const status = await agent.post(statusParams);
 
   logger?.info({ status }, `Posted to ${status.uri}`);

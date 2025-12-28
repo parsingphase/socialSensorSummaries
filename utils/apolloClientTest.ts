@@ -1,7 +1,10 @@
 #!/usr/bin/env npx tsx
 
 import { dailyDetectionsQuery } from "../lib/birdWeather/queries";
-import { DailyDetectionsQuery, DailyDetectionsQueryVariables } from "../lib/birdWeather/codegen/graphql";
+import {
+  DailyDetectionsQuery,
+  DailyDetectionsQueryVariables,
+} from "../lib/birdWeather/codegen/graphql";
 import { initBirdWeatherClient } from "../lib/birdWeather/client";
 
 /**

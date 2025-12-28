@@ -87,24 +87,35 @@ function buildBarChartForPost(
  * @param logger
  * @param source
  * @param whenString
+ * @param sourceTag Including #
  * @param client
  * @param replyRef
  */
 async function postStatusFromBirdList(
   birds: BirdRecord[],
   logger: pino.Logger,
-  source: string,
   whenString: string,
+  source: string,
+  sourceTag: string,
   client: AtpAgent,
   replyRef?: StrongPostRef
 ): Promise<StrongPostRef> {
   const maxBirds = 10;
   const minObservationCount = 10;
   const links: Link[] = [
-    { uri: "https://bsky.app/profile/parsingphase.dev/post/3ljfn54m4ls23", text: "caveat" },
+    {
+      uri: "https://bsky.app/profile/did:plc:jsjgrbio76yz7zzch5fsasox/post/3mb356jnlrs2c",
+      text: "caveat",
+    },
   ];
 
-  const postString = buildBirdPostForBluesky(birds || [], seenBirds, maxBirds, minObservationCount);
+  const postString = buildBirdPostForBluesky(
+    birds || [],
+    seenBirds,
+    sourceTag,
+    maxBirds,
+    minObservationCount
+  );
   logger.info({ birds, postString, length: postString.length, source }, source + " Chart");
   const images = buildBarChartForPost(
     birds,
@@ -165,19 +176,21 @@ export const handler = async (_event: ScheduledEvent, _context: Context): Promis
   const bwStatus = await postStatusFromBirdList(
     bwBirds ?? [],
     logger,
-    "Birdweather PUC",
     whenString,
+    "BirdWeather PUC",
+    "#BirdWeather",
     client
   );
 
   // Haikubox Post Generation
   const birds = await fetchDailyCountFromHaikuboxApi(haikuBaseUrl, haikuSerialNumber, whenString);
-  const source = "Haikubox";
+
   const haikuboxStatus = await postStatusFromBirdList(
     birds ?? [],
     logger,
-    source,
     whenString,
+    "Haikubox",
+    "#Haikubox",
     client,
     bwStatus
   );
