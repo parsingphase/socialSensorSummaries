@@ -9,7 +9,7 @@ import {
 } from "./core/haiku2masto";
 
 import { fetchDailyCount } from "./lib/haiku";
-import type { MastoClient } from "./lib/masto/types";
+import type { MastoClient, StatusVisibility } from "./lib/masto/types";
 import { seenBirds } from "./lib/sightings";
 import {
 	type AmbientWeatherApiConfig,
@@ -29,17 +29,27 @@ function assertedEnvVar(key: string): string {
 	return token;
 }
 
-export const handler = async (
-	_event: ScheduledEvent,
-	_context: Context,
-): Promise<void> => {
-	void _event;
-	void _context;
+type LambdaConfig = {
+	mastoToken: string;
+	mastoBaseUrl: string;
+	haikuSerialNumber: string;
+	haikuBaseUrl: string;
+	// birdWeatherStationId: string;
+	// birdWeatherBaseUrl: string;
+	AWNBaseUrl: string;
+	AWNApiKey: string;
+	AWNApplicationKey: string;
+	AWNDeviceMac: string;
+	latitude: number;
+	longitude: number;
+	visibility: StatusVisibility;
+};
 
+function getConfigFromEnv(): LambdaConfig {
 	const mastoToken = assertedEnvVar("MASTO_CLIENT_TOKEN");
 	const mastoBaseUrl = assertedEnvVar("MASTO_BASE_URL");
 
-	const serialNumber = assertedEnvVar("HAIKU_SERIAL_NUMBER");
+	const haikuSerialNumber = assertedEnvVar("HAIKU_SERIAL_NUMBER");
 	const haikuBaseUrl = assertedEnvVar("HAIKU_BASE_URL");
 
 	const AWNBaseUrl = assertedEnvVar("AWN_BASE_URL");
@@ -50,11 +60,45 @@ export const handler = async (
 	const latitude = Number(assertedEnvVar("SITE_LATITUDE"));
 	const longitude = Number(assertedEnvVar("SITE_LONGITUDE"));
 
-	const visibility = process.env.POST_VISIBILITY || "direct";
+	const visibility = (process.env.POST_VISIBILITY ||
+		"direct") as StatusVisibility;
+	return {
+		mastoToken,
+		mastoBaseUrl,
+		haikuSerialNumber,
+		haikuBaseUrl,
+		AWNBaseUrl,
+		AWNApiKey,
+		AWNApplicationKey,
+		AWNDeviceMac,
+		latitude,
+		longitude,
+		visibility,
+	};
+}
+
+async function executeWithConfig(configFromEnv: LambdaConfig) {
+	const {
+		mastoToken,
+		mastoBaseUrl,
+		haikuSerialNumber,
+		haikuBaseUrl,
+		AWNBaseUrl,
+		AWNApiKey,
+		AWNApplicationKey,
+		AWNDeviceMac,
+		latitude,
+		longitude,
+		visibility,
+	} = configFromEnv;
 
 	const when = DateTime.now().minus(Duration.fromObject({ days: 1 }));
 	const whenString = when.toFormat("yyyy-MM-dd");
-	const birds = await fetchDailyCount(haikuBaseUrl, serialNumber, whenString);
+	const birds = await fetchDailyCount(
+		haikuBaseUrl,
+		haikuSerialNumber,
+		whenString,
+	);
 
 	const maxBirds = 20;
 	const minObservationCount = 10;
@@ -123,4 +167,16 @@ export const handler = async (
 	logger.info(
 		`Posted weather status to ${weatherStatus.url} / ${weatherStatus.id}`,
 	);
+}
+
+export const handler = async (
+	_event: ScheduledEvent,
+	_context: Context,
+): Promise<void> => {
+	void _event;
+	void _context;
+	const configFromEnv = getConfigFromEnv();
+	await executeWithConfig(configFromEnv);
 };
+
+export { executeWithConfig, type LambdaConfig };
