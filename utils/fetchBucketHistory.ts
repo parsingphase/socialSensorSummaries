@@ -1,7 +1,6 @@
 #!/usr/bin/env tsx
 
 import fs from "node:fs";
-import path from "node:path";
 import { DateTime } from "luxon";
 import { initBirdWeatherClient } from "../lib/birdWeather/client";
 import type {
@@ -9,14 +8,13 @@ import type {
 	BucketSpeciesObservationsQueryVariables,
 } from "../lib/birdWeather/codegen/graphql";
 import { bucketObservationsQuery } from "../lib/birdWeather/queries";
-import { PROJECT_DIR } from "../lib/utils";
+import {
+	getSpeciesBucketCacheDirForSpeciesStationDuration,
+	getSpeciesBucketCacheRootDir,
+} from "./shared";
 
 async function main(): Promise<void> {
-	const cacheRootDir = path.join(
-		PROJECT_DIR,
-		"rawBirdWeatherData",
-		"speciesBucketCache",
-	);
+	const cacheRootDir = getSpeciesBucketCacheRootDir();
 	fs.mkdirSync(cacheRootDir, { recursive: true });
 
 	const client = initBirdWeatherClient();
@@ -40,12 +38,13 @@ async function main(): Promise<void> {
 			speciesId: `${speciesId}`,
 			stationId: `${stationId}`,
 		};
-
-		const cacheFileDir = `${cacheRootDir}/station-${stationId}/species-${speciesId}/from-${fromDate}`;
+		const cacheFileDir = getSpeciesBucketCacheDirForSpeciesStationDuration(
+			speciesId,
+			stationId,
+			bucketMinutes,
+		);
 		fs.mkdirSync(cacheFileDir, { recursive: true });
-		const cacheFile = `${cacheFileDir}/${bucketMinutes}minutes.json`;
-
-		// console.log({ variables });
+		const cacheFile = `${cacheFileDir}/from-${fromDate}.json`;
 
 		// run synchronously, to avoid spike load
 		const weekBuckets = await client.query<
