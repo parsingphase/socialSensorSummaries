@@ -1,5 +1,7 @@
 #!/usr/bin/env npx tsx -r tsconfig-paths/register
 
+// TODO rewrite this to just call the lambda
+
 import { DateTime, Duration } from "luxon";
 import pino from "pino";
 import { config } from "./config/config";

@@ -1,5 +1,7 @@
 import { gql } from "graphql-tag";
 
+// If you change this file, re-run `npm run generate:graphql:client`
+
 const dailyDetectionsQuery = gql`
   query DailyDetections($stationId: ID!, $days: Int!) {
     dailyDetectionCounts(stationIds: [$stationId], period: { count: $days, unit: "day" }) {
@@ -16,7 +18,7 @@ const dailyDetectionsQuery = gql`
   }
 `;
 
-// eg period: { from: "2025-12-26T00:00:00-05:00", to: "2025-12-26T23:59:59-05:00" }
+// eg period: { from: "2025-12-26", to: "2025-12-26" }
 const allDetectionsInPeriodQuery = gql`
   query AllDetectionsInPeriod(
     $stationId: ID!
