@@ -162,15 +162,23 @@ async function postStatusFromBirdList(
 	return birdsStatus;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const handler = async (
-	_event: ScheduledEvent,
-	_context: Context,
-): Promise<void> => {
-	void _event;
-	void _context;
+type LambdaConfig = {
+	blueskyUsername: string;
+	blueskyPassword: string;
+	blueskyServerBaseUrl: string;
+	haikuSerialNumber: string;
+	haikuBaseUrl: string;
+	birdWeatherStationId: string;
+	birdWeatherBaseUrl: string;
+	AWNBaseUrl: string;
+	AWNApiKey: string;
+	AWNApplicationKey: string;
+	AWNDeviceMac: string;
+	latitude: number;
+	longitude: number;
+};
 
-	// Environmental setup
+function getConfigFromEnv(): LambdaConfig {
 	const blueskyUsername = assertedEnvVar("BLUESKY_USERNAME");
 	const blueskyPassword = assertedEnvVar("BLUESKY_PASSWORD");
 	const blueskyServerBaseUrl = assertedEnvVar("BLUESKY_BASE_URL");
@@ -179,7 +187,7 @@ export const handler = async (
 	const haikuBaseUrl = assertedEnvVar("HAIKU_BASE_URL");
 
 	const birdWeatherStationId = assertedEnvVar("BIRDWEATHER_STATION_ID");
-	const birdweatherBaseUrl = assertedEnvVar("BIRDWEATHER_BASE_URL");
+	const birdWeatherBaseUrl = assertedEnvVar("BIRDWEATHER_BASE_URL");
 
 	const AWNBaseUrl = assertedEnvVar("AWN_BASE_URL");
 	const AWNApiKey = assertedEnvVar("AWN_API_KEY");
@@ -188,6 +196,39 @@ export const handler = async (
 
 	const latitude = Number(assertedEnvVar("SITE_LATITUDE"));
 	const longitude = Number(assertedEnvVar("SITE_LONGITUDE"));
+	return {
+		blueskyUsername,
+		blueskyPassword,
+		blueskyServerBaseUrl,
+		haikuSerialNumber,
+		haikuBaseUrl,
+		birdWeatherStationId,
+		birdWeatherBaseUrl,
+		AWNBaseUrl,
+		AWNApiKey,
+		AWNApplicationKey,
+		AWNDeviceMac,
+		latitude,
+		longitude,
+	};
+}
+
+async function executeWithConfig(config: LambdaConfig): Promise<void> {
+	const {
+		blueskyUsername,
+		blueskyPassword,
+		blueskyServerBaseUrl,
+		haikuSerialNumber,
+		haikuBaseUrl,
+		birdWeatherStationId,
+		birdWeatherBaseUrl,
+		AWNBaseUrl,
+		AWNApiKey,
+		AWNApplicationKey,
+		AWNDeviceMac,
+		latitude,
+		longitude,
+	} = config;
 
 	// Post setup
 	const when = DateTime.now().minus(Duration.fromObject({ days: 1 }));
@@ -204,7 +245,7 @@ export const handler = async (
 
 	// Birdweather Post Generation
 	const bwBirds = await fetchDailyCountFromBirdWeatherApi(
-		birdweatherBaseUrl,
+		birdWeatherBaseUrl,
 		birdWeatherStationId,
 		whenString,
 	);
@@ -259,4 +300,25 @@ export const handler = async (
 	logger.info(
 		`Posted weather status to ${weatherStatus.uri} / ${weatherStatus.cid}`,
 	);
+}
+
+/**
+ * Handler used by AWS to execute the lambda
+ *
+ * Should just build config then execute the main function, to make CLI usage simpler
+ * @param _event
+ * @param _context
+ */
+export const handler = async (
+	_event: ScheduledEvent,
+	_context: Context,
+): Promise<void> => {
+	void _event;
+	void _context;
+
+	// Environmental setup
+	const configFromEnv = getConfigFromEnv();
+	await executeWithConfig(configFromEnv);
 };
+
+export { executeWithConfig, type LambdaConfig };
