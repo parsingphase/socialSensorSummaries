@@ -4,3 +4,6 @@
 - https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API
 
 - Lambda base image: https://hub.docker.com/r/amazon/aws-lambda-nodejs.
+
+
+ Pixel blatting: https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Pixel_manipulation_with_canvas

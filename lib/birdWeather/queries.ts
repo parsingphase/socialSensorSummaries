@@ -49,4 +49,24 @@ const allDetectionsInPeriodQuery = gql`
   }
 `;
 
-export { allDetectionsInPeriodQuery, dailyDetectionsQuery };
+const bucketObservationsQuery = gql`
+query BucketSpeciesObservations($speciesId: ID!, $stationId: ID!, $fromDate: ISO8601Date!, $toDate: ISO8601Date!, $bucketMinutes: Int!) {
+  species(id: $speciesId) {
+    commonName
+    id
+    # period is *inclusive* days
+    detectionCounts(period:{from: $fromDate, to: $toDate}, group: $bucketMinutes, stationIds:[$stationId]) {
+      count
+      bins {
+           key
+           count
+         }
+      }
+   }
+}`;
+
+export {
+	allDetectionsInPeriodQuery,
+	dailyDetectionsQuery,
+	bucketObservationsQuery,
+};

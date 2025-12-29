@@ -1,3 +1,5 @@
+import path from "node:path";
+
 /**
  * Convert dict to HTTP query string
  *
@@ -15,4 +17,6 @@ function objectToQueryString(obj: {
 		.join("&");
 }
 
-export { objectToQueryString };
+const PROJECT_DIR = path.dirname(path.dirname(__dirname));
+
+export { objectToQueryString, PROJECT_DIR };
