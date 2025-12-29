@@ -4,3 +4,4 @@ config.ts
 dist
 rawHaikuData
 node_modules
+lefthook.yml.sample
