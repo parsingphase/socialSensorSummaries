@@ -1,25 +1,25 @@
-import path from "path";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import copy from "rollup-plugin-copy";
 import typescript from "rollup-plugin-typescript2";
-import { fileURLToPath } from "url";
 
 const thisFile = fileURLToPath(import.meta.url);
 const thisDir = path.dirname(thisFile);
 
 const projectRootDir = path.dirname(thisDir);
 const inputDir = projectRootDir;
-const input = inputDir + "/lambdaMasto.ts";
-const outDir = projectRootDir + "/dist/masto";
-const outputFile = outDir + "/lambda.js";
+const input = `${inputDir}/lambdaMasto.ts`;
+const outDir = `${projectRootDir}/dist/masto`;
+const outputFile = `${outDir}/lambda.js`;
 
 export default {
 	plugins: [
 		typescript({ tsconfigOverride: { compilerOptions: { module: "ES2020" } } }),
 		copy({
 			targets: [
-				{ src: inputDir + "/package.json", dest: outDir },
-				{ src: inputDir + "/package-lock.json", dest: outDir },
-				{ src: inputDir + "/.npmrc", dest: outDir },
+				{ src: `${inputDir}/package.json`, dest: outDir },
+				{ src: `${inputDir}/package-lock.json`, dest: outDir },
+				{ src: `${inputDir}/.npmrc`, dest: outDir },
 			],
 		}),
 	],
