@@ -8,8 +8,9 @@
 		"test:static": "npm run test:static:tsc && npm run test:static:biome",
 		"test:static:tsc": "tsc --pretty --noEmit",
 		"test:static:biome": "biome check",
-		"lambda:deploy:dev": "npm run cdk:deploy:dev",
-		"lambda:deploy:prod": "npm run cdk:deploy:prod",
+		"lambda:build": "npm run clean:cdk.out && ./build/buildMastoLambda.sh && ./build/buildBlueskyLambda.sh",
+		"lambda:deploy:dev": "npm run lambda:build && npm run cdk:deploy:dev",
+		"lambda:deploy:prod": "npm run lambda:build && npm run cdk:deploy:prod",
 		"cdk:synth": "cdk synth",
 		"cdk:deploy:dev": "cdk deploy --require-approval broadening",
 		"cdk:deploy:prod": "DEPLOY_ENV=prod cdk deploy --require-approval broadening",
@@ -33,8 +34,12 @@
 		"aws-cdk-lib": "^2.221.1",
 		"aws-lambda": "^1.0.7",
 		"lefthook": "^2.0.13",
+		"rollup": "^3.29.5",
+		"rollup-plugin-copy": "^3.4.0",
+		"rollup-plugin-typescript2": "^0.34.1",
 		"tsx": "^4.19.0",
-		"typescript": "^5.5.4"
+		"typescript": "^5.5.4",
+		"typescript-eslint": "^8.3.0"
 	},
 	"dependencies": {
 		"@apollo/client": "^4.0.11",
