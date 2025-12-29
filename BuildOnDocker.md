@@ -7,3 +7,7 @@ Because `canvas` has to be installed on Linux, we need to build on a Docker imag
 
     # npm i -D
     # npm run lambda:deploy:dev
+
+Testing AWS images:
+
+     docker build --platform linux/amd64 --provenance=false -t bluesky-lambda -f Dockerfile-bluesky-lambda .

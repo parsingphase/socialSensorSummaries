@@ -3,8 +3,8 @@ FROM public.ecr.aws/lambda/nodejs:24-x86_64
 RUN dnf install -y fontconfig
 
 # Copy function code
-COPY dist/masto/package-lock.json dist/bluesky/package.json ${LAMBDA_TASK_ROOT}/
-COPY dist/masto/lambda.js ${LAMBDA_TASK_ROOT}/lambda.js
+COPY package-lock.json package.json ${LAMBDA_TASK_ROOT}/
+COPY dist/mastodon/lambda.js ${LAMBDA_TASK_ROOT}/lambda.js
 
 RUN npm i --include prod
 
