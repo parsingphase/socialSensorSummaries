@@ -95,7 +95,7 @@ async function buildAndUploadDailySongChart(
 		right: Math.round(width / 25),
 	};
 
-	const imageBuffer = drawChartFromDailySongData(
+	const imageBuffer: Buffer = drawChartFromDailySongData(
 		dayData,
 		whenString,
 		width,
@@ -110,7 +110,7 @@ async function buildAndUploadDailySongChart(
 	// images = [{ data: imageBuffer, alt: alt.join("\n"), width, height, mimetype: "image/png" }];
 	logger.info("Image created");
 	const attachment = await mastoClient.v2.media.create({
-		file: new Blob([imageBuffer]),
+		file: new Blob([new Uint8Array(imageBuffer)]),
 		description: alt.join("\n"),
 	});
 	return attachment.id;

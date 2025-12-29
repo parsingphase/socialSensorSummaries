@@ -32,20 +32,19 @@
 		"aws-cdk": "^2.221.1",
 		"aws-cdk-lib": "^2.221.1",
 		"aws-lambda": "^1.0.7",
-		"globals": "^15.9.0",
 		"lefthook": "^2.0.13",
 		"tsx": "^4.19.0",
 		"typescript": "^5.5.4"
 	},
 	"dependencies": {
 		"@apollo/client": "^4.0.11",
-		"@atproto/api": "^0.17.7",
+		"@atproto/api": "^0.18.8",
 		"@ctrl/tinycolor": "^4.1.0",
 		"canvas": "^3.2.0",
 		"graphql": "^16.12.0",
 		"luxon": "^3.1.1",
-		"masto": "^6.5.1",
-		"pino": "^9.6.0",
+		"masto": "^7.10.0",
+		"pino": "^10.1.0",
 		"suncalc": "^1.9.0"
 	}
 }

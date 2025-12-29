@@ -170,11 +170,14 @@ async function postToAtproto(
 			const { alt, mimetype, data, height, width } = image;
 
 			// Upload the image
-			const attachment = await agent.uploadBlob(new Blob([data]), {
-				headers: {
-					"Content-Type": mimetype,
+			const attachment = await agent.uploadBlob(
+				new Blob([new Uint8Array(data)]),
+				{
+					headers: {
+						"Content-Type": mimetype,
+					},
 				},
-			});
+			);
 			imageEmbeds.push({
 				image: attachment.data.blob,
 				alt,
