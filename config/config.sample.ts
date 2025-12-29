@@ -7,7 +7,7 @@ const config = {
 	blueSky: {
 		serviceUrl: "",
 		username: "",
-		password: "",
+		password: "", // app password OK
 	},
 	cdk: {
 		region: "us-east-1",
