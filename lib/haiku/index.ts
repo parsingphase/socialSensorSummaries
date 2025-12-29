@@ -1,4 +1,4 @@
-import fs from "fs";
+import fs from "node:fs";
 
 type BirdRecord = { bird: string; count: number }; // NB: Common Names
 
@@ -79,6 +79,7 @@ function aggregateAllDays(
 				.filter((c) => c.count >= dailyMinimum)
 				.map(
 					(b) =>
+						// biome-ignore lint/suspicious: FIXME cleanup
 						(totalCountMap[b.bird] = totalCountMap[b.bird]
 							? totalCountMap[b.bird] + b.count
 							: b.count),

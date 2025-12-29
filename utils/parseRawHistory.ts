@@ -1,6 +1,6 @@
 #!/usr/bin/env npx tsx -r tsconfig-paths/register
 
-import * as fs from "fs";
+import * as fs from "node:fs";
 import {
 	aggregateAllDays,
 	type BirdRecord,
@@ -38,13 +38,13 @@ async function main(): Promise<void> {
 		const row: (string | number)[] = [bird];
 		for (const day of allDays) {
 			// console.log({ day });
-			const foundDay: DayRecord[] = allData.filter((ad) => ad.date == day);
+			const foundDay: DayRecord[] = allData.filter((ad) => ad.date === day);
 			// console.log(foundDay);
-			if (foundDay.length == 0) {
+			if (foundDay.length === 0) {
 				row.push(0);
 			} else {
 				const foundRecord: BirdRecord[] = (foundDay[0]?.dayData || []).filter(
-					(d) => d.bird == bird,
+					(d) => d.bird === bird,
 				);
 				// console.log({bird,foundRecord});
 				row.push(foundRecord.length > 0 ? foundRecord[0].count : 0);

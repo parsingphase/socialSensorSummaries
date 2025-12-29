@@ -73,7 +73,7 @@ export class IacStack extends cdk.Stack {
 		);
 
 		const bluePostSchedule = lambdaEnv.postSchedule;
-		bluePostSchedule.minute = "" + (Number(bluePostSchedule.minute) + 2); // offset to support AWN bandwidth
+		bluePostSchedule.minute = `${Number(bluePostSchedule.minute) + 2}`; // offset to support AWN bandwidth
 		const blueEventRule = new Events.Rule(
 			this,
 			"DailyYardSummaryScheduleRuleBluesky",
@@ -124,15 +124,15 @@ export class IacStack extends cdk.Stack {
 					HAIKU_SERIAL_NUMBER: haikubox.serialNumber,
 
 					BIRDWEATHER_BASE_URL: birdWeather.apiBaseUrl,
-					BIRDWEATHER_STATION_ID: "" + birdWeather.stationId,
+					BIRDWEATHER_STATION_ID: `${birdWeather.stationId}`,
 
 					AWN_BASE_URL: ambientWeather.apiBaseUrl,
 					AWN_API_KEY: ambientWeather.apiKey,
 					AWN_APPLICATION_KEY: ambientWeather.applicationKey,
 					AWN_DEVICE_MAC: ambientWeather.deviceMac,
 
-					SITE_LATITUDE: "" + location.latitude,
-					SITE_LONGITUDE: "" + location.longitude,
+					SITE_LATITUDE: `${location.latitude}`,
+					SITE_LONGITUDE: `${location.longitude}`,
 				},
 			},
 		);

@@ -78,7 +78,7 @@ async function buildWeatherSummaryForDay(
 		.plus({ day: 1 })
 		.setZone("US/Eastern")
 		.startOf("day");
-	const midnightMs = startOfNextDay.toUnixInteger() + "000";
+	const midnightMs = `${startOfNextDay.toUnixInteger()}000`;
 
 	const daylightMinutes = sunsetLuxon.diff(sunriseLuxon).as("minutes");
 	// const intervals = Math.ceil(daylightMinutes / 5);
@@ -114,14 +114,14 @@ async function buildWeatherSummaryForDay(
   Sunrise - sunset (${daylightHours} hours):
   Temp ${daylightSummary.minTemp}ºF - ${daylightSummary.maxTemp}ºF
   Approx rainfall: ${daylightSummary.estPeriodRain} inch${
-		daylightSummary.estPeriodRain == 1 ? "" : "es"
+		daylightSummary.estPeriodRain === 1 ? "" : "es"
 	}
   Max wind: ${daylightSummary.peakGust} mph
   ${daylightSummary.lightningCount ? `Lightning: ${daylightSummary.lightningCount} strikes\n` : ""}
   24 hours ${lunarIcon}:
   Temp ${wholeDaySummary.minTemp}ºF - ${wholeDaySummary.maxTemp}ºF
   Approx rainfall: ${wholeDaySummary.estPeriodRain} inch${
-		wholeDaySummary.estPeriodRain == 1 ? "" : "es"
+		wholeDaySummary.estPeriodRain === 1 ? "" : "es"
 	}
   Max wind: ${wholeDaySummary.peakGust} mph
   ${wholeDaySummary.lightningCount ? `Lightning: ${daylightSummary.lightningCount} strikes` : ""}

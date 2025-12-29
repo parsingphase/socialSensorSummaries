@@ -7,8 +7,8 @@ import {
 	buildBirdPostForMastodon,
 	postToMastodon,
 } from "./core/haiku2masto";
-import { drawChartFromDailySongData, Offsets } from "./lib/charts/barChart";
-import { BirdRecord, fetchDailyCount } from "./lib/haiku";
+
+import { fetchDailyCount } from "./lib/haiku";
 import type { MastoClient } from "./lib/masto/types";
 import { seenBirds } from "./lib/sightings";
 import {
@@ -24,7 +24,7 @@ import {
 function assertedEnvVar(key: string): string {
 	const token = process.env[key];
 	if (!token) {
-		throw new Error("Must set " + key);
+		throw new Error(`Must set ${key}`);
 	}
 	return token;
 }

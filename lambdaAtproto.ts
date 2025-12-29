@@ -33,7 +33,7 @@ import {
 function assertedEnvVar(key: string): string {
 	const token = process.env[key];
 	if (!token) {
-		throw new Error("Must set " + key);
+		throw new Error(`Must set ${key}`);
 	}
 	return token;
 }
@@ -83,7 +83,9 @@ function buildBarChartForPost(
 		const alt = ["Bar chart of the above data:", ""];
 
 		for (const bird of dayData) {
-			alt.push(`${bird.bird}: ${bird.count} call${bird.count == 1 ? "" : "s"}`);
+			alt.push(
+				`${bird.bird}: ${bird.count} call${bird.count === 1 ? "" : "s"}`,
+			);
 		}
 		images = [
 			{
@@ -136,7 +138,7 @@ async function postStatusFromBirdList(
 	);
 	logger.info(
 		{ birds, postString, length: postString.length, source },
-		source + " Chart",
+		`${source} Chart`,
 	);
 	const images = buildBarChartForPost(
 		birds,

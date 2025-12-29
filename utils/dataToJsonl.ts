@@ -1,5 +1,5 @@
 #!/usr/bin/env npx tsx
-import fs from "fs";
+import fs from "node:fs";
 
 type DayRecord = { date: string } & Record<string, number>;
 
@@ -39,6 +39,7 @@ function main(): void {
 	const dataDir = `${__dirname}/../rawHaikuData`;
 	const allDays = loadDayRecordsFromDataDir(dataDir);
 
+	// biome-ignore lint/suspicious/useIterableCallbackReturn: FIXME cleanup
 	allDays.forEach((d) => console.log(JSON.stringify(d)));
 }
 

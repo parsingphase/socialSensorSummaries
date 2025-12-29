@@ -236,7 +236,7 @@ class LineChart extends ChartImageBuilder {
 		let label = 0;
 		do {
 			const labelYPos = (label / this.maxValue) * this.graphHeight;
-			const labelString = label.toString() + " -";
+			const labelString = `${label.toString()} -`;
 			const labelWidth = ctx.measureText(labelString).width;
 			ctx.fillText(
 				labelString,
@@ -246,35 +246,6 @@ class LineChart extends ChartImageBuilder {
 			step++;
 			label = step * stepSize;
 		} while (label <= this.maxValue);
-	}
-
-	/**
-	 * Draw x-axis labels
-	 * @param numColumLabels
-	 * @param lineChartPoints
-	 * @param ctx
-	 * @private
-	 */
-	private drawColumnLabels(
-		numColumLabels: number,
-		lineChartPoints: LineChartPoint[],
-		ctx: CanvasRenderingContext2D,
-	): void {
-		for (let numerator = 0; numerator <= numColumLabels; numerator++) {
-			// LHS date label
-			const labelColumn = Math.floor(
-				(numerator * (lineChartPoints.length - 1)) / numColumLabels,
-			);
-			const selectPoint = lineChartPoints[labelColumn];
-			ctx.translate(
-				this.graphOffset.x + (selectPoint.xIndex / 366) * this.graphWidth,
-				this.graphOffset.y + this.graphHeight + 10,
-			);
-			ctx.rotate(Math.PI / 2);
-			ctx.fillStyle = this.textColor;
-			ctx.fillText(selectPoint.date, 0, 0);
-			ctx.setTransform(new DOMMatrix([1, 0, 0, 1, 0, 0]));
-		}
 	}
 
 	protected plotPoints(
@@ -300,13 +271,13 @@ class LineChart extends ChartImageBuilder {
 				const datum = lineChartPoints[i];
 				const count = datum.count;
 				if (count !== null) {
-					const drewLastPoint = lastDrawnXIndex == datum.xIndex - 1;
+					const drewLastPoint = lastDrawnXIndex === datum.xIndex - 1;
 					const nextPoint = this.graphPointToCanvasXY(datum.xIndex, count);
 					// special case to make sure the first point gets on the chart, even if it's the only one
-					if (i == 0 && lineChartPoints.length == 1) {
+					if (i === 0 && lineChartPoints.length === 1) {
 						ctx.lineTo(nextPoint.x + 1, nextPoint.y);
 					}
-					if (drewLastPoint || i == 0) {
+					if (drewLastPoint || i === 0) {
 						ctx.lineTo(nextPoint.x, nextPoint.y);
 					} else {
 						ctx.moveTo(nextPoint.x, nextPoint.y);
@@ -465,13 +436,14 @@ function main(): void {
 
 	// we want an ordered list of [ { bird: SPECIES, date: YYYY-MM-DD, count: number }]
 	for (const species of drawSpecies) {
-		const speciesCount = aggregate.find((a) => a.bird == species)?.count || 0;
+		const speciesCount = aggregate.find((a) => a.bird === species)?.count || 0;
 		if (speciesCount >= 1) {
 			const outFile = outPathForSpecies(species, speciesCount);
 			drawSpeciesGraph(allData, species, outFile);
 		}
 	}
 	let countAll = 0;
+	// biome-ignore lint/suspicious: FIXME cleanup
 	aggregate.forEach((a) => (countAll += a.count));
 	drawSpeciesGraph(allData, null, outPathForSpecies("All species", countAll));
 }

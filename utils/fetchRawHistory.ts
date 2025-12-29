@@ -1,6 +1,6 @@
 #!/usr/bin/env npx tsx -r tsconfig-paths/register
 
-import * as fs from "fs";
+import * as fs from "node:fs";
 import { DateTime } from "luxon";
 import { config } from "../config/config";
 import { fetchDailyCount } from "../lib/haiku";
@@ -26,7 +26,7 @@ async function main(): Promise<void> {
 	do {
 		const when = day.toFormat("yyyy-MM-dd");
 		console.log(when);
-		const file = outDir + `/${when}.json`;
+		const file = `${outDir}/${when}.json`;
 		if (!fs.existsSync(file)) {
 			const dayData = await fetchDailyCount(haikuBaseUrl, serialNumber, when);
 			fs.writeFileSync(file, JSON.stringify(dayData, null, 2));

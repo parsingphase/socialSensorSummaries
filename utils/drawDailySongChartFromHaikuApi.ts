@@ -1,6 +1,6 @@
 #!/usr/bin/env npx tsx
 
-import fs from "fs";
+import fs from "node:fs";
 import { config } from "../config/config";
 import {
 	drawChartFromDailySongData,
@@ -37,6 +37,7 @@ async function main(): Promise<void> {
 		height,
 		offsets,
 	);
+	// biome-ignore lint/style/useTemplate: FIXME use proper Path manip
 	const outPath = __dirname + `/../tmp/${dateString}-haikubox.png`;
 	fs.writeFileSync(outPath, fileData);
 	console.log(`Wrote PNG to ${outPath}`);

@@ -57,7 +57,9 @@ function buildHashtagFacets(
 	const hashtags = [...postText.matchAll(/#\w+/g)].map((h) => {
 		return {
 			index: {
+				// biome-ignore lint/style/noNonNullAssertion: FIXME cleanup
 				byteStart: bytesBeforeUtf8Offset(postText, h.index!),
+				// biome-ignore lint/style/noNonNullAssertion: FIXME cleanup
 				byteEnd: bytesBeforeUtf8Offset(postText, h.index! + h[0].length),
 			},
 			features: [

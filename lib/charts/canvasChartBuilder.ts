@@ -1,9 +1,9 @@
+import fs from "node:fs";
 import {
 	type Canvas,
 	type CanvasRenderingContext2D,
 	createCanvas,
 } from "canvas";
-import fs from "fs";
 
 type Margins = { top: number; left: number; bottom: number; right: number };
 

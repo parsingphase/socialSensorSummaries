@@ -120,7 +120,7 @@ class BarChart extends ChartImageBuilder {
 
 			// number
 			ctx.fillText(
-				"" + songCount,
+				`${songCount}`,
 				barLeft + padding,
 				barTop + this.labelFontSize / baselineCoefficient + barHeight / 2,
 			);
@@ -135,7 +135,7 @@ class BarChart extends ChartImageBuilder {
 		let step = 0;
 		let label = 0;
 		do {
-			const labelString = "" + label;
+			const labelString = `${label}`;
 			const labelWidth = ctx.measureText(labelString).width;
 			const markerPositionX =
 				this.graphOffset.x +

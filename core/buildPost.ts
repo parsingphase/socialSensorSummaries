@@ -58,6 +58,7 @@ function buildTopBirdsPost(
 	birds
 		.filter((b) => b.count >= minObservationCount)
 		.slice(0, maxBirds)
+		// biome-ignore lint/suspicious: FIXME cleanup (map, don't push)
 		.forEach(({ bird }, index) => candidateLines.push(buildLine(index, bird)));
 
 	if (unverifiedBirds > 0 && caveatText) {

@@ -1,6 +1,6 @@
 #!/usr/bin/env npx tsx
 
-import fs from "fs";
+import fs from "node:fs";
 import { config } from "../config/config";
 import { fetchDailyCount } from "../lib/birdWeather";
 import {
@@ -43,6 +43,7 @@ async function main(): Promise<void> {
 		"from BirdWeather PUC",
 	);
 	const outPath =
+		// biome-ignore lint/style/useTemplate: FIXME use proper Path manip
 		__dirname + `/../tmp/${dateString}-birdweather-${minConfidence}.png`;
 	fs.writeFileSync(outPath, fileData);
 

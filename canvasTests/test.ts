@@ -1,7 +1,7 @@
 #!/usr/bin/env npx ts-node --esm -r tsconfig-paths/register
 
+import * as fs from "node:fs";
 import { createCanvas } from "canvas";
-import * as fs from "fs";
 
 const canvas = createCanvas(200, 200);
 const ctx = canvas.getContext("2d");
@@ -24,4 +24,4 @@ ctx.lineTo(50 + text.width, 102);
 ctx.stroke();
 
 const fileData = canvas.toBuffer("image/png");
-fs.writeFileSync(__dirname + "/../tmp/test.png", fileData);
+fs.writeFileSync(`${__dirname}/../tmp/test.png`, fileData);

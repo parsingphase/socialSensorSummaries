@@ -105,7 +105,7 @@ async function buildAndUploadDailySongChart(
 	const alt = ["Bar chart of the above data:", ""];
 
 	for (const bird of dayData) {
-		alt.push(`${bird.bird}: ${bird.count} call${bird.count == 1 ? "" : "s"}`);
+		alt.push(`${bird.bird}: ${bird.count} call${bird.count === 1 ? "" : "s"}`);
 	}
 	// images = [{ data: imageBuffer, alt: alt.join("\n"), width, height, mimetype: "image/png" }];
 	logger.info("Image created");

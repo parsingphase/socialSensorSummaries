@@ -29,6 +29,7 @@ async function main(): Promise<void> {
 	const postString = buildBirdPostForBluesky(
 		birds || [],
 		seenBirds,
+		"",
 		listLength,
 	);
 	const logger = pino({});

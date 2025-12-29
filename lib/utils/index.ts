@@ -8,7 +8,10 @@ function objectToQueryString(obj: {
 }): string {
 	return Object.keys(obj)
 		.filter((key) => typeof obj[key] !== "undefined")
-		.map((key) => `${encodeURIComponent(key)}=${encodeURIComponent(obj[key]!)}`)
+		.map(
+			// biome-ignore lint/style/noNonNullAssertion: FIXME cleanup
+			(key) => `${encodeURIComponent(key)}=${encodeURIComponent(obj[key]!)}`,
+		)
 		.join("&");
 }
 

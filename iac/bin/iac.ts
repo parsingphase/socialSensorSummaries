@@ -12,7 +12,7 @@ if (deployEnv !== "dev" && deployEnv !== "prod") {
 	throw new Error("DEPLOY_ENV must be one of prod,dev");
 }
 
-const stackId = "DailyYardSummary" + ucFirst(deployEnv);
+const stackId = `DailyYardSummary${ucFirst(deployEnv)}`;
 console.log(`Deploy to ${stackId}`);
 
 const app = new cdk.App();
