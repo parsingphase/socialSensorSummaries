@@ -1,8 +1,16 @@
+import type pino from "pino";
+import {
+	drawChartFromDailySongData,
+	type Offsets,
+} from "../lib/charts/barChart";
+import type { BirdRecord } from "../lib/haiku";
+import type {
+	CreateStatusParams,
+	MastoClient,
+	Status,
+	StatusVisibility,
+} from "../lib/masto/types";
 import { buildTopBirdsPost } from "./buildPost";
-import { CreateStatusParams, MastoClient, Status, StatusVisibility } from "../lib/masto/types";
-import { BirdRecord } from "../lib/haiku";
-import pino from "pino";
-import { drawChartFromDailySongData, Offsets } from "../lib/charts/barChart";
 
 /**
  * Build daily summary string
@@ -14,23 +22,23 @@ import { drawChartFromDailySongData, Offsets } from "../lib/charts/barChart";
  * @param maxPostLength
  */
 function buildBirdPostForMastodon(
-  birds: { bird: string; count: number }[],
-  confirmedObservations?: string[],
-  maxBirds = 20,
-  minObservationCount = 10,
-  maxPostLength = 500
+	birds: { bird: string; count: number }[],
+	confirmedObservations?: string[],
+	maxBirds = 20,
+	minObservationCount = 10,
+	maxPostLength = 500,
 ): string {
-  const caveatUrl = "https://m.phase.org/@parsingphase/111711558681612429";
-  const caveatText = `\n\n ^ caveat: ${caveatUrl}`;
+	const caveatUrl = "https://m.phase.org/@parsingphase/111711558681612429";
+	const caveatText = `\n\n ^ caveat: ${caveatUrl}`;
 
-  return buildTopBirdsPost(
-    birds,
-    maxBirds,
-    maxPostLength,
-    minObservationCount,
-    confirmedObservations,
-    caveatText
-  );
+	return buildTopBirdsPost(
+		birds,
+		maxBirds,
+		maxPostLength,
+		minObservationCount,
+		confirmedObservations,
+		caveatText,
+	);
 }
 
 /**
@@ -44,24 +52,24 @@ function buildBirdPostForMastodon(
  * @param mediaIds
  */
 async function postToMastodon(
-  masto: MastoClient,
-  postString: string,
-  postVisibility: string,
-  inReplyToId?: string,
-  mediaIds: string[] = []
+	masto: MastoClient,
+	postString: string,
+	postVisibility: string,
+	inReplyToId?: string,
+	mediaIds: string[] = [],
 ): Promise<Status> {
-  console.log(`Logged in…`);
+	console.log(`Logged in…`);
 
-  const statusParams: CreateStatusParams = {
-    status: postString,
-    visibility: postVisibility as StatusVisibility,
-    ...(inReplyToId ? { inReplyToId } : {}),
-    ...(mediaIds ? { mediaIds } : {}),
-  };
+	const statusParams: CreateStatusParams = {
+		status: postString,
+		visibility: postVisibility as StatusVisibility,
+		...(inReplyToId ? { inReplyToId } : {}),
+		...(mediaIds ? { mediaIds } : {}),
+	};
 
-  console.log({ statusParams });
+	console.log({ statusParams });
 
-  return masto.v1.statuses.create(statusParams);
+	return masto.v1.statuses.create(statusParams);
 }
 
 /**
@@ -72,34 +80,44 @@ async function postToMastodon(
  * @param logger
  */
 async function buildAndUploadDailySongChart(
-  mastoClient: MastoClient,
-  whenString: string,
-  dayData: BirdRecord[],
-  logger: pino.Logger
+	mastoClient: MastoClient,
+	whenString: string,
+	dayData: BirdRecord[],
+	logger: pino.Logger,
 ): Promise<string> {
-  const width = 1200;
-  const height = 1200;
+	const width = 1200;
+	const height = 1200;
 
-  const offsets: Offsets = {
-    top: Math.round(height / 10),
-    left: Math.round(width / 4),
-    bottom: Math.round(height / 12.5),
-    right: Math.round(width / 25),
-  };
+	const offsets: Offsets = {
+		top: Math.round(height / 10),
+		left: Math.round(width / 4),
+		bottom: Math.round(height / 12.5),
+		right: Math.round(width / 25),
+	};
 
-  const imageBuffer = drawChartFromDailySongData(dayData, whenString, width, height, offsets);
-  const alt = ["Bar chart of the above data:", ""];
+	const imageBuffer = drawChartFromDailySongData(
+		dayData,
+		whenString,
+		width,
+		height,
+		offsets,
+	);
+	const alt = ["Bar chart of the above data:", ""];
 
-  for (const bird of dayData) {
-    alt.push(`${bird.bird}: ${bird.count} call${bird.count == 1 ? "" : "s"}`);
-  }
-  // images = [{ data: imageBuffer, alt: alt.join("\n"), width, height, mimetype: "image/png" }];
-  logger.info("Image created");
-  const attachment = await mastoClient.v2.media.create({
-    file: new Blob([imageBuffer]),
-    description: alt.join("\n"),
-  });
-  return attachment.id;
+	for (const bird of dayData) {
+		alt.push(`${bird.bird}: ${bird.count} call${bird.count == 1 ? "" : "s"}`);
+	}
+	// images = [{ data: imageBuffer, alt: alt.join("\n"), width, height, mimetype: "image/png" }];
+	logger.info("Image created");
+	const attachment = await mastoClient.v2.media.create({
+		file: new Blob([imageBuffer]),
+		description: alt.join("\n"),
+	});
+	return attachment.id;
 }
 
-export { buildAndUploadDailySongChart, buildBirdPostForMastodon, postToMastodon };
+export {
+	buildAndUploadDailySongChart,
+	buildBirdPostForMastodon,
+	postToMastodon,
+};

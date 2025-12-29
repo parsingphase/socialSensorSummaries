@@ -1,9 +1,10 @@
-import * as AppBskyRichtextFacet from "@atproto/api/src/client/types/app/bsky/richtext/facet";
-import { Logger } from "pino";
 import { AtpAgent } from "@atproto/api";
-import { AppBskyFeedPost } from "@atproto/api/src/client";
+import type { AppBskyFeedPost } from "@atproto/api/src/client";
+import type * as AppBskyRichtextFacet from "@atproto/api/src/client/types/app/bsky/richtext/facet";
+import type { Logger } from "pino";
 
-type Postable = Partial<AppBskyFeedPost.Record> & Omit<AppBskyFeedPost.Record, "createdAt">;
+type Postable = Partial<AppBskyFeedPost.Record> &
+	Omit<AppBskyFeedPost.Record, "createdAt">;
 
 type StrongPostRef = { uri: string; cid: string };
 
@@ -13,9 +14,9 @@ type StrongPostRef = { uri: string; cid: string };
  * @param offset
  */
 function bytesBeforeUtf8Offset(text: string, offset: number): number {
-  const substring = text.substring(0, offset);
-  const bytes = Buffer.from(substring);
-  return bytes.length;
+	const substring = text.substring(0, offset);
+	const bytes = Buffer.from(substring);
+	return bytes.length;
 }
 
 /**
@@ -26,22 +27,22 @@ function bytesBeforeUtf8Offset(text: string, offset: number): number {
  * @param logger
  */
 async function getAtprotoAgent(
-  serverBaseUrl: string,
-  username: string,
-  password: string,
-  logger?: Logger
+	serverBaseUrl: string,
+	username: string,
+	password: string,
+	logger?: Logger,
 ): Promise<AtpAgent> {
-  logger?.info(`Logging in…`);
-  const agent = new AtpAgent({
-    service: serverBaseUrl,
-  });
-  await agent.login({
-    identifier: username,
-    password: password,
-  });
+	logger?.info(`Logging in…`);
+	const agent = new AtpAgent({
+		service: serverBaseUrl,
+	});
+	await agent.login({
+		identifier: username,
+		password: password,
+	});
 
-  logger?.info(`Logged in…`);
-  return agent;
+	logger?.info(`Logged in…`);
+	return agent;
 }
 
 /**
@@ -49,29 +50,32 @@ async function getAtprotoAgent(
  * @param postText
  * @param logger
  */
-function buildHashtagFacets(postText: string, logger?: Logger): AppBskyRichtextFacet.Main[] {
-  const hashtags = [...postText.matchAll(/#\w+/g)].map((h) => {
-    return {
-      index: {
-        byteStart: bytesBeforeUtf8Offset(postText, h.index!),
-        byteEnd: bytesBeforeUtf8Offset(postText, h.index! + h[0].length),
-      },
-      features: [
-        {
-          tag: h[0].substring(1),
-          $type: "app.bsky.richtext.facet#tag",
-        },
-      ],
-    };
-  });
+function buildHashtagFacets(
+	postText: string,
+	logger?: Logger,
+): AppBskyRichtextFacet.Main[] {
+	const hashtags = [...postText.matchAll(/#\w+/g)].map((h) => {
+		return {
+			index: {
+				byteStart: bytesBeforeUtf8Offset(postText, h.index!),
+				byteEnd: bytesBeforeUtf8Offset(postText, h.index! + h[0].length),
+			},
+			features: [
+				{
+					tag: h[0].substring(1),
+					$type: "app.bsky.richtext.facet#tag",
+				},
+			],
+		};
+	});
 
-  logger?.debug({ hashtags });
-  return hashtags;
+	logger?.debug({ hashtags });
+	return hashtags;
 }
 
 type Link = {
-  text: string;
-  uri: string;
+	text: string;
+	uri: string;
 };
 
 /**
@@ -81,42 +85,42 @@ type Link = {
  * @param logger
  */
 function buildLinkFacets(
-  postText: string,
-  matches: Link[],
-  logger?: Logger
+	postText: string,
+	matches: Link[],
+	logger?: Logger,
 ): AppBskyRichtextFacet.Main[] {
-  const facets: AppBskyRichtextFacet.Main[] = [];
-  for (const h of matches) {
-    const { text, uri } = h;
-    const index = postText.indexOf(text);
-    const length = postText.length;
+	const facets: AppBskyRichtextFacet.Main[] = [];
+	for (const h of matches) {
+		const { text, uri } = h;
+		const index = postText.indexOf(text);
+		const length = postText.length;
 
-    if (index) {
-      facets.push({
-        index: {
-          byteStart: bytesBeforeUtf8Offset(postText, index),
-          byteEnd: bytesBeforeUtf8Offset(postText, index + length),
-        },
-        features: [
-          {
-            uri: uri,
-            $type: "app.bsky.richtext.facet#link",
-          },
-        ],
-      });
-    }
-  }
+		if (index) {
+			facets.push({
+				index: {
+					byteStart: bytesBeforeUtf8Offset(postText, index),
+					byteEnd: bytesBeforeUtf8Offset(postText, index + length),
+				},
+				features: [
+					{
+						uri: uri,
+						$type: "app.bsky.richtext.facet#link",
+					},
+				],
+			});
+		}
+	}
 
-  logger?.debug({ facets });
-  return facets;
+	logger?.debug({ facets });
+	return facets;
 }
 
 type ImageSpecFromBuffer = {
-  data: Buffer;
-  alt: string;
-  mimetype: string;
-  width: number;
-  height: number;
+	data: Buffer;
+	alt: string;
+	mimetype: string;
+	width: number;
+	height: number;
 };
 
 /**
@@ -130,66 +134,66 @@ type ImageSpecFromBuffer = {
  * @param images
  */
 async function postToAtproto(
-  agent: AtpAgent,
-  text: string,
-  replyRef?: StrongPostRef,
-  linkSpecs: Link[] = [],
-  images: ImageSpecFromBuffer[] = [],
-  logger?: Logger
+	agent: AtpAgent,
+	text: string,
+	replyRef?: StrongPostRef,
+	linkSpecs: Link[] = [],
+	images: ImageSpecFromBuffer[] = [],
+	logger?: Logger,
 ): Promise<StrongPostRef> {
-  // Publish!
-  const hashtags = buildHashtagFacets(text);
-  let fullReplyReference = {};
-  if (replyRef) {
-    fullReplyReference = {
-      reply: {
-        root: replyRef,
-        parent: replyRef,
-      },
-    };
-  }
+	// Publish!
+	const hashtags = buildHashtagFacets(text);
+	let fullReplyReference = {};
+	if (replyRef) {
+		fullReplyReference = {
+			reply: {
+				root: replyRef,
+				parent: replyRef,
+			},
+		};
+	}
 
-  const linkFacets = buildLinkFacets(text, linkSpecs, logger);
+	const linkFacets = buildLinkFacets(text, linkSpecs, logger);
 
-  const statusParams: Postable = {
-    text: text,
-    createdAt: new Date().toISOString(),
-    facets: [...hashtags, ...linkFacets],
-    ...fullReplyReference,
-  };
+	const statusParams: Postable = {
+		text: text,
+		createdAt: new Date().toISOString(),
+		facets: [...hashtags, ...linkFacets],
+		...fullReplyReference,
+	};
 
-  if (images && images.length > 0) {
-    const imageEmbeds = [];
-    for (const image of images) {
-      const { alt, mimetype, data, height, width } = image;
+	if (images && images.length > 0) {
+		const imageEmbeds = [];
+		for (const image of images) {
+			const { alt, mimetype, data, height, width } = image;
 
-      // Upload the image
-      const attachment = await agent.uploadBlob(new Blob([data]), {
-        headers: {
-          "Content-Type": mimetype,
-        },
-      });
-      imageEmbeds.push({
-        image: attachment.data.blob,
-        alt,
-        aspectRatio: {
-          width,
-          height,
-        },
-      });
-      logger?.info(`Posted media…`);
-    }
-    // return imageEmbed;
-    statusParams.embed = {
-      $type: "app.bsky.embed.images",
-      images: imageEmbeds,
-    };
-  }
+			// Upload the image
+			const attachment = await agent.uploadBlob(new Blob([data]), {
+				headers: {
+					"Content-Type": mimetype,
+				},
+			});
+			imageEmbeds.push({
+				image: attachment.data.blob,
+				alt,
+				aspectRatio: {
+					width,
+					height,
+				},
+			});
+			logger?.info(`Posted media…`);
+		}
+		// return imageEmbed;
+		statusParams.embed = {
+			$type: "app.bsky.embed.images",
+			images: imageEmbeds,
+		};
+	}
 
-  const status = await agent.post(statusParams);
+	const status = await agent.post(statusParams);
 
-  logger?.info({ status }, `Posted to ${status.uri}`);
-  return status;
+	logger?.info({ status }, `Posted to ${status.uri}`);
+	return status;
 }
 
 export { buildHashtagFacets, buildLinkFacets, getAtprotoAgent, postToAtproto };

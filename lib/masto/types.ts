@@ -1,4 +1,4 @@
-import { mastodon } from "masto";
+import type { mastodon } from "masto";
 
 type MastoClient = mastodon.rest.Client;
 type Status = mastodon.v1.Status;
