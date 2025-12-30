@@ -1,12 +1,13 @@
 #!/usr/bin/env tsx
 
 import fs from "node:fs";
+import { Command } from "@commander-js/extra-typings";
 import { DateTime } from "luxon";
 import { config } from "../config/config";
 import type { BucketSpeciesObservationsQuery } from "../lib/birdWeather/codegen/graphql";
-import { fetchStationInfo } from "../lib/birdWeather/fetch";
+import { fetchSpeciesInfo, fetchStationInfo } from "../lib/birdWeather/fetch";
 import type { Margins } from "../lib/charts/canvasChartBuilder";
-import { HeatmapChart } from "../lib/charts/heatMapChart";
+import { HeatmapChart, type LatLon } from "../lib/charts/heatMapChart";
 import { PROJECT_DIR } from "../lib/utils";
 import { getSpeciesBucketCacheDirForSpeciesStationDuration } from "./shared";
 
@@ -33,6 +34,12 @@ function loadSpeciesBucketCache(
 			stationId,
 			minutes,
 		);
+
+	if (!fs.existsSync(consistentFilesetRootDir)) {
+		throw new Error(
+			"No cached data available. Run fetchBucketHistory.ts first",
+		);
+	}
 
 	const allFiles = fs.readdirSync(consistentFilesetRootDir);
 
@@ -69,10 +76,7 @@ function hydrateSpeciesBucketCacheDates(
 function buildObservationHeatmap(
 	speciesName: string,
 	observations: CachedBucketPeriodWithDateTime[],
-	location: {
-		lat: number;
-		lon: number;
-	},
+	location?: LatLon,
 ): Buffer {
 	const width = 1000;
 	const height = 800;
@@ -102,30 +106,69 @@ function buildObservationHeatmap(
 	return chart.canvasAsPng();
 }
 
+async function getOpts() {
+	const program = new Command()
+		.requiredOption("--stationId <number>", "Required, stationId to chart")
+		.requiredOption("--speciesId <number>", "Required, speciesId to chart")
+		.option(
+			"--speciesName <number>",
+			"Optional, looked up if from speciesId if missing",
+		)
+		.option(
+			"--location <lat,lng>",
+			"Optional, looked up if from stationId if missing",
+		)
+		.description("Data must be pre-cached with fetchBucketHistory.ts");
+
+	program.parse();
+
+	const options = program.opts(); // smart type
+	const {
+		stationId: stationIdString,
+		speciesId: speciesIdString,
+		location: stringLocation,
+	} = options;
+	const stationId = Number(stationIdString);
+	const speciesId = Number(speciesIdString);
+
+	const apiUrl = config.birdWeather.apiBaseUrl;
+	let { speciesName } = options;
+	let location: LatLon | null;
+	if (stringLocation) {
+		const [lat, lon] = stringLocation
+			.split(/\s*,\s*/)
+			.map((x) => parseFloat(x));
+		location = { lat, lon };
+	} else {
+		const stationInfo = await fetchStationInfo(apiUrl, stationId);
+		location = stationInfo.station.coords ?? null;
+	}
+
+	if (!speciesName) {
+		const speciesInfo = await fetchSpeciesInfo(apiUrl, speciesId);
+		speciesName = speciesInfo.species?.commonName;
+	}
+	return { stationId, speciesId, speciesName, location };
+}
+
 async function main(): Promise<void> {
-	// const speciesId = 408; //AMGO
-	// const speciesId = 316; //junco
-	const speciesId = 24; //DOWO
-	const speciesName = "Downy Woodpecker";
-	const stationId = 11214; //nearby with decent history
+	const { stationId, speciesId, speciesName, location } = await getOpts();
 	const minutes = 5;
-
-	const location = { lat: 42.48, lon: -71.15 }; // very approx for now
-	// API currently down - use fixed location for now
-	// const stationInfo = await fetchStationInfo(config.birdWeather.apiBaseUrl, stationId);
-	// const location = stationInfo.station.coords;
-	void fetchStationInfo;
-	void config;
-
 	const allData = loadSpeciesBucketCache(speciesId, stationId, minutes);
 
 	const targetTimeZone = "America/New_York";
 	const withDates = hydrateSpeciesBucketCacheDates(allData, targetTimeZone);
-	const fileData = buildObservationHeatmap(speciesName, withDates, location);
+	const fileData = buildObservationHeatmap(
+		speciesName ?? "",
+		withDates,
+		location || undefined,
+	);
 
 	const outpath = `${PROJECT_DIR}/tmp/yearHeatMap-station${stationId}-species${speciesId}.png`;
 	console.log({ outpath });
 	fs.writeFileSync(outpath, fileData);
 }
 
-main().finally(() => console.log("DONE"));
+main()
+	.catch((e) => console.error(e.message ?? e))
+	.finally(() => console.log("DONE"));

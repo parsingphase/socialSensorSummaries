@@ -85,9 +85,22 @@ const stationInfoQuery = gql`
 	}
 `;
 
+const speciesInfoByIdQuery = gql`
+	query SpeciesInfoById($speciesId: ID!){
+		species(id: $speciesId) {
+			id
+			alpha
+			commonName
+			scientificName
+			classification 
+		}
+}
+`;
+
 export {
 	allDetectionsInPeriodQuery,
 	dailyDetectionsQuery,
 	bucketObservationsQuery,
+	speciesInfoByIdQuery,
 	stationInfoQuery,
 };

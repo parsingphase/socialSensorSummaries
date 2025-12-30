@@ -289,4 +289,4 @@ function getSunriseSunsetForDateTime(
 	return { sunrise, sunset };
 }
 
-export { HeatmapChart };
+export { HeatmapChart, type LatLon };

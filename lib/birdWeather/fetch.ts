@@ -7,10 +7,16 @@ import QueryResult = ApolloClient.QueryResult;
 import type {
 	AllDetectionsInPeriodQuery,
 	AllDetectionsInPeriodQueryVariables,
+	SpeciesInfoByIdQuery,
+	SpeciesInfoByIdQueryVariables,
 	StationInfoQuery,
 	StationInfoQueryVariables,
 } from "./codegen/graphql";
-import { allDetectionsInPeriodQuery, stationInfoQuery } from "./queries";
+import {
+	allDetectionsInPeriodQuery,
+	speciesInfoByIdQuery,
+	stationInfoQuery,
+} from "./queries";
 
 /**
  * Fetch birds for a given day, by analog with same-named function for Haikubox
@@ -100,4 +106,32 @@ async function fetchStationInfo(
 	return stationInfo.data;
 }
 
-export { fetchDailyCount, fetchStationInfo };
+/**
+ * Fetch various info about a species (see speciesInfoByIdQuery)
+ *
+ * @param apiUrl
+ * @param speciesId
+ */
+async function fetchSpeciesInfo(
+	apiUrl: string,
+	speciesId: number,
+): Promise<SpeciesInfoByIdQuery> {
+	const client = initBirdWeatherClient(apiUrl);
+	const speciesInfo = await client.query<
+		SpeciesInfoByIdQuery,
+		SpeciesInfoByIdQueryVariables
+	>({
+		query: speciesInfoByIdQuery,
+		variables: { speciesId: `${speciesId}` },
+	});
+
+	if (!speciesInfo.data) {
+		throw new Error(
+			speciesInfo?.error?.message ?? "Could not load species info",
+		);
+	}
+
+	return speciesInfo.data;
+}
+
+export { fetchDailyCount, fetchSpeciesInfo, fetchStationInfo };
