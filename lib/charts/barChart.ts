@@ -198,5 +198,5 @@ function drawChartFromDailySongData(
 	return chart.canvasAsPng();
 }
 
-export { drawChartFromDailySongData };
+export { drawChartFromDailySongData, BarChart };
 export type { Offsets };
