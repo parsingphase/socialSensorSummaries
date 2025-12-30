@@ -1,7 +1,7 @@
 #!/usr/bin/env tsx
 
 import fs from "node:fs";
-import { createCanvas } from "canvas";
+import { createCanvas, type ImageData } from "canvas";
 import { DateTime, Interval } from "luxon";
 import type { BucketSpeciesObservationsQuery } from "../lib/birdWeather/codegen/graphql";
 import { PROJECT_DIR } from "../lib/utils";
@@ -63,16 +63,32 @@ function hydrateSpeciesBucketCacheDates(
 	}));
 }
 
+function plotPixelFromBottomLeft(
+	myImageData: ImageData,
+	x: number,
+	y: number,
+	r: number,
+	g: number,
+	b: number,
+	a: number,
+) {
+	const pixelOffset = ((myImageData.height - y) * myImageData.width + x) * 4;
+
+	myImageData.data[pixelOffset] = r;
+	myImageData.data[pixelOffset + 1] = g;
+	myImageData.data[pixelOffset + 2] = b;
+	myImageData.data[pixelOffset + 3] = a;
+}
+
 async function main(): Promise<void> {
-	const speciesId = 316; //junco
+	// const speciesId = 408; //AMGO
+	// const speciesId = 316; //junco
+	const speciesId = 24; //DOWO
 	const stationId = 11214; //nearby with decent history
 	const minutes = 5;
 
 	const allData = loadSpeciesBucketCache(speciesId, stationId, minutes);
 
-	void allData;
-
-	// console.log(JSON.stringify(allData, undefined, 2));
 	const targetTimeZone = "America/New_York";
 	const withDates = hydrateSpeciesBucketCacheDates(allData, targetTimeZone);
 
@@ -82,12 +98,14 @@ async function main(): Promise<void> {
 		0,
 	);
 
-	console.log({ withDates, maxCount });
+	const scale = 2;
 
-	const width = 365;
-	const height = 24 * 12;
+	const width = 365 * scale;
+	const height = 24 * 12 * scale;
 	const myCanvas = createCanvas(width, height);
 	const ctx = myCanvas.getContext("2d");
+	ctx.fillStyle = "rgb(255,255,255)";
+	ctx.fillRect(0, 0, width, height);
 
 	const myImageData = ctx.getImageData(0, 0, width, height);
 
@@ -102,21 +120,35 @@ async function main(): Promise<void> {
 			period.timestamp.startOf("day"),
 			period.timestamp,
 		).length("minutes");
+		const tint = Math.floor((period.count / maxCount) * 255);
+		const a = 255;
+		const r = 255,
+			b = 255 - tint,
+			g = 255 - tint;
+
 		const dayBucket = minuteOfDay / 5;
-		// const pixelOffset = ((dayOfYear * height) + dayBucket) * 4;
-		const pixelOffset = ((height - dayBucket) * width + dayOfYear) * 4;
-
-		const opacity = (period.count / maxCount) * 255;
-		myImageData.data[pixelOffset] = 0;
-		myImageData.data[pixelOffset + 3] = Math.floor(opacity);
-
-		console.log({ dayOfYear, minuteOfDay, dayBucket, opacity });
+		for (let dx = 0; dx < scale; dx++) {
+			for (let dy = 0; dy < scale; dy++) {
+				plotPixelFromBottomLeft(
+					myImageData,
+					dayOfYear * scale + dx,
+					dayBucket * scale + dy,
+					r,
+					g,
+					b,
+					a,
+				);
+			}
+		}
 	}
 
 	ctx.putImageData(myImageData, 0, 0);
 
 	const fileData = myCanvas.toBuffer("image/png");
-	fs.writeFileSync(`${PROJECT_DIR}/tmp/yearHeatMap-${speciesId}.png`, fileData);
+	fs.writeFileSync(
+		`${PROJECT_DIR}/tmp/yearHeatMap-station${stationId}-species${speciesId}.png`,
+		fileData,
+	);
 }
 
 main().finally(() => console.log("DONE"));

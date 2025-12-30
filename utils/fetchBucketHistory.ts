@@ -22,7 +22,9 @@ async function main(): Promise<void> {
 	const startOfThisWeek = today.startOf("week");
 
 	const weeksToCollect = 52;
-	const speciesId = 316; //junco
+	// const speciesId = 316; //DEJU
+	// const speciesId = 408; //AMGO
+	const speciesId = 24; //DOWO
 	const stationId = 11214; //nearby with decent history
 
 	for (let i = 0; i < weeksToCollect; i++) {
