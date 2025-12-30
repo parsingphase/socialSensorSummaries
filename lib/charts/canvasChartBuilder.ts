@@ -5,7 +5,12 @@ import {
 	createCanvas,
 } from "canvas";
 
-type Margins = { top: number; left: number; bottom: number; right: number };
+export type Margins = {
+	top: number;
+	left: number;
+	bottom: number;
+	right: number;
+};
 
 export abstract class ChartImageBuilder {
 	protected canvasWidth: number;

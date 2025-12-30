@@ -11,7 +11,7 @@ type DatedCount = { bird: string; date: string; count: number | null };
  * Map a full date to the day of the year it would be in a leap year
  * @param date
  */
-function dateToLeapYearDayOfYear(date: DateTime): number {
+export function dateToLeapYearDayOfYear(date: DateTime): number {
 	// use 2024 as a standard leap year
 	const leapYearDate = DateTime.local(2024, date.month, date.day);
 	const startOfLeapYear = DateTime.local(2024, 1, 1);
@@ -109,6 +109,12 @@ class LineChart extends ChartImageBuilder {
 		);
 	}
 
+	/**
+	 * Split time-sequence data to multiple years
+	 *
+	 * @param speciesData
+	 * @private
+	 */
 	private mapDataToYears(speciesData: DatedCount[]): MultiYearData {
 		const dataByYear: MultiYearData = {};
 
