@@ -17,6 +17,51 @@ type CachedBucketPeriodWithDateTime = RawCachedBucketPeriod & {
 	timestamp: DateTime;
 };
 
+async function getOpts() {
+	const program = new Command()
+		.requiredOption("--stationId <number>", "Required, stationId to chart")
+		.requiredOption("--speciesId <number>", "Required, speciesId to chart")
+		.option(
+			"--speciesName <number>",
+			"Optional, looked up if from speciesId if missing",
+		)
+		.option(
+			"--location <lat,lng>",
+			"Optional, looked up if from stationId if missing",
+		)
+		.description("Data must be pre-cached with fetchBucketHistory.ts");
+
+	program.parse();
+
+	const options = program.opts(); // smart type
+	const {
+		stationId: stationIdString,
+		speciesId: speciesIdString,
+		location: stringLocation,
+	} = options;
+	const stationId = Number(stationIdString);
+	const speciesId = Number(speciesIdString);
+
+	const apiUrl = config.birdWeather.apiBaseUrl;
+	let { speciesName } = options;
+	let location: LatLon | null;
+	if (stringLocation) {
+		const [lat, lon] = stringLocation
+			.split(/\s*,\s*/)
+			.map((x) => parseFloat(x));
+		location = { lat, lon };
+	} else {
+		const stationInfo = await fetchStationInfo(apiUrl, stationId);
+		location = stationInfo.station.coords ?? null;
+	}
+
+	if (!speciesName) {
+		const speciesInfo = await fetchSpeciesInfo(apiUrl, speciesId);
+		speciesName = speciesInfo.species?.commonName;
+	}
+	return { stationId, speciesId, speciesName, location };
+}
+
 /**
  * Fetch all the data from a specific species/station cache set
  * @param speciesId
@@ -104,51 +149,6 @@ function buildObservationHeatmap(
 
 	chart.drawGraph();
 	return chart.canvasAsPng();
-}
-
-async function getOpts() {
-	const program = new Command()
-		.requiredOption("--stationId <number>", "Required, stationId to chart")
-		.requiredOption("--speciesId <number>", "Required, speciesId to chart")
-		.option(
-			"--speciesName <number>",
-			"Optional, looked up if from speciesId if missing",
-		)
-		.option(
-			"--location <lat,lng>",
-			"Optional, looked up if from stationId if missing",
-		)
-		.description("Data must be pre-cached with fetchBucketHistory.ts");
-
-	program.parse();
-
-	const options = program.opts(); // smart type
-	const {
-		stationId: stationIdString,
-		speciesId: speciesIdString,
-		location: stringLocation,
-	} = options;
-	const stationId = Number(stationIdString);
-	const speciesId = Number(speciesIdString);
-
-	const apiUrl = config.birdWeather.apiBaseUrl;
-	let { speciesName } = options;
-	let location: LatLon | null;
-	if (stringLocation) {
-		const [lat, lon] = stringLocation
-			.split(/\s*,\s*/)
-			.map((x) => parseFloat(x));
-		location = { lat, lon };
-	} else {
-		const stationInfo = await fetchStationInfo(apiUrl, stationId);
-		location = stationInfo.station.coords ?? null;
-	}
-
-	if (!speciesName) {
-		const speciesInfo = await fetchSpeciesInfo(apiUrl, speciesId);
-		speciesName = speciesInfo.species?.commonName;
-	}
-	return { stationId, speciesId, speciesName, location };
 }
 
 async function main(): Promise<void> {

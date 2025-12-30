@@ -1,6 +1,7 @@
 #!/usr/bin/env tsx
 
 import fs from "node:fs";
+import { Command } from "@commander-js/extra-typings";
 import { DateTime } from "luxon";
 import { initBirdWeatherClient } from "../lib/birdWeather/client";
 import type {
@@ -13,6 +14,27 @@ import {
 	getSpeciesBucketCacheRootDir,
 } from "./shared";
 
+function getOpts() {
+	const program = new Command()
+		.requiredOption("--stationId <number>", "Required, stationId to chart")
+		.requiredOption("--speciesId <number>", "Required, speciesId to chart")
+		.option("--weeks <number>", "Number of weeks of data to fetch", "52");
+
+	program.parse();
+
+	const options = program.opts(); // smart type
+	const {
+		stationId: stationIdString,
+		speciesId: speciesIdString,
+		weeks: weeksString,
+	} = options;
+	const stationId = Number(stationIdString);
+	const speciesId = Number(speciesIdString);
+	const weeks = Number(weeksString);
+
+	return { stationId, speciesId, weeks };
+}
+
 async function main(): Promise<void> {
 	const cacheRootDir = getSpeciesBucketCacheRootDir();
 	fs.mkdirSync(cacheRootDir, { recursive: true });
@@ -21,11 +43,7 @@ async function main(): Promise<void> {
 	const today = DateTime.now();
 	const startOfThisWeek = today.startOf("week");
 
-	const weeksToCollect = 52;
-	// const speciesId = 316; //DEJU
-	// const speciesId = 408; //AMGO
-	const speciesId = 24; //DOWO
-	const stationId = 11214; //nearby with decent history
+	const { speciesId, stationId, weeks: weeksToCollect } = getOpts();
 
 	for (let i = 0; i < weeksToCollect; i++) {
 		const startOfWindow = startOfThisWeek.minus({ week: i + 1 });
