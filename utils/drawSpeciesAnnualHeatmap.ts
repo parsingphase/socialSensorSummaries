@@ -3,6 +3,7 @@
 import fs from "node:fs";
 import { createCanvas, type ImageData } from "canvas";
 import { DateTime, Interval } from "luxon";
+import SunCalc from "suncalc";
 import type { BucketSpeciesObservationsQuery } from "../lib/birdWeather/codegen/graphql";
 import { PROJECT_DIR } from "../lib/utils";
 import { getSpeciesBucketCacheDirForSpeciesStationDuration } from "./shared";
@@ -80,12 +81,42 @@ function plotPixelFromBottomLeft(
 	myImageData.data[pixelOffset + 3] = a;
 }
 
+function dateTimeToBucket(timestamp: DateTime, scale = 1) {
+	const dayOfYear = Math.floor(
+		Interval.fromDateTimes(timestamp.startOf("year"), timestamp).length("days"),
+	);
+	const minuteOfDay = Interval.fromDateTimes(
+		timestamp.startOf("day"),
+		timestamp,
+	).length("minutes");
+
+	const dayBucket = Math.floor((scale * minuteOfDay) / 5) / scale;
+	return { dayOfYear, dayBucket };
+}
+
+function getSunriseSunsetForDateTime(
+	location: {
+		latitude: number;
+		longitude: number;
+	},
+	timestamp: DateTime,
+) {
+	const { latitude, longitude } = location;
+	const envTimes = SunCalc.getTimes(timestamp.toJSDate(), latitude, longitude);
+	const { sunrise: sunriseDT, sunset: sunsetDT } = envTimes;
+
+	const sunrise = DateTime.fromJSDate(sunriseDT);
+	const sunset = DateTime.fromJSDate(sunsetDT);
+	return { sunrise, sunset };
+}
+
 async function main(): Promise<void> {
 	// const speciesId = 408; //AMGO
 	// const speciesId = 316; //junco
 	const speciesId = 24; //DOWO
 	const stationId = 11214; //nearby with decent history
 	const minutes = 5;
+	const location = { latitude: 42.48, longitude: -71.15 }; // very approx for now
 
 	const allData = loadSpeciesBucketCache(speciesId, stationId, minutes);
 
@@ -110,23 +141,15 @@ async function main(): Promise<void> {
 	const myImageData = ctx.getImageData(0, 0, width, height);
 
 	for (const period of withDates) {
-		const dayOfYear = Math.floor(
-			Interval.fromDateTimes(
-				period.timestamp.startOf("year"),
-				period.timestamp,
-			).length("days"),
-		);
-		const minuteOfDay = Interval.fromDateTimes(
-			period.timestamp.startOf("day"),
-			period.timestamp,
-		).length("minutes");
+		const timestamp = period.timestamp;
+		const { dayOfYear, dayBucket } = dateTimeToBucket(timestamp);
+
 		const tint = Math.floor((period.count / maxCount) * 255);
 		const a = 255;
 		const r = 255,
 			b = 255 - tint,
 			g = 255 - tint;
 
-		const dayBucket = minuteOfDay / 5;
 		for (let dx = 0; dx < scale; dx++) {
 			for (let dy = 0; dy < scale; dy++) {
 				plotPixelFromBottomLeft(
@@ -142,13 +165,55 @@ async function main(): Promise<void> {
 		}
 	}
 
+	// now loop through days in range:
+
+	const firstDateTime = withDates[0].timestamp;
+	const lastDateTime = withDates[withDates.length - 1].timestamp;
+
+	let timestamp = firstDateTime;
+	do {
+		timestamp = timestamp.plus({ day: 1 });
+		const { sunrise, sunset } = getSunriseSunsetForDateTime(
+			location,
+			timestamp,
+		);
+		const { dayOfYear: sunriseDoy, dayBucket: sunriseBkt } = dateTimeToBucket(
+			sunrise,
+			scale,
+		);
+		plotPixelFromBottomLeft(
+			myImageData,
+			sunriseDoy * scale,
+			sunriseBkt * scale,
+			200,
+			100,
+			100,
+			200,
+		);
+
+		const { dayOfYear: sunsetDoy, dayBucket: sunsetBkt } = dateTimeToBucket(
+			sunset,
+			scale,
+		);
+		plotPixelFromBottomLeft(
+			myImageData,
+			sunsetDoy * scale,
+			sunsetBkt * scale,
+			100,
+			200,
+			200,
+			200,
+		);
+
+		console.log({ timestamp, sunriseDoy, sunriseBkt });
+	} while (timestamp.toMillis() < lastDateTime.toMillis());
+
 	ctx.putImageData(myImageData, 0, 0);
 
 	const fileData = myCanvas.toBuffer("image/png");
-	fs.writeFileSync(
-		`${PROJECT_DIR}/tmp/yearHeatMap-station${stationId}-species${speciesId}.png`,
-		fileData,
-	);
+	const outpath = `${PROJECT_DIR}/tmp/yearHeatMap-station${stationId}-species${speciesId}.png`;
+	console.log({ outpath });
+	fs.writeFileSync(outpath, fileData);
 }
 
 main().finally(() => console.log("DONE"));
