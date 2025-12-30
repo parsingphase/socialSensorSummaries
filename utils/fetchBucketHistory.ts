@@ -21,7 +21,7 @@ async function main(): Promise<void> {
 	const today = DateTime.now();
 	const startOfThisWeek = today.startOf("week");
 
-	const weeksToCollect = 8;
+	const weeksToCollect = 52;
 	const speciesId = 316; //junco
 	const stationId = 11214; //nearby with decent history
 
