@@ -65,8 +65,29 @@ query BucketSpeciesObservations($speciesId: ID!, $stationId: ID!, $fromDate: ISO
    }
 }`;
 
+const stationInfoQuery = gql`
+	query StationInfo($stationId: ID!) {
+		station(id: $stationId) {
+			id
+			name
+			state
+			country
+			continent
+			location
+			locationPrivacy
+			coords { 
+			 lat, 
+			 lon
+			}
+			type
+			earliestDetectionAt    
+			}
+	}
+`;
+
 export {
 	allDetectionsInPeriodQuery,
 	dailyDetectionsQuery,
 	bucketObservationsQuery,
+	stationInfoQuery,
 };

@@ -8,6 +8,7 @@
 		"test:static": "npm run test:static:tsc && npm run test:static:biome",
 		"test:static:tsc": "tsc --pretty --noEmit",
 		"test:static:biome": "biome check",
+		"test:static:biome:fix": "biome check --fix",
 		"lambda:build": "npm run clean:cdk.out && ./build/buildMastoLambda.sh && ./build/buildBlueskyLambda.sh",
 		"lambda:deploy:dev": "npm run lambda:build && npm run cdk:deploy:dev",
 		"lambda:deploy:prod": "npm run lambda:build && npm run cdk:deploy:prod",

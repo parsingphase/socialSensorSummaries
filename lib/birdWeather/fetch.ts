@@ -7,8 +7,10 @@ import QueryResult = ApolloClient.QueryResult;
 import type {
 	AllDetectionsInPeriodQuery,
 	AllDetectionsInPeriodQueryVariables,
+	StationInfoQuery,
+	StationInfoQueryVariables,
 } from "./codegen/graphql";
-import { allDetectionsInPeriodQuery } from "./queries";
+import { allDetectionsInPeriodQuery, stationInfoQuery } from "./queries";
 
 /**
  * Fetch birds for a given day, by analog with same-named function for Haikubox
@@ -70,4 +72,32 @@ async function fetchDailyCount(
 	return birdRecords.sort((a, b) => b.count - a.count);
 }
 
-export { fetchDailyCount };
+/**
+ * Fetch various info about a station (see stationInfoQuery)
+ *
+ * @param apiUrl
+ * @param stationId
+ */
+async function fetchStationInfo(
+	apiUrl: string,
+	stationId: number,
+): Promise<StationInfoQuery> {
+	const client = initBirdWeatherClient(apiUrl);
+	const stationInfo = await client.query<
+		StationInfoQuery,
+		StationInfoQueryVariables
+	>({
+		query: stationInfoQuery,
+		variables: { stationId: `${stationId}` },
+	});
+
+	if (!stationInfo.data) {
+		throw new Error(
+			stationInfo?.error?.message ?? "Could not load station info",
+		);
+	}
+
+	return stationInfo.data;
+}
+
+export { fetchDailyCount, fetchStationInfo };
