@@ -31,7 +31,10 @@ Scripts run as AWS Lambdas, CDK IaC is included.
 
 "WFM+" - works for me, tidied up a bit. Strongly typed, but no automated testing beyond static & linting.
 
-Some local scripts require modification of fixed values - these are being migrated to use command-line switches.
+Some local scripts require modification of fixed values - these are being migrated to use command-line switches. 
+The lambdas assume you have exactly the same set of accounts/devices I do, but you can tweak these / comment out sections.
+
+Feel free to email with queries, address is on my [profile page](https://github.com/parsingphase)
 
 ## Setup
 
@@ -39,9 +42,11 @@ Copy [config.sample.ts](config/config.sample.ts) to `config/config.ts` and popul
 
 Run `npm install`
 
-For test & deploy, see scripts in `package.json`.
+Local-only scripts are in the [utils](utils) directory.
 
-For local testing, see `run*Cli.ts`
+To run the lambdas locally, see `run*Cli.ts`
+
+For test & deploy, see scripts in `package.json`. To deploy to AWS, you'll need Docker and an AWS account.
 
 ## Generative "AI" usage
 
