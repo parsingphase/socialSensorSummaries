@@ -18,7 +18,10 @@ function getOpts() {
 	const program = new Command()
 		.requiredOption("--stationId <number>", "Required, stationId to chart")
 		.requiredOption("--speciesId <number>", "Required, speciesId to chart")
-		.option("--weeks <number>", "Number of weeks of data to fetch", "52");
+		.option("--weeks <number>", "Number of weeks of data to fetch", "52")
+		.description(
+			"Fetch BirdWeather bucket data to cache for heatmaps. Use searchSpecies.ts to look up IDs.",
+		);
 
 	program.parse();
 

@@ -1,4 +1,6 @@
-#!/usr/bin/env npx tsx -r tsconfig-paths/register
+#!/usr/bin/env npx tsx
+
+// Write a by-day CSV list of sightings of your all-time top-20 birds
 
 import * as fs from "node:fs";
 import {
@@ -7,8 +9,9 @@ import {
 	type DayRecord,
 	loadCachedDailyData,
 } from "../lib/haiku";
+import { PROJECT_DIR } from "../lib/utils";
 
-const rawDir = `${__dirname}/rawHaikuData`;
+const rawDir = `${PROJECT_DIR}/rawHaikuData`;
 
 /**
  * Run script
@@ -55,7 +58,9 @@ async function main(): Promise<void> {
 
 	// console.log(csvData);
 
-	fs.writeFileSync("tmp/grid.csv", csvData.map((r) => r.join(",")).join("\n"));
+	const outFile = "tmp/grid.csv";
+	fs.writeFileSync(outFile, csvData.map((r) => r.join(",")).join("\n"));
+	console.log(`Wrote to ${outFile}`);
 }
 
 main().finally(() => console.log("DONE"));

@@ -97,10 +97,32 @@ const speciesInfoByIdQuery = gql`
 }
 `;
 
+// NB : returns as a connection but doesn't actually seem to paginate
+const speciesSearchQuery = gql`
+	query SearchSpecies($query: String!, $limit: Int!) {
+		searchSpecies(query: $query, limit: $limit) {
+			pageInfo {
+				hasPreviousPage
+				hasNextPage
+				endCursor
+			}
+			nodes {
+        id
+        alpha
+        alpha6
+        birdweatherUrl
+        commonName
+        scientificName
+      }
+		}
+	}
+`;
+
 export {
 	allDetectionsInPeriodQuery,
 	dailyDetectionsQuery,
 	bucketObservationsQuery,
+	speciesSearchQuery,
 	speciesInfoByIdQuery,
 	stationInfoQuery,
 };

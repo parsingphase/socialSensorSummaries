@@ -1,4 +1,4 @@
-#!/usr/bin/env npx tsx -r tsconfig-paths/register
+#!/usr/bin/env npx tsx
 
 import { config } from "../config/config";
 

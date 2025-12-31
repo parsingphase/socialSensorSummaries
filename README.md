@@ -48,6 +48,26 @@ To run the lambdas locally, see `run*Cli.ts`
 
 For test & deploy, see scripts in `package.json`. To deploy to AWS, you'll need Docker and an AWS account.
 
+## Useful links
+
+### Ambient Weather
+ 
+ - Store: https://ambientweather.com
+ - Station map: https://ambientweather.net
+ - REST API: https://ambientweather.docs.apiary.io
+
+### BirdWeather PUC
+
+ - Store: https://www.birdweather.com
+ - Station map: https://app.birdweather.com
+ - REST API: https://app.birdweather.com/api/v1
+ - GraphQL API: https://app.birdweather.com/api/index.html
+
+### Haikubox
+
+ - Store: https://haikubox.com
+ - REST API: https://api.haikubox.com/docs
+
 ## Generative "AI" usage
 
 None. Do not submit code created with any generative tooling. 

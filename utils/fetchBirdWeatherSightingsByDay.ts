@@ -1,6 +1,9 @@
 #!/usr/bin/env npx tsx
 
+// Fetch a list of sightings for the previous day from BirdWeather
+
 import { DateTime, Duration } from "luxon";
+import { config } from "../config/config";
 import { fetchDailyCount } from "../lib/birdWeather/fetch";
 
 /**
@@ -11,7 +14,7 @@ async function main(): Promise<void> {
 
 	// const dateOfInterest = '2025-12-27';
 	const dateOfInterest = yesterday.toISODate();
-	const stationId = "20191";
+	const stationId = config.birdWeather.stationId;
 
 	const sortedRecords = await fetchDailyCount(
 		"https://app.birdweather.com/graphql",

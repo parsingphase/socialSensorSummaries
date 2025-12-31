@@ -19,6 +19,7 @@ type Documents = {
     "\nquery BucketSpeciesObservations($speciesId: ID!, $stationId: ID!, $fromDate: ISO8601Date!, $toDate: ISO8601Date!, $bucketMinutes: Int!) {\n  species(id: $speciesId) {\n    commonName\n    id\n    # period is *inclusive* days\n    detectionCounts(period:{from: $fromDate, to: $toDate}, group: $bucketMinutes, stationIds:[$stationId]) {\n      count\n      bins {\n           key\n           count\n         }\n      }\n   }\n}": typeof types.BucketSpeciesObservationsDocument,
     "\n\tquery StationInfo($stationId: ID!) {\n\t\tstation(id: $stationId) {\n\t\t\tid\n\t\t\tname\n\t\t\tstate\n\t\t\tcountry\n\t\t\tcontinent\n\t\t\tlocation\n\t\t\tlocationPrivacy\n\t\t\tcoords { \n\t\t\t lat, \n\t\t\t lon\n\t\t\t}\n\t\t\ttype\n\t\t\tearliestDetectionAt    \n\t\t\t}\n\t}\n": typeof types.StationInfoDocument,
     "\n\tquery SpeciesInfoById($speciesId: ID!){\n\t\tspecies(id: $speciesId) {\n\t\t\tid\n\t\t\talpha\n\t\t\tcommonName\n\t\t\tscientificName\n\t\t\tclassification \n\t\t}\n}\n": typeof types.SpeciesInfoByIdDocument,
+    "\n\tquery SearchSpecies($query: String!, $limit: Int!) {\n\t\tsearchSpecies(query: $query, limit: $limit) {\n\t\t\tpageInfo {\n\t\t\t\thasPreviousPage\n\t\t\t\thasNextPage\n\t\t\t\tendCursor\n\t\t\t}\n\t\t\tnodes {\n        id\n        alpha\n        alpha6\n        birdweatherUrl\n        commonName\n        scientificName\n      }\n\t\t}\n\t}\n": typeof types.SearchSpeciesDocument,
 };
 const documents: Documents = {
     "\n  query DailyDetections($stationId: ID!, $days: Int!) {\n    dailyDetectionCounts(stationIds: [$stationId], period: { count: $days, unit: \"day\" }) {\n      date\n      dayOfYear\n      counts {\n        count\n        species {\n          alpha\n          commonName\n        }\n      }\n    }\n  }\n": types.DailyDetectionsDocument,
@@ -26,6 +27,7 @@ const documents: Documents = {
     "\nquery BucketSpeciesObservations($speciesId: ID!, $stationId: ID!, $fromDate: ISO8601Date!, $toDate: ISO8601Date!, $bucketMinutes: Int!) {\n  species(id: $speciesId) {\n    commonName\n    id\n    # period is *inclusive* days\n    detectionCounts(period:{from: $fromDate, to: $toDate}, group: $bucketMinutes, stationIds:[$stationId]) {\n      count\n      bins {\n           key\n           count\n         }\n      }\n   }\n}": types.BucketSpeciesObservationsDocument,
     "\n\tquery StationInfo($stationId: ID!) {\n\t\tstation(id: $stationId) {\n\t\t\tid\n\t\t\tname\n\t\t\tstate\n\t\t\tcountry\n\t\t\tcontinent\n\t\t\tlocation\n\t\t\tlocationPrivacy\n\t\t\tcoords { \n\t\t\t lat, \n\t\t\t lon\n\t\t\t}\n\t\t\ttype\n\t\t\tearliestDetectionAt    \n\t\t\t}\n\t}\n": types.StationInfoDocument,
     "\n\tquery SpeciesInfoById($speciesId: ID!){\n\t\tspecies(id: $speciesId) {\n\t\t\tid\n\t\t\talpha\n\t\t\tcommonName\n\t\t\tscientificName\n\t\t\tclassification \n\t\t}\n}\n": types.SpeciesInfoByIdDocument,
+    "\n\tquery SearchSpecies($query: String!, $limit: Int!) {\n\t\tsearchSpecies(query: $query, limit: $limit) {\n\t\t\tpageInfo {\n\t\t\t\thasPreviousPage\n\t\t\t\thasNextPage\n\t\t\t\tendCursor\n\t\t\t}\n\t\t\tnodes {\n        id\n        alpha\n        alpha6\n        birdweatherUrl\n        commonName\n        scientificName\n      }\n\t\t}\n\t}\n": types.SearchSpeciesDocument,
 };
 
 /**
@@ -62,6 +64,10 @@ export function graphql(source: "\n\tquery StationInfo($stationId: ID!) {\n\t\ts
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n\tquery SpeciesInfoById($speciesId: ID!){\n\t\tspecies(id: $speciesId) {\n\t\t\tid\n\t\t\talpha\n\t\t\tcommonName\n\t\t\tscientificName\n\t\t\tclassification \n\t\t}\n}\n"): (typeof documents)["\n\tquery SpeciesInfoById($speciesId: ID!){\n\t\tspecies(id: $speciesId) {\n\t\t\tid\n\t\t\talpha\n\t\t\tcommonName\n\t\t\tscientificName\n\t\t\tclassification \n\t\t}\n}\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n\tquery SearchSpecies($query: String!, $limit: Int!) {\n\t\tsearchSpecies(query: $query, limit: $limit) {\n\t\t\tpageInfo {\n\t\t\t\thasPreviousPage\n\t\t\t\thasNextPage\n\t\t\t\tendCursor\n\t\t\t}\n\t\t\tnodes {\n        id\n        alpha\n        alpha6\n        birdweatherUrl\n        commonName\n        scientificName\n      }\n\t\t}\n\t}\n"): (typeof documents)["\n\tquery SearchSpecies($query: String!, $limit: Int!) {\n\t\tsearchSpecies(query: $query, limit: $limit) {\n\t\t\tpageInfo {\n\t\t\t\thasPreviousPage\n\t\t\t\thasNextPage\n\t\t\t\tendCursor\n\t\t\t}\n\t\t\tnodes {\n        id\n        alpha\n        alpha6\n        birdweatherUrl\n        commonName\n        scientificName\n      }\n\t\t}\n\t}\n"];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};

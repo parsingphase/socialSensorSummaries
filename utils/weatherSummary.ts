@@ -1,4 +1,6 @@
-#!/usr/bin/env npx tsx -r tsconfig-paths/register
+#!/usr/bin/env npx tsx
+
+// Print a summary of yesterday's weather from Ambient Weather
 
 import { DateTime } from "luxon";
 import { config } from "../config/config";
