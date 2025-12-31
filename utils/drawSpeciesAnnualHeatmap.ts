@@ -29,7 +29,14 @@ async function getOpts() {
 			"--location <lat,lng>",
 			"Optional, looked up if from stationId if missing",
 		)
-		.description("Data must be pre-cached with fetchBucketHistory.ts");
+		.option(
+			"--timezone <tz>",
+			"Timezone to calculate start/end of day",
+			Intl.DateTimeFormat().resolvedOptions().timeZone,
+		)
+		.description(
+			"Data must be pre-cached with fetchBucketHistory.ts\nFor a full list of timezones, see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones",
+		);
 
 	program.parse();
 
@@ -38,6 +45,7 @@ async function getOpts() {
 		stationId: stationIdString,
 		speciesId: speciesIdString,
 		location: stringLocation,
+		timezone,
 	} = options;
 	const stationId = Number(stationIdString);
 	const speciesId = Number(speciesIdString);
@@ -59,7 +67,7 @@ async function getOpts() {
 		const speciesInfo = await fetchSpeciesInfo(apiUrl, speciesId);
 		speciesName = speciesInfo.species?.commonName;
 	}
-	return { stationId, speciesId, speciesName, location };
+	return { stationId, speciesId, speciesName, location, timezone };
 }
 
 /**
@@ -152,12 +160,13 @@ function buildObservationHeatmap(
 }
 
 async function main(): Promise<void> {
-	const { stationId, speciesId, speciesName, location } = await getOpts();
+	const { stationId, speciesId, speciesName, location, timezone } =
+		await getOpts();
+
 	const minutes = 5;
 	const allData = loadSpeciesBucketCache(speciesId, stationId, minutes);
 
-	const targetTimeZone = "America/New_York";
-	const withDates = hydrateSpeciesBucketCacheDates(allData, targetTimeZone);
+	const withDates = hydrateSpeciesBucketCacheDates(allData, timezone);
 	const fileData = buildObservationHeatmap(
 		speciesName ?? "",
 		withDates,
