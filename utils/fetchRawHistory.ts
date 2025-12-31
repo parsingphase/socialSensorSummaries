@@ -1,4 +1,6 @@
-#!/usr/bin/env npx tsx -r tsconfig-paths/register
+#!/usr/bin/env npx tsx
+
+// Fetch historic HaikuBox daily observation data to a local cache
 
 import * as fs from "node:fs";
 import { DateTime } from "luxon";
