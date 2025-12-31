@@ -24,7 +24,7 @@ function buildTopBirdsPost(
 	birds.sort((a, b) => b.count - a.count);
 
 	const topNoteString = topXnote ? ` top ${maxBirds}` : "";
-	let postText = `#YesterdaysYardBirds${topNoteString} 🤖 (NE MA):\n`;
+	let postText = `#YesterdaysYardBirds${topNoteString} 🤖 (NE MA):\n`; // FIXME parameterize
 	const fixedTags = "\n\n#Birds #BirdsongDetection";
 	let unverifiedBirds = 0;
 	let firstUnverifiedBirdIndex: number | null = null;

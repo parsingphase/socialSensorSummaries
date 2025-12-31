@@ -120,34 +120,48 @@ async function postStatusFromBirdList(
 	client: AtpAgent,
 	replyRef?: StrongPostRef,
 ): Promise<StrongPostRef> {
-	const maxBirds = 10;
-	const minObservationCount = 10;
+	let postString: string;
 	const links: Link[] = [
 		{
-			uri: "https://bsky.app/profile/did:plc:jsjgrbio76yz7zzch5fsasox/post/3mb356jnlrs2c",
+			uri: "https://bsky.app/profile/did:plc:jsjgrbio76yz7zzch5fsasox/post/3mb356jnlrs2c", // FIXME parameterize
 			text: "caveat",
 		},
 	];
+	let images: ImageSpecFromBuffer[] = [];
 
-	const postString = buildBirdPostForBluesky(
-		birds || [],
-		seenBirds,
-		sourceTag,
-		maxBirds,
-		minObservationCount,
-	);
-	logger.info(
-		{ birds, postString, length: postString.length, source },
-		`${source} Chart`,
-	);
-	const images = buildBarChartForPost(
-		birds,
-		maxBirds,
-		minObservationCount,
-		whenString,
-		`from ${source}`,
-		logger,
-	);
+	if (birds?.length) {
+		const maxBirds = 10;
+		const minObservationCount = 10;
+
+		postString = buildBirdPostForBluesky(
+			birds || [],
+			seenBirds,
+			sourceTag,
+			maxBirds,
+			minObservationCount,
+		);
+		logger.info(
+			{ birds, postString, length: postString.length, source },
+			`${source} Chart`,
+		);
+		images = buildBarChartForPost(
+			birds,
+			maxBirds,
+			minObservationCount,
+			whenString,
+			`from ${source}`,
+			logger,
+		);
+	} else {
+		postString = `#YesterdaysYardBirds 🤖 (NE MA):
+
+Not a peep!
+
+No birds detected, even below threshold. ${source} may be offline?
+`;
+		logger.error(`No birds detected - ${source} may be offline?`);
+	}
+
 	const birdsStatus = await postToAtproto(
 		client,
 		postString,

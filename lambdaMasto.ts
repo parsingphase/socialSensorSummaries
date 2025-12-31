@@ -100,28 +100,28 @@ async function executeWithConfig(configFromEnv: LambdaConfig) {
 		whenString,
 	);
 
-	const maxBirds = 20;
-	const minObservationCount = 10;
-	const postString = buildBirdPostForMastodon(
-		birds || [],
-		seenBirds,
-		maxBirds,
-		minObservationCount,
-		500,
-	);
-
-	const logger = pino({});
-
-	logger.info({ birds, postString, length: postString.length });
-
 	const mastoClient: MastoClient = createRestAPIClient({
 		url: mastoBaseUrl,
 		accessToken: mastoToken,
 	});
+	const logger = pino({});
 
+	let postString: string;
 	let attachmentIds: string[] = [];
 
-	if (birds && birds.length > 0) {
+	if (birds?.length) {
+		const maxBirds = 20;
+		const minObservationCount = 10;
+		postString = buildBirdPostForMastodon(
+			birds || [],
+			seenBirds,
+			maxBirds,
+			minObservationCount,
+			500,
+		);
+
+		logger.info({ birds, postString, length: postString.length });
+
 		const dayData = birds
 			.slice(0, maxBirds)
 			.filter((b) => b.count >= minObservationCount);
@@ -133,6 +133,14 @@ async function executeWithConfig(configFromEnv: LambdaConfig) {
 				logger,
 			),
 		];
+	} else {
+		postString = `#YesterdaysYardBirds 🤖 (NE MA):
+
+Not a peep!
+
+No birds detected, even below threshold. HaikuBox may be offline?
+`;
+		logger.error("No birds detected - HaikuBox may be offline?");
 	}
 
 	const birdsStatus = await postToMastodon(
