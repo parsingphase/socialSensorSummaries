@@ -35,7 +35,7 @@ async function getOpts() {
 			Intl.DateTimeFormat().resolvedOptions().timeZone,
 		)
 		.description(
-			"Data must be pre-cached with fetchBucketHistory.ts\nFor a full list of timezones, see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones",
+			"Data must be pre-cached with fetchBirdWeatherBucketHistory.ts\nFor a full list of timezones, see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones",
 		);
 
 	program.parse();
@@ -90,7 +90,7 @@ function loadSpeciesBucketCache(
 
 	if (!fs.existsSync(consistentFilesetRootDir)) {
 		throw new Error(
-			"No cached data available. Run fetchBucketHistory.ts first",
+			"No cached data available. Run fetchBirdWeatherBucketHistory.ts first",
 		);
 	}
 

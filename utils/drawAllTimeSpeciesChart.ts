@@ -1,6 +1,6 @@
 #!/usr/bin/env npx tsx
 
-// Draws multi-year line chart from cached Haikubox data (use fetchRawHistory.ts)
+// Draws multi-year line chart from cached Haikubox data (use fetchRawHaikuboxHistory.ts)
 // USAGE: ./utils/drawAllTimeSpeciesChart.ts "Ruby-throated Hummingbird"
 
 import { type DatedCount, LineChart } from "../lib/charts/lineChart";

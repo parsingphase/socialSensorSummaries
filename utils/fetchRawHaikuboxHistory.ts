@@ -6,9 +6,10 @@ import * as fs from "node:fs";
 import { DateTime } from "luxon";
 import { config } from "../config/config";
 import { fetchDailyCount } from "../lib/haiku";
+import { PROJECT_DIR } from "../lib/utils";
 
 const start = DateTime.local(2023, 7, 15);
-const outDir = `${__dirname}/rawHaikuData`;
+const outDir = `${PROJECT_DIR}/rawHaikuData`;
 
 /**
  * Sleep as a raw delay
