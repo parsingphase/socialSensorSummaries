@@ -14,6 +14,7 @@ const outputFile = `${outDir}/lambda.js`;
 
 export default {
 	plugins: [
+		commonjs(),
 		typescript({ tsconfigOverride: { compilerOptions: { module: "ES2020" } } }),
 		copy({
 			targets: [
