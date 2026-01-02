@@ -1,90 +1,27 @@
 import type { AtpAgent } from "@atproto/api";
 import type { Context, ScheduledEvent } from "aws-lambda";
-import { DateTime, Duration } from "luxon";
-import pino from "pino";
-import {
-	buildDailySummaryPostContent,
-	type SummaryPostTextSubstitutions,
-} from "./core/buildPost";
-import { assertedEnvVar } from "./core/configTools";
 import {
 	getAtprotoAgent,
 	type Link,
 	postToAtproto,
 	type StrongPostRef,
-} from "./lib/atproto";
-import { fetchDailyCount as fetchDailyCountFromBirdWeatherApi } from "./lib/birdWeather";
+} from "lib/atproto";
+import {
+	buildDailySummaryPostContent,
+	type SummaryPostTextSubstitutions,
+} from "lib/birdObservations/buildBirdObservationSummaryPost";
+import { fetchDailyCount as fetchDailyCountFromBirdWeatherApi } from "lib/birdWeather";
+import { assertedEnvVar } from "lib/configTools";
 import {
 	type BirdRecord,
 	fetchDailyCount as fetchDailyCountFromHaikuboxApi,
-} from "./lib/haiku";
+} from "lib/haiku";
 import {
 	type AmbientWeatherApiConfig,
 	buildWeatherSummaryForDay,
-} from "./lib/weather";
-
-/**
- * Build & post text & image from provided data, ie one song monitor's daily output
- *
- * @param birds
- * @param logger
- * @param dateString
- * @param sourceName
- * @param sourceTag Including #
- * @param client
- * @param replyRef
- */
-async function postStatusFromBirdList(
-	birds: BirdRecord[],
-	logger: pino.Logger,
-	dateString: string,
-	sourceName: string,
-	sourceTag: string,
-	client: AtpAgent,
-	replyRef?: StrongPostRef,
-): Promise<StrongPostRef> {
-	const links: Link[] = [
-		{
-			uri: "https://bsky.app/profile/did:plc:jsjgrbio76yz7zzch5fsasox/post/3mb356jnlrs2c", // FIXME parameterize
-			text: "caveat",
-		},
-	];
-	const shortLocation = `(NE MA)`; // FIXME move this to config
-	const caveatText = `\n\n ^ See caveat`;
-	const maxPostLength = 300;
-	const maxBirds = 10;
-	const minObservationCount = 10;
-
-	const textSubstitutions: SummaryPostTextSubstitutions = {
-		shortLocation,
-		dateString,
-		sourceName,
-		sourceTag,
-		caveatText,
-	};
-
-	const { text, imageData } = buildDailySummaryPostContent(
-		birds,
-		minObservationCount,
-		maxBirds,
-		maxPostLength,
-		textSubstitutions,
-		logger,
-	);
-
-	const birdsStatus = await postToAtproto(
-		client,
-		text,
-		replyRef,
-		links,
-		imageData,
-		logger,
-	);
-	logger.info(
-		`Posted ${sourceName} bird list to ${birdsStatus.uri} / ${birdsStatus.cid}`,
-	);
-	return birdsStatus;
-}
+} from "lib/weather";
+import { DateTime, Duration } from "luxon";
+import pino from "pino";
 
 type LambdaConfig = {
 	blueskyUsername: string;
@@ -224,6 +161,69 @@ async function executeWithConfig(config: LambdaConfig): Promise<void> {
 	logger.info(
 		`Posted weather status to ${weatherStatus.uri} / ${weatherStatus.cid}`,
 	);
+}
+
+/**
+ * Build & post text & image from provided data, ie one song monitor's daily output
+ *
+ * @param birds
+ * @param logger
+ * @param dateString
+ * @param sourceName
+ * @param sourceTag Including #
+ * @param client
+ * @param replyRef
+ */
+async function postStatusFromBirdList(
+	birds: BirdRecord[],
+	logger: pino.Logger,
+	dateString: string,
+	sourceName: string,
+	sourceTag: string,
+	client: AtpAgent,
+	replyRef?: StrongPostRef,
+): Promise<StrongPostRef> {
+	const links: Link[] = [
+		{
+			uri: "https://bsky.app/profile/did:plc:jsjgrbio76yz7zzch5fsasox/post/3mb356jnlrs2c", // FIXME parameterize
+			text: "caveat",
+		},
+	];
+	const shortLocation = `(NE MA)`; // FIXME move this to config
+	const caveatText = `\n\n ^ See caveat`;
+	const maxPostLength = 300;
+	const maxBirds = 10;
+	const minObservationCount = 10;
+
+	const textSubstitutions: SummaryPostTextSubstitutions = {
+		shortLocation,
+		dateString,
+		sourceName,
+		sourceTag,
+		caveatText,
+	};
+
+	const { text, imageData } = buildDailySummaryPostContent(
+		birds,
+		minObservationCount,
+		maxBirds,
+		maxPostLength,
+		textSubstitutions,
+		logger,
+	);
+
+	const birdsStatus = await postToAtproto(
+		client,
+		text,
+		replyRef,
+		links,
+		imageData,
+		logger,
+	);
+	logger.info(
+		`Posted ${sourceName} bird list to ${birdsStatus.uri} / ${birdsStatus.cid}`,
+	);
+	return birdsStatus;
 }
 
 /**

@@ -7,14 +7,15 @@ import { executeWithConfig, type LambdaConfig } from "./lambdaMasto";
  * CLI main loop
  */
 async function main(): Promise<void> {
-	const { ambientWeather, mastodon, haikubox, location } = cliConfig;
+	const { ambientWeather, birdWeather, mastodon, haikubox, location } =
+		cliConfig;
 	const builtConfig: LambdaConfig = {
 		AWNApiKey: ambientWeather.apiKey,
 		AWNApplicationKey: ambientWeather.applicationKey,
 		AWNBaseUrl: ambientWeather.apiBaseUrl,
 		AWNDeviceMac: ambientWeather.deviceMac,
-		// birdWeatherBaseUrl: birdWeather.apiBaseUrl,
-		// birdWeatherStationId: birdWeather.stationId,
+		birdWeatherBaseUrl: birdWeather.apiBaseUrl,
+		birdWeatherStationId: birdWeather.stationId,
 		haikuBaseUrl: haikubox.apiBaseUrl,
 		haikuSerialNumber: haikubox.serialNumber,
 		latitude: location.latitude,

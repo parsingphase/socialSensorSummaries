@@ -1,11 +1,8 @@
+import type { ImageSpecFromBuffer } from "lib/atproto";
+import { drawChartFromDailySongData, type Offsets } from "lib/charts/barChart";
+import type { BirdRecord } from "lib/haiku";
+import { seenBirds } from "lib/sightings";
 import type pino from "pino";
-import type { ImageSpecFromBuffer } from "../lib/atproto";
-import {
-	drawChartFromDailySongData,
-	type Offsets,
-} from "../lib/charts/barChart";
-import type { BirdRecord } from "../lib/haiku";
-import { seenBirds } from "../lib/sightings";
 
 /**
  * Build the list of most-seen birds into a post
@@ -223,7 +220,7 @@ function buildDailySummaryPostContent(
 			logger,
 		);
 	} else if (birds?.length) {
-		const info = `Insufficient observations were made to generate a report.  
+		const info = `Insufficient observations were made by ${textSubstitutions.sourceName} to generate a report.  
 To avoid posting spurious reports, each species must be heard at least ${minObservationCount} times in the day.`;
 		postString = buildInfoPostText(textSubstitutions.shortLocation, info);
 		logger.error(

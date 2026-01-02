@@ -1,41 +1,35 @@
 import type { Context, ScheduledEvent } from "aws-lambda";
-import { DateTime, Duration } from "luxon";
-import { createRestAPIClient } from "masto";
-import pino from "pino";
-import { buildInfoPostText } from "./core/buildPost";
 import {
-	buildAndUploadDailySongChart,
-	buildBirdPostForMastodon,
+	buildDailySummaryPostContent,
+	type SummaryPostTextSubstitutions,
+} from "lib/birdObservations/buildBirdObservationSummaryPost";
+import { fetchDailyCount as fetchDailyCountFromBirdWeatherApi } from "lib/birdWeather";
+import { assertedEnvVar } from "lib/configTools";
+import {
+	type BirdRecord,
+	fetchDailyCount as fetchDailyCountFromHaikuboxApi,
+} from "lib/haiku";
+import {
+	createAttachmentFromImageData,
 	postToMastodon,
-} from "./core/haiku2masto";
-import { fetchDailyCount } from "./lib/haiku";
-import type { MastoClient, StatusVisibility } from "./lib/masto/types";
-import { seenBirds } from "./lib/sightings";
+	type SimpleMastoAttachment,
+} from "lib/masto";
+import type { MastoClient, Status, StatusVisibility } from "lib/masto/types";
 import {
 	type AmbientWeatherApiConfig,
 	buildWeatherSummaryForDay,
-} from "./lib/weather";
-
-/**
- * Return an ENV value, object if it's missing
- *
- * @param key
- */
-function assertedEnvVar(key: string): string {
-	const token = process.env[key];
-	if (!token) {
-		throw new Error(`Must set ${key}`);
-	}
-	return token;
-}
+} from "lib/weather";
+import { DateTime, Duration } from "luxon";
+import { createRestAPIClient } from "masto";
+import pino from "pino";
 
 type LambdaConfig = {
 	mastoToken: string;
 	mastoBaseUrl: string;
 	haikuSerialNumber: string;
 	haikuBaseUrl: string;
-	// birdWeatherStationId: string;
-	// birdWeatherBaseUrl: string;
+	birdWeatherStationId: string;
+	birdWeatherBaseUrl: string;
 	AWNBaseUrl: string;
 	AWNApiKey: string;
 	AWNApplicationKey: string;
@@ -52,6 +46,9 @@ function getConfigFromEnv(): LambdaConfig {
 	const haikuSerialNumber = assertedEnvVar("HAIKU_SERIAL_NUMBER");
 	const haikuBaseUrl = assertedEnvVar("HAIKU_BASE_URL");
 
+	const birdWeatherStationId = assertedEnvVar("BIRDWEATHER_STATION_ID");
+	const birdWeatherBaseUrl = assertedEnvVar("BIRDWEATHER_BASE_URL");
+
 	const AWNBaseUrl = assertedEnvVar("AWN_BASE_URL");
 	const AWNApiKey = assertedEnvVar("AWN_API_KEY");
 	const AWNApplicationKey = assertedEnvVar("AWN_APPLICATION_KEY");
@@ -67,6 +64,8 @@ function getConfigFromEnv(): LambdaConfig {
 		mastoBaseUrl,
 		haikuSerialNumber,
 		haikuBaseUrl,
+		birdWeatherStationId,
+		birdWeatherBaseUrl,
 		AWNBaseUrl,
 		AWNApiKey,
 		AWNApplicationKey,
@@ -77,12 +76,14 @@ function getConfigFromEnv(): LambdaConfig {
 	};
 }
 
-async function executeWithConfig(configFromEnv: LambdaConfig) {
+async function executeWithConfig(config: LambdaConfig) {
 	const {
 		mastoToken,
 		mastoBaseUrl,
 		haikuSerialNumber,
 		haikuBaseUrl,
+		birdWeatherStationId,
+		birdWeatherBaseUrl,
 		AWNBaseUrl,
 		AWNApiKey,
 		AWNApplicationKey,
@@ -90,78 +91,53 @@ async function executeWithConfig(configFromEnv: LambdaConfig) {
 		latitude,
 		longitude,
 		visibility,
-	} = configFromEnv;
+	} = config;
 
+	// Post setup
 	const when = DateTime.now().minus(Duration.fromObject({ days: 1 }));
-	const whenString = when.toFormat("yyyy-MM-dd");
-	const maxBirds = 20;
-	const minObservationCount = 10;
-	const shortLocation = `(NE MA)`; // FIXME move this to config
+	const dateString = when.toFormat("yyyy-MM-dd");
 
-	const allBirds =
-		(await fetchDailyCount(haikuBaseUrl, haikuSerialNumber, whenString)) || [];
+	const logger = pino({});
 
-	// Filter at a common external location to avoid duplication and simplify logic
-	const filteredBirds = allBirds.filter((b) => b.count >= minObservationCount);
-
-	const mastoClient: MastoClient = createRestAPIClient({
+	const client: MastoClient = createRestAPIClient({
 		url: mastoBaseUrl,
 		accessToken: mastoToken,
 	});
-	const logger = pino({});
 
-	let postString: string;
-	let attachmentIds: string[] = [];
-
-	if (filteredBirds?.length) {
-		postString = buildBirdPostForMastodon(
-			filteredBirds,
-			shortLocation,
-			seenBirds,
-			maxBirds,
-		);
-
-		logger.info({
-			birds: filteredBirds,
-			postString,
-			length: postString.length,
-		});
-
-		const dayData = filteredBirds
-			.slice(0, maxBirds)
-			.filter((b) => b.count >= minObservationCount);
-		attachmentIds = [
-			await buildAndUploadDailySongChart(
-				mastoClient,
-				whenString,
-				dayData,
-				logger,
-			),
-		];
-	} else if (allBirds?.length) {
-		const info = `Insufficient observations were made to generate a report.  
-To avoid posting spurious reports, each species must be heard at least ${minObservationCount} times in the day.`;
-		postString = buildInfoPostText(shortLocation, info);
-		logger.error(
-			"No birds detected over threshold - HaikuBox may be impaired?",
-		);
-	} else {
-		const info = `Not a peep!
-No birds detected, even below threshold. HaikuBox may be offline?`;
-		postString = buildInfoPostText(shortLocation, info);
-
-		logger.error("No birds detected - HaikuBox may be offline?");
-	}
-
-	const birdsStatus = await postToMastodon(
-		mastoClient,
-		postString,
+	// Birdweather Post Generation
+	const bwBirds = await fetchDailyCountFromBirdWeatherApi(
+		birdWeatherBaseUrl,
+		birdWeatherStationId,
+		dateString,
+	);
+	const bwStatus = await postStatusFromBirdList(
+		bwBirds ?? [],
+		logger,
+		dateString,
+		"BirdWeather PUC",
+		"#BirdWeather",
 		visibility,
-		undefined,
-		attachmentIds,
+		client,
 	);
 
-	logger.info(`Posted bird list to ${birdsStatus.url} / ${birdsStatus.id}`);
+	// Haikubox Post Generation
+	const haikuBirds = await fetchDailyCountFromHaikuboxApi(
+		haikuBaseUrl,
+		haikuSerialNumber,
+		dateString,
+	);
+
+	const haikuboxStatus = await postStatusFromBirdList(
+		haikuBirds ?? [],
+		logger,
+		dateString,
+		"Haikubox",
+		"#Haikubox",
+		visibility,
+		client,
+		bwStatus.id,
+	);
+	void haikuboxStatus;
 
 	const ambientWeatherConfig: AmbientWeatherApiConfig = {
 		apiBaseUrl: AWNBaseUrl,
@@ -177,22 +153,98 @@ No birds detected, even below threshold. HaikuBox may be offline?`;
 	);
 
 	const weatherStatus = await postToMastodon(
-		mastoClient,
+		client,
 		weatherSummary,
 		visibility,
-		birdsStatus.id,
+		bwStatus.id,
 	);
 	logger.info(
 		`Posted weather status to ${weatherStatus.url} / ${weatherStatus.id}`,
 	);
 }
 
+/**
+ * Build & post text & image from provided data, ie one song monitor's daily output
+ *
+ * @param birds
+ * @param logger
+ * @param dateString
+ * @param sourceName
+ * @param sourceTag Including #
+ * @param visibility
+ * @param client
+ * @param replyRef
+ */
+async function postStatusFromBirdList(
+	birds: BirdRecord[],
+	logger: pino.Logger,
+	dateString: string,
+	sourceName: string,
+	sourceTag: string,
+	visibility: StatusVisibility,
+	client: MastoClient,
+	replyRef?: string,
+): Promise<Status> {
+	const shortLocation = `(NE MA)`; // FIXME move this to config
+	const caveatText = `\n\n ^ See caveat`;
+	const maxPostLength = 300;
+	const maxBirds = 10;
+	const minObservationCount = 10;
+
+	const textSubstitutions: SummaryPostTextSubstitutions = {
+		shortLocation,
+		dateString,
+		sourceName,
+		sourceTag,
+		caveatText,
+	};
+
+	const { text, imageData } = buildDailySummaryPostContent(
+		birds,
+		minObservationCount,
+		maxBirds,
+		maxPostLength,
+		textSubstitutions,
+		logger,
+	);
+
+	let imageAttachment: SimpleMastoAttachment | undefined;
+	if (imageData?.length) {
+		imageAttachment = await createAttachmentFromImageData(
+			client,
+			imageData[0].data,
+			imageData[0].alt,
+		);
+	}
+
+	const birdsStatus = await postToMastodon(
+		client,
+		text,
+		visibility,
+		replyRef,
+		imageAttachment ? [imageAttachment.id] : [],
+	);
+	logger.info(
+		`Posted ${sourceName} bird list to ${birdsStatus.uri} / ${birdsStatus.id}`,
+	);
+	return birdsStatus;
+}
+
+/**
+ * Handler used by AWS to execute the lambda
+ *
+ * Should just build config then execute the main function, to make CLI usage simpler
+ * @param _event
+ * @param _context
+ */
 export const handler = async (
 	_event: ScheduledEvent,
 	_context: Context,
 ): Promise<void> => {
 	void _event;
 	void _context;
+
+	// Environmental setup
 	const configFromEnv = getConfigFromEnv();
 	await executeWithConfig(configFromEnv);
 };
