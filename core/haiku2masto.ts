@@ -10,32 +10,31 @@ import type {
 	Status,
 	StatusVisibility,
 } from "../lib/masto/types";
-import { buildTopBirdsPost } from "./buildPost";
 
 /**
  * Build daily summary string
  *
  * @param birds
+ * @param shortLocation
  * @param confirmedObservations
  * @param maxBirds
- * @param minObservationCount
  * @param maxPostLength
  */
 function buildBirdPostForMastodon(
 	birds: { bird: string; count: number }[],
+	shortLocation: string,
 	confirmedObservations?: string[],
 	maxBirds = 20,
-	minObservationCount = 10,
 	maxPostLength = 500,
 ): string {
 	const caveatUrl = "https://m.phase.org/@parsingphase/111711558681612429";
 	const caveatText = `\n\n ^ caveat: ${caveatUrl}`;
 
-	return buildTopBirdsPost(
+	return buildTopBirdsPostText(
 		birds,
+		shortLocation,
 		maxBirds,
 		maxPostLength,
-		minObservationCount,
 		confirmedObservations,
 		caveatText,
 	);

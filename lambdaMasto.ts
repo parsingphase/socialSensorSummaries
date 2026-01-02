@@ -2,12 +2,12 @@ import type { Context, ScheduledEvent } from "aws-lambda";
 import { DateTime, Duration } from "luxon";
 import { createRestAPIClient } from "masto";
 import pino from "pino";
+import { buildInfoPostText } from "./core/buildPost";
 import {
 	buildAndUploadDailySongChart,
 	buildBirdPostForMastodon,
 	postToMastodon,
 } from "./core/haiku2masto";
-
 import { fetchDailyCount } from "./lib/haiku";
 import type { MastoClient, StatusVisibility } from "./lib/masto/types";
 import { seenBirds } from "./lib/sightings";
@@ -94,11 +94,15 @@ async function executeWithConfig(configFromEnv: LambdaConfig) {
 
 	const when = DateTime.now().minus(Duration.fromObject({ days: 1 }));
 	const whenString = when.toFormat("yyyy-MM-dd");
-	const birds = await fetchDailyCount(
-		haikuBaseUrl,
-		haikuSerialNumber,
-		whenString,
-	);
+	const maxBirds = 20;
+	const minObservationCount = 10;
+	const shortLocation = `(NE MA)`; // FIXME move this to config
+
+	const allBirds =
+		(await fetchDailyCount(haikuBaseUrl, haikuSerialNumber, whenString)) || [];
+
+	// Filter at a common external location to avoid duplication and simplify logic
+	const filteredBirds = allBirds.filter((b) => b.count >= minObservationCount);
 
 	const mastoClient: MastoClient = createRestAPIClient({
 		url: mastoBaseUrl,
@@ -109,20 +113,21 @@ async function executeWithConfig(configFromEnv: LambdaConfig) {
 	let postString: string;
 	let attachmentIds: string[] = [];
 
-	if (birds?.length) {
-		const maxBirds = 20;
-		const minObservationCount = 10;
+	if (filteredBirds?.length) {
 		postString = buildBirdPostForMastodon(
-			birds || [],
+			filteredBirds,
+			shortLocation,
 			seenBirds,
 			maxBirds,
-			minObservationCount,
-			500,
 		);
 
-		logger.info({ birds, postString, length: postString.length });
+		logger.info({
+			birds: filteredBirds,
+			postString,
+			length: postString.length,
+		});
 
-		const dayData = birds
+		const dayData = filteredBirds
 			.slice(0, maxBirds)
 			.filter((b) => b.count >= minObservationCount);
 		attachmentIds = [
@@ -133,13 +138,18 @@ async function executeWithConfig(configFromEnv: LambdaConfig) {
 				logger,
 			),
 		];
+	} else if (allBirds?.length) {
+		const info = `Insufficient observations were made to generate a report.  
+To avoid posting spurious reports, each species must be heard at least ${minObservationCount} times in the day.`;
+		postString = buildInfoPostText(shortLocation, info);
+		logger.error(
+			"No birds detected over threshold - HaikuBox may be impaired?",
+		);
 	} else {
-		postString = `#YesterdaysYardBirds 🤖 (NE MA):
+		const info = `Not a peep!
+No birds detected, even below threshold. HaikuBox may be offline?`;
+		postString = buildInfoPostText(shortLocation, info);
 
-Not a peep!
-
-No birds detected, even below threshold. HaikuBox may be offline?
-`;
 		logger.error("No birds detected - HaikuBox may be offline?");
 	}
 
