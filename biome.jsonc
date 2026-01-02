@@ -23,6 +23,16 @@
 			"quoteStyle": "double"
 		}
 	},
+	"overrides": [
+		{
+			"includes": ["tsconfig.json"],
+			"json": {
+				"parser": {
+					"allowComments": true
+				}
+			}
+		}
+	],
 	"assist": {
 		"enabled": true,
 		"actions": {
