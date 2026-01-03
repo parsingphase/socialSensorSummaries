@@ -1,8 +1,11 @@
-import type { ImageSpecFromBuffer } from "lib/atproto";
-import { drawChartFromDailySongData, type Offsets } from "lib/charts/barChart";
-import type { BirdRecord } from "lib/haiku";
-import { seenBirds } from "lib/sightings";
 import type pino from "pino";
+import type { ImageSpecFromBuffer } from "../../lib/atproto";
+import {
+	drawChartFromDailySongData,
+	type Offsets,
+} from "../../lib/charts/barChart";
+import type { BirdRecord } from "../../lib/haiku";
+import { seenBirds } from "../../lib/sightings";
 
 /**
  * Build the list of most-seen birds into a post

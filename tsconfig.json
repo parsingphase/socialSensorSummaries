@@ -99,8 +99,8 @@
 		// "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
 		"skipLibCheck": true /* Skip type checking all .d.ts files. */,
 		"paths": {
-			"*": ["./@types/*"],
-			"lib/*": ["./lib/*"]
+			"*": ["./@types/*"]
+			//			"lib/*": ["./lib/*"]
 		}
 	},
 	"exclude": ["node_modules", "dist", "tmp", "test", "iac", "cdk.out"]

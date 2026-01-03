@@ -1,27 +1,27 @@
 import type { AtpAgent } from "@atproto/api";
 import type { Context, ScheduledEvent } from "aws-lambda";
+import { DateTime, Duration } from "luxon";
+import pino from "pino";
 import {
 	getAtprotoAgent,
 	type Link,
 	postToAtproto,
 	type StrongPostRef,
-} from "lib/atproto";
+} from "./lib/atproto";
 import {
 	buildDailySummaryPostContent,
 	type SummaryPostTextSubstitutions,
-} from "lib/birdObservations/buildBirdObservationSummaryPost";
-import { fetchDailyCount as fetchDailyCountFromBirdWeatherApi } from "lib/birdWeather";
-import { assertedEnvVar } from "lib/configTools";
+} from "./lib/birdObservations/buildBirdObservationSummaryPost";
+import { fetchDailyCount as fetchDailyCountFromBirdWeatherApi } from "./lib/birdWeather";
+import { assertedEnvVar } from "./lib/configTools";
 import {
 	type BirdRecord,
 	fetchDailyCount as fetchDailyCountFromHaikuboxApi,
-} from "lib/haiku";
+} from "./lib/haiku";
 import {
 	type AmbientWeatherApiConfig,
 	buildWeatherSummaryForDay,
-} from "lib/weather";
-import { DateTime, Duration } from "luxon";
-import pino from "pino";
+} from "./lib/weather";
 
 type LambdaConfig = {
 	blueskyUsername: string;
