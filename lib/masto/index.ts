@@ -3,7 +3,7 @@ import type {
 	MastoClient,
 	Status,
 	StatusVisibility,
-} from "lib/masto/types";
+} from "./types";
 
 /**
  * Post plain string to mastodon

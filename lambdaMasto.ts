@@ -1,27 +1,27 @@
 import type { Context, ScheduledEvent } from "aws-lambda";
+import { DateTime, Duration } from "luxon";
+import { createRestAPIClient } from "masto";
+import pino from "pino";
 import {
 	buildDailySummaryPostContent,
 	type SummaryPostTextSubstitutions,
-} from "lib/birdObservations/buildBirdObservationSummaryPost";
-import { fetchDailyCount as fetchDailyCountFromBirdWeatherApi } from "lib/birdWeather";
-import { assertedEnvVar } from "lib/configTools";
+} from "./lib/birdObservations/buildBirdObservationSummaryPost";
+import { fetchDailyCount as fetchDailyCountFromBirdWeatherApi } from "./lib/birdWeather";
+import { assertedEnvVar } from "./lib/configTools";
 import {
 	type BirdRecord,
 	fetchDailyCount as fetchDailyCountFromHaikuboxApi,
-} from "lib/haiku";
+} from "./lib/haiku";
 import {
 	createAttachmentFromImageData,
 	postToMastodon,
 	type SimpleMastoAttachment,
-} from "lib/masto";
-import type { MastoClient, Status, StatusVisibility } from "lib/masto/types";
+} from "./lib/masto";
+import type { MastoClient, Status, StatusVisibility } from "./lib/masto/types";
 import {
 	type AmbientWeatherApiConfig,
 	buildWeatherSummaryForDay,
-} from "lib/weather";
-import { DateTime, Duration } from "luxon";
-import { createRestAPIClient } from "masto";
-import pino from "pino";
+} from "./lib/weather";
 
 type LambdaConfig = {
 	mastoToken: string;
@@ -209,7 +209,7 @@ async function postStatusFromBirdList(
 	);
 
 	let imageAttachment: SimpleMastoAttachment | undefined;
-	if (imageData?.length) {
+	if (imageData?.[0]) {
 		imageAttachment = await createAttachmentFromImageData(
 			client,
 			imageData[0].data,

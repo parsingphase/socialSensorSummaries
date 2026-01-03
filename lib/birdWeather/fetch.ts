@@ -1,8 +1,8 @@
-import { ApolloClient, type MaybeMasked } from "@apollo/client";
+import type { ApolloClient, MaybeMasked } from "@apollo/client";
 import type { BirdRecord } from "../haiku";
 import { initBirdWeatherClient } from "./client";
 
-import QueryResult = ApolloClient.QueryResult;
+type QueryResult = ApolloClient.QueryResult;
 
 import type {
 	AllDetectionsInPeriodQuery,
@@ -37,9 +37,9 @@ async function fetchDailyCount(
 	let hasNextPage: boolean = true;
 	let previousEndCursor: string | null | undefined;
 
-	let res: QueryResult<MaybeMasked<AllDetectionsInPeriodQuery>>;
+
 	do {
-		res = await client.query<
+		const res = await client.query<
 			AllDetectionsInPeriodQuery,
 			AllDetectionsInPeriodQueryVariables
 		>({
@@ -72,7 +72,7 @@ async function fetchDailyCount(
 
 	const birdRecords: BirdRecord[] = [];
 	for (const key in countBySpecies) {
-		birdRecords.push({ bird: key, count: countBySpecies[key] });
+		birdRecords.push({ bird: key, count: countBySpecies[key] ?? 0 });
 	}
 
 	return birdRecords.sort((a, b) => b.count - a.count);

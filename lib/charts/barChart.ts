@@ -21,11 +21,12 @@ class BarChart extends ChartImageBuilder {
 	) {
 		super(canvasWidth, canvasHeight, title, chartOffsets);
 		this.chartData = chartData;
-		this.maxCount = Object.keys(this.chartData).reduce(
-			(max, current) =>
-				this.chartData[current] > max ? this.chartData[current] : max,
-			0,
-		);
+		this.maxCount = 0;
+
+		for (const count of Object.values(this.chartData)) {
+			this.maxCount = Math.max(this.maxCount, count);
+		}
+
 		this.bgColor = "rgb(250,250,250)";
 		this.fgColor = "rgb(255,255,255)";
 		this.titleFontSize = Math.floor((1.5 * canvasWidth) / title.length);
@@ -92,8 +93,8 @@ class BarChart extends ChartImageBuilder {
 
 		let offset = 0;
 		const barLeft = this.graphOffset.x + chartFrameStrokeWidth + padding;
-		for (const species in this.chartData) {
-			const songCount = this.chartData[species];
+		for (const [species, songCount] of Object.entries(this.chartData)) {
+			// const songCount = this.chartData[species];
 			const barWidth = songCount * chartWidthScale;
 			const barTop =
 				this.graphOffset.y +

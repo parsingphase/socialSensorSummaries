@@ -118,8 +118,11 @@ class HeatmapChart extends ChartImageBuilder {
 		location: LatLon,
 		scale: number,
 	) {
-		const firstDateTime = intervals[0].timestamp;
-		const lastDateTime = intervals[intervals.length - 1].timestamp;
+		const firstDateTime = intervals[0]?.timestamp;
+		const lastDateTime = intervals[intervals.length - 1]?.timestamp;
+		if(!(firstDateTime && lastDateTime)) {
+			return; // fixme make this more robust
+		}
 
 		let timestamp = firstDateTime;
 		do {

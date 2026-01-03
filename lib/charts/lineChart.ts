@@ -56,9 +56,11 @@ function smoothCount<T extends { count: number | null }>(
 			}
 		});
 
-		if (outData[i].count !== null) {
+
+		if (outData[i]?.count !== null) {
 			// leave nulls unchanged as we can't plot them
-			outData[i].count = total / dataPoints;
+			// biome-ignore lint/style/noNonNullAssertion: Solve this after we've verified libs>
+			outData[i]!.count = total / dataPoints;
 		}
 	}
 	return outData;
@@ -157,18 +159,21 @@ class LineChart extends ChartImageBuilder {
 		].map((c) => new TinyColor(c));
 
 		// Draw data
-		for (let i = 0; i < years.length; i++) {
-			const year = years[i];
+		let i=0;
+		for (const year of years) {
+			// const year = years[i];
 
-			const lineColor = new TinyColor(colors[i].toRgbString()).setAlpha(0.4);
-			const avgColor = new TinyColor(colors[i].toRgbString())
+			const lineColor = new TinyColor(colors[i]?.toRgbString()).setAlpha(0.4);
+			const avgColor = new TinyColor(colors[i]?.toRgbString())
 				.brighten(10)
 				.setAlpha(0.6);
 
 			ctx.lineWidth = 5;
-			this.plotPoints(ctx, this.smoothData[year], avgColor.toRgbString());
+			// biome-ignore lint/style/noNonNullAssertion: <explanation>
+			this.plotPoints(ctx, this.smoothData[year]!, avgColor.toRgbString());
 			ctx.lineWidth = 1;
-			this.plotPoints(ctx, this.dailyData[year], lineColor.toRgbString());
+			// biome-ignore lint/style/noNonNullAssertion: <explanation>
+			this.plotPoints(ctx, this.dailyData[year]!, lineColor.toRgbString());
 
 			// draw legend
 			const yearLegendLeft =
@@ -212,6 +217,7 @@ class LineChart extends ChartImageBuilder {
 				yearLegendLeft + this.legendBarLength + 5,
 				this.canvasHeight - ybase + 3,
 			);
+			i++;
 		}
 		this.drawMonthLabels(ctx);
 
@@ -222,7 +228,7 @@ class LineChart extends ChartImageBuilder {
 				this.graphXtoCanvasX(outage.startPos),
 				this.graphYtoCanvasY(0) + 2,
 				this.graphXtoCanvasX(outage.endPos) -
-					this.graphXtoCanvasX(outage.startPos),
+				this.graphXtoCanvasX(outage.startPos),
 				this.graphYtoCanvasY(this.maxValue) - this.graphYtoCanvasY(0) - 2,
 			);
 		}
@@ -278,20 +284,22 @@ class LineChart extends ChartImageBuilder {
 			let lastDrawnXIndex = startDatum.xIndex;
 			for (let i = 0; i < lineChartPoints.length; i++) {
 				const datum = lineChartPoints[i];
-				const count = datum.count;
-				if (count !== null) {
-					const drewLastPoint = lastDrawnXIndex === datum.xIndex - 1;
-					const nextPoint = this.graphPointToCanvasXY(datum.xIndex, count);
-					// special case to make sure the first point gets on the chart, even if it's the only one
-					if (i === 0 && lineChartPoints.length === 1) {
-						ctx.lineTo(nextPoint.x + 1, nextPoint.y);
+				if (datum) {
+					const count = datum.count;
+					if (count !== null) {
+						const drewLastPoint = lastDrawnXIndex === datum.xIndex - 1;
+						const nextPoint = this.graphPointToCanvasXY(datum.xIndex, count);
+						// special case to make sure the first point gets on the chart, even if it's the only one
+						if (i === 0 && lineChartPoints.length === 1) {
+							ctx.lineTo(nextPoint.x + 1, nextPoint.y);
+						}
+						if (drewLastPoint || i === 0) {
+							ctx.lineTo(nextPoint.x, nextPoint.y);
+						} else {
+							ctx.moveTo(nextPoint.x, nextPoint.y);
+						}
+						lastDrawnXIndex = datum.xIndex;
 					}
-					if (drewLastPoint || i === 0) {
-						ctx.lineTo(nextPoint.x, nextPoint.y);
-					} else {
-						ctx.moveTo(nextPoint.x, nextPoint.y);
-					}
-					lastDrawnXIndex = datum.xIndex;
 				}
 			}
 			ctx.stroke();

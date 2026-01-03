@@ -1,8 +1,8 @@
-import type { ImageSpecFromBuffer } from "lib/atproto";
-import { drawChartFromDailySongData, type Offsets } from "lib/charts/barChart";
-import type { BirdRecord } from "lib/haiku";
-import { seenBirds } from "lib/sightings";
 import type pino from "pino";
+import type { ImageSpecFromBuffer } from "../atproto";
+import { drawChartFromDailySongData, type Offsets } from "../charts/barChart";
+import type { BirdRecord } from "../haiku";
+import { seenBirds } from "../sightings";
 
 /**
  * Build the list of most-seen birds into a post
@@ -66,24 +66,25 @@ function buildTopBirdsPostText(
 	}
 
 	let maxBirdIndexIncluded = 0;
-	for (let i = 0; i < candidateLines.length; i++) {
+	for (const line of candidateLines) {
 		if (
 			postText.length +
-				candidateLines[i].length +
+			line.length +
 				fixedTags.length +
 				caveatAppendedText.length <
 			maxPostLength
 		) {
-			postText += `\n${candidateLines[i]}`;
-			maxBirdIndexIncluded = i;
+			postText += `\n${line}`;
+			maxBirdIndexIncluded ++;
 		} else {
 			break;
 		}
 	}
 
+	// FIXME this logic may be off after we changed maxBirdIndexIncluded increment logic
 	if (
 		firstUnverifiedBirdIndex !== null &&
-		maxBirdIndexIncluded >= firstUnverifiedBirdIndex
+		maxBirdIndexIncluded > firstUnverifiedBirdIndex
 	) {
 		postText += caveatAppendedText;
 	}

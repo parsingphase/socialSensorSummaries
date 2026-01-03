@@ -6,6 +6,7 @@ const config: CodegenConfig = {
 	generates: {
 		"./lib/birdWeather/codegen/": {
 			preset: "client",
+			config: { useTypeImports: true, }
 		},
 	},
 };

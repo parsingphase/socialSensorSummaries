@@ -77,7 +77,7 @@ async function fetchDeviceWeatherRecords(
 		applicationKey,
 	})}`;
 
-	return await (await fetch(queryUrl)).json();
+	return (await (await fetch(queryUrl)).json()) as AmbientWeatherInterval[];
 }
 
 export { fetchDeviceWeatherRecords };

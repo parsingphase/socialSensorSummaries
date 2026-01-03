@@ -19,7 +19,7 @@ async function fetchDailyCount(
 
 	let birds: BirdRecord[] | null = null;
 	try {
-		birds = await (await fetch(queryUrl)).json();
+		birds = (await (await fetch(queryUrl)).json()) as BirdRecord[];
 	} catch (e) {
 		console.log(e);
 	}
@@ -36,7 +36,7 @@ function listDatesWithData(dataDir: string): string[] {
 	// console.log(JSON.stringify(dirList));
 	const rawFiles = dirList
 		.filter((f) => f.match(/^\d{4}-\d{2}-\d{2}/))
-		.map((f) => f.split(".")[0]);
+		.map((f) => f.split(".")[0]??''); // FIXME type forced
 	rawFiles.sort();
 	return rawFiles;
 }

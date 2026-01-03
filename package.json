@@ -3,6 +3,7 @@
 	"version": "0.0.1",
 	"description": "Post daily summaries from atmospheric sensors to social media",
 	"main": "index.js",
+	"type": "module",
 	"scripts": {
 		"test": "npm run test:static",
 		"test:static": "npm run test:static:tsc && npm run test:static:biome",
@@ -34,7 +35,7 @@
 		"aws-lambda": "^1.0.7",
 		"commander": "^14.0.2",
 		"lefthook": "^2.0.13",
-		"tsx": "^4.19.0",
+		"tsx": "^4.21.0",
 		"typescript": "^5.5.4",
 		"typescript-eslint": "^8.3.0"
 	},
