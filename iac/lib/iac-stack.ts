@@ -114,7 +114,7 @@ export class IacStack extends cdk.Stack {
 					file: dockerFile,
 				}),
 				memorySize: 512,
-				timeout: Duration.seconds(30),
+				timeout: Duration.seconds(60),
 				environment: {
 					...serviceConfig,
 
