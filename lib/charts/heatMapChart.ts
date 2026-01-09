@@ -38,13 +38,11 @@ class HeatmapChart extends ChartImageBuilder {
 		this.fgColor = "rgb(250,250,250)";
 	}
 
-	drawGraph(): Canvas {
+	drawGraph(scalingPower = 1): Canvas {
 		this.drawTitleAndBackground();
 		this.drawInnerFrame();
 		this.drawMonthLabels();
 		this.drawHourLabels();
-
-		// return this.canvas;
 
 		const withDates = this.bucketData;
 
@@ -71,6 +69,12 @@ class HeatmapChart extends ChartImageBuilder {
 
 		const bgColorRgb = inputToRGB(this.fgColor);
 
+		function scaleColor(r1: number, count: number) {
+			return Math.round(
+				r1 - (count ** scalingPower / maxCount ** scalingPower) * r1,
+			);
+		}
+
 		for (const period of withDates) {
 			const timestamp = period.timestamp;
 			const { dayOfYear, dayBucket } = dateTimeToBucket(timestamp);
@@ -78,8 +82,8 @@ class HeatmapChart extends ChartImageBuilder {
 			// const tint = Math.floor((period.count / maxCount) * 255);
 			const a = 255;
 			const count = period.count;
-			const r = Math.round(bgColorRgb.r - (count / maxCount) * bgColorRgb.r);
-			const g = Math.round(bgColorRgb.g - (count / maxCount) * bgColorRgb.g);
+			const r = scaleColor(bgColorRgb.r, count);
+			const g = scaleColor(bgColorRgb.g, count);
 			const b = bgColorRgb.b;
 
 			for (let dx = 0; dx < scale; dx++) {

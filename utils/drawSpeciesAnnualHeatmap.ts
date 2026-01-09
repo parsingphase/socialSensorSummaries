@@ -41,6 +41,11 @@ async function getOpts() {
 			"Timezone to calculate start/end of day",
 			Intl.DateTimeFormat().resolvedOptions().timeZone,
 		)
+		.option(
+			"--scaling-root <number>",
+			"Scaling factor N to apply to chart counts, applied by scaling to Nth root of observation count. Try values from 1-3 (1 is unscaled)",
+			"1",
+		)
 		.description(
 			"Data must be pre-cached with fetchBirdWeatherBucketHistory.ts\nFor a full list of timezones, see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones",
 		);
@@ -53,9 +58,11 @@ async function getOpts() {
 		speciesId: speciesIdString,
 		location: stringLocation,
 		timezone,
+		scalingRoot: scalingRootString,
 	} = options;
 	const stationId = Number(stationIdString);
 	const speciesId = Number(speciesIdString);
+	const scalingRoot = Number(scalingRootString);
 
 	const apiUrl = config.birdWeather.apiBaseUrl;
 	let { speciesName } = options;
@@ -84,7 +91,7 @@ async function getOpts() {
 			throw e;
 		}
 	}
-	return { stationId, speciesId, speciesName, location, timezone };
+	return { stationId, speciesId, speciesName, location, timezone, scalingRoot };
 }
 
 /**
@@ -201,6 +208,7 @@ function buildObservationHeatmap(
 	speciesName: string,
 	observations: CachedBucketPeriodWithDateTime[],
 	location?: LatLon,
+	scalingPower = 1,
 ): Buffer {
 	const width = 1000;
 	const height = 800;
@@ -226,12 +234,12 @@ function buildObservationHeatmap(
 		location,
 	);
 
-	chart.drawGraph();
+	chart.drawGraph(scalingPower);
 	return chart.canvasAsPng();
 }
 
 async function main(): Promise<void> {
-	const { stationId, speciesId, speciesName, location, timezone } =
+	const { stationId, speciesId, speciesName, location, timezone, scalingRoot } =
 		await getOpts();
 
 	const minutes = 5;
@@ -243,9 +251,12 @@ async function main(): Promise<void> {
 		speciesName ?? "",
 		withDates,
 		location || undefined,
+		1 / scalingRoot,
 	);
 
-	const outpath = `${PROJECT_DIR}/tmp/yearHeatMap-station${stationId}-species${speciesId}.png`;
+	const scalingRootString = `${scalingRoot}`.replace(".", "_");
+
+	const outpath = `${PROJECT_DIR}/tmp/yearHeatMap-station${stationId}-species${speciesId}-sr${scalingRootString}.png`;
 	console.log({ outpath });
 	fs.writeFileSync(outpath, fileData);
 }
