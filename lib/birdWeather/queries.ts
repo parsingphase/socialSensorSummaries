@@ -49,6 +49,38 @@ const allDetectionsInPeriodQuery = gql`
   }
 `;
 
+// eg period: { from: "2025-12-26", to: "2025-12-26" }
+const allSpeciesDetectionsInPeriodQuery = gql`
+  query AllSpeciesDetectionsInPeriod(
+    $stationId: ID!
+    $speciesId: ID!
+    $from: ISO8601Date!
+    $to: ISO8601Date!
+    $after: String
+  ) {
+    detections(stationIds: [$stationId], speciesIds: [$speciesId], period: { from: $from, to: $to }, after: $after) {
+      pageInfo {
+        startCursor
+        endCursor
+        hasNextPage
+        hasPreviousPage
+      }
+      edges {
+        cursor
+        node {
+          timestamp
+          species {
+            commonName
+          }
+          confidence
+          probability
+          score
+        }
+      }
+    }
+  }
+`;
+
 const bucketObservationsQuery = gql`
 query BucketSpeciesObservations($speciesId: ID!, $stationId: ID!, $fromDate: ISO8601Date!, $toDate: ISO8601Date!, $bucketMinutes: Int!) {
   species(id: $speciesId) {
@@ -120,6 +152,7 @@ const speciesSearchQuery = gql`
 
 export {
 	allDetectionsInPeriodQuery,
+	allSpeciesDetectionsInPeriodQuery,
 	dailyDetectionsQuery,
 	bucketObservationsQuery,
 	speciesSearchQuery,
