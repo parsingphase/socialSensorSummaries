@@ -257,3 +257,5 @@ export {
 	fetchSpeciesObservationsForDay,
 	fetchStationInfo,
 };
+
+export type { ObservationRecord };

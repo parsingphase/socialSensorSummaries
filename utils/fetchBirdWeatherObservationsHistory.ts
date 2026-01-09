@@ -21,6 +21,7 @@ function getOpts() {
 			"End of range to fetch",
 			DateTime.now().toISODate(),
 		)
+		.option("--no-skip-cached", "Refresh even cached files")
 		.description(
 			"Fetch BirdWeather bucket data to cache for heatmaps. Use searchSpecies.ts to look up IDs.",
 		);
@@ -33,6 +34,7 @@ function getOpts() {
 		speciesId: speciesIdString,
 		from: fromDateString,
 		to: toDateString,
+		skipCached,
 	} = options;
 	const stationId = Number(stationIdString);
 	const speciesId = Number(speciesIdString);
@@ -43,11 +45,16 @@ function getOpts() {
 		throw new Error("Invalid dates");
 	}
 
-	return { stationId, speciesId, fromDate, toDate };
+	const processedOps = { stationId, speciesId, fromDate, toDate, skipCached };
+
+	// console.log({processedOps});
+	// process.exit();
+
+	return processedOps;
 }
 
 async function main(): Promise<void> {
-	const { speciesId, stationId, fromDate, toDate } = getOpts();
+	const { speciesId, stationId, fromDate, toDate, skipCached } = getOpts();
 	const dirForSpeciesStation = getSpeciesObservationCacheDirForSpeciesStation(
 		speciesId,
 		stationId,
@@ -64,6 +71,14 @@ async function main(): Promise<void> {
 		day = day.minus({ day: 1 })
 	) {
 		const dateOfInterest = day.toISODate();
+
+		const cacheFile = `${dirForSpeciesStation}/${dateOfInterest}.json`;
+
+		if (fs.existsSync(cacheFile) && skipCached) {
+			console.info(`Skip cached file: ${dateOfInterest}.json`);
+			continue;
+		}
+
 		const observations = await fetchSpeciesObservationsForDay(
 			apiUrl,
 			`${stationId}`,
@@ -71,7 +86,6 @@ async function main(): Promise<void> {
 			dateOfInterest,
 		);
 
-		const cacheFile = `${dirForSpeciesStation}/${dateOfInterest}.json`;
 		fs.writeFileSync(cacheFile, JSON.stringify(observations, undefined, 2));
 		console.log(`${dateOfInterest}: Write to ${cacheFile}`);
 	}

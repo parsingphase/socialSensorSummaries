@@ -5,11 +5,18 @@ import { Command } from "@commander-js/extra-typings";
 import { DateTime } from "luxon";
 import { config } from "../config/config";
 import type { BucketSpeciesObservationsQuery } from "../lib/birdWeather/codegen/graphql";
-import { fetchSpeciesInfo, fetchStationInfo } from "../lib/birdWeather/fetch";
+import {
+	fetchSpeciesInfo,
+	fetchStationInfo,
+	type ObservationRecord,
+} from "../lib/birdWeather/fetch";
 import type { Margins } from "../lib/charts/canvasChartBuilder";
 import { HeatmapChart, type LatLon } from "../lib/charts/heatMapChart";
 import { PROJECT_DIR } from "../lib/utils";
-import { getSpeciesBucketCacheDirForSpeciesStationDuration } from "./shared";
+import {
+	getSpeciesBucketCacheDirForSpeciesStationDuration,
+	getSpeciesObservationCacheDirForSpeciesStation,
+} from "./shared";
 
 type RawCachedBucketPeriod = { count: number; key: string };
 
@@ -116,6 +123,60 @@ function loadSpeciesBucketCache(
 	return allData;
 }
 
+void loadSpeciesBucketCache; // unused until API is fixed
+
+function loadSpeciesCacheDataAsBuckets(
+	speciesId: number,
+	stationId: number,
+	minutes: number,
+): CachedBucketPeriodWithDateTime[] {
+	const keyedBuckets: Record<string, CachedBucketPeriodWithDateTime> = {};
+	const dirForSpeciesStation = getSpeciesObservationCacheDirForSpeciesStation(
+		speciesId,
+		stationId,
+	);
+
+	const files = fs.readdirSync(dirForSpeciesStation);
+	for (const file of files) {
+		if (file.endsWith(".json")) {
+			const fileData = fs.readFileSync(`${dirForSpeciesStation}/${file}`, {
+				encoding: "utf-8",
+			});
+			const records: ObservationRecord[] = JSON.parse(fileData);
+			for (const record of records) {
+				if (!record) {
+					continue;
+				}
+				const timestamp = DateTime.fromISO(record.timestamp);
+				const bucketFloor =
+					Math.floor(timestamp.toMillis() / (60_000 * minutes)) *
+					60_000 *
+					minutes;
+				const bucketTimestamp = DateTime.fromMillis(bucketFloor, {
+					zone: timestamp.zone,
+				});
+
+				if (!bucketTimestamp.isValid) {
+					throw new Error("bad ts");
+				}
+
+				const key = bucketTimestamp.toISO();
+
+				if (!keyedBuckets[key]) {
+					keyedBuckets[key] = {
+						count: 0,
+						key,
+						timestamp: bucketTimestamp,
+					};
+				}
+				keyedBuckets[key].count++;
+			}
+		}
+	}
+
+	return Object.values(keyedBuckets);
+}
+
 function hydrateSpeciesBucketCacheDates(
 	allData: RawCachedBucketPeriod[],
 	targetTimeZone: string,
@@ -164,7 +225,8 @@ async function main(): Promise<void> {
 		await getOpts();
 
 	const minutes = 5;
-	const allData = loadSpeciesBucketCache(speciesId, stationId, minutes);
+	// const allData = loadSpeciesBucketCache(speciesId, stationId, minutes);
+	const allData = loadSpeciesCacheDataAsBuckets(speciesId, stationId, minutes);
 
 	const withDates = hydrateSpeciesBucketCacheDates(allData, timezone);
 	const fileData = buildObservationHeatmap(
