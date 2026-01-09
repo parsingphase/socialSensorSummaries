@@ -66,13 +66,23 @@ async function getOpts() {
 			.map((x) => parseFloat(x));
 		location = { lat, lon };
 	} else {
-		const stationInfo = await fetchStationInfo(apiUrl, stationId);
-		location = stationInfo.station.coords ?? null;
+		try {
+			const stationInfo = await fetchStationInfo(apiUrl, stationId);
+			location = stationInfo.station.coords ?? null;
+		} catch (e) {
+			console.error("Error in fetchStationInfo");
+			throw e;
+		}
 	}
 
 	if (!speciesName) {
-		const speciesInfo = await fetchSpeciesInfo(apiUrl, speciesId);
-		speciesName = speciesInfo.species?.commonName;
+		try {
+			const speciesInfo = await fetchSpeciesInfo(apiUrl, speciesId);
+			speciesName = speciesInfo.species?.commonName;
+		} catch (e) {
+			console.error("Error in fetchSpeciesInfo");
+			throw e;
+		}
 	}
 	return { stationId, speciesId, speciesName, location, timezone };
 }
