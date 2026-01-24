@@ -1,9 +1,10 @@
-import { inputToRGB } from "@ctrl/tinycolor";
+import { inputToRGB, TinyColor } from "@ctrl/tinycolor";
 import { type Canvas, DOMMatrix, type ImageData } from "canvas";
 import { DateTime, Interval } from "luxon";
 import SunCalc from "suncalc";
 import { ChartImageBuilder, type Margins } from "./canvasChartBuilder";
 import { dateToLeapYearDayOfYear } from "./lineChart";
+import { tinyColorToRgba255 } from "./tinyTools";
 
 type LatLon = {
 	lat: number;
@@ -16,9 +17,88 @@ type CountWithDateTime = {
 };
 
 class HeatmapChart extends ChartImageBuilder {
-	protected plotscale: number;
+	/**
+	 * Edge length in pixels of the square plotting one time-bucket's data
+	 * @protected
+	 */
+	protected plotScale: number;
+	/**
+	 * Lat-lon position of the station, used for sunrise/set if present
+	 * @protected
+	 */
 	protected location: { lat: number; lon: number } | undefined;
-	protected bucketData: CountWithDateTime[];
+	/**
+	 * Data to plot (set via accessor in constructor)
+	 * @protected
+	 */
+	protected bucketData: CountWithDateTime[] = [];
+
+	protected bucketMax: number = 0;
+
+	/**
+	 * Plot color as string (mostly informational)
+	 * @protected
+	 */
+	protected plotColorString: string = "rgb(0,0,255)";
+	/**
+	 * Color in object form as a parser cache. Set on construct or setter
+	 * @protected
+	 */
+	protected plotColor: TinyColor;
+
+	/**
+	 * Power to raise values to when calculating color, to avoid swamping lower values
+	 *
+	 * Range of >0, ≤=1 (ie we're typically taking a root of some sort)
+	 *
+	 * @protected
+	 */
+	protected scalingPower: number = 1;
+
+	protected fixedMax: number | false = false;
+
+	// Chained setters for optional values
+	public setLocation(location: LatLon): this {
+		this.location = location;
+		return this;
+	}
+
+	public setPlotColor(colorObjOrString: TinyColor | string): this {
+		if (typeof colorObjOrString === "string") {
+			this.plotColorString = colorObjOrString;
+			this.plotColor = new TinyColor(colorObjOrString);
+		} else {
+			this.plotColor = colorObjOrString;
+			this.plotColorString = `rgb(${colorObjOrString.r},${colorObjOrString.g},${colorObjOrString.b})`;
+		}
+		return this;
+	}
+
+	public setScalingPower(power: number): this {
+		if (power <= 0 || power > 1) {
+			throw new Error("Scaling power must be in range (0,1]");
+		}
+		this.scalingPower = power;
+		return this;
+	}
+
+	public setFixedMax(max: number | false): this {
+		if (max !== false && max < 1) {
+			throw new Error("Fixed max must be at least 1 (or 'false' to unset)");
+		}
+		this.fixedMax = max;
+		return this;
+	}
+
+	public setBucketData(bucketData: CountWithDateTime[]) {
+		this.bucketData = bucketData;
+		this.bucketMax = this.bucketData.reduce(
+			(prevMax, currentValue) =>
+				currentValue.count > prevMax ? currentValue.count : prevMax,
+			0,
+		);
+		return this;
+	}
 
 	/**
 	 * Create chart builder with required config
@@ -29,7 +109,6 @@ class HeatmapChart extends ChartImageBuilder {
 	 * @param graphFrame Margins between image edge and graph plot
 	 * @param plotScale Edge length in pixels of the square plotting one time-bucket's data
 	 * @param bucketData Time-bucket data to plot
-	 * @param location Lat-lon position of the station, used for sunrise/set if present
 	 */
 	constructor(
 		canvasWidth: number,
@@ -38,23 +117,22 @@ class HeatmapChart extends ChartImageBuilder {
 		graphFrame: Margins,
 		plotScale: number,
 		bucketData: CountWithDateTime[],
-		location?: LatLon,
 	) {
 		super(canvasWidth, canvasHeight, title, graphFrame);
-		this.plotscale = plotScale;
-		this.location = location;
-		this.bucketData = bucketData;
+		this.plotScale = plotScale;
+		this.setBucketData(bucketData);
 
 		this.labelFont = "16px Impact";
 		this.fgColor = "rgb(250,250,250)";
+
+		// init - this is a with-default property, so use a setter to change it
+		this.plotColor = new TinyColor(this.plotColorString);
 	}
 
 	/**
 	 * Draw the chart, returning a canvas
-	 * @param scalingPower Exponent to apply to value when picking color, so extreme highs don't swamp typical values
-	 * @param fixedMax Fixed upper limit of scale (values will clip if needed) to support direct comparison
 	 */
-	drawGraph(scalingPower = 1, fixedMax?: number): Canvas {
+	drawGraph(): Canvas {
 		this.drawTitleAndBackground();
 		this.drawInnerFrame();
 		this.drawMonthLabels();
@@ -62,13 +140,7 @@ class HeatmapChart extends ChartImageBuilder {
 
 		const withDates = this.bucketData;
 
-		const maxCount = withDates.reduce(
-			(prevMax, currentValue) =>
-				currentValue.count > prevMax ? currentValue.count : prevMax,
-			0,
-		);
-
-		const scale = this.plotscale;
+		const scale = this.plotScale;
 
 		const ctx = this.context2d;
 
@@ -83,35 +155,14 @@ class HeatmapChart extends ChartImageBuilder {
 			height,
 		);
 
-		const chartBackground = this.fgColor;
-		const bgColorRgb = inputToRGB(chartBackground);
-		// console.log({ chartBackground, bgColorRgb });
 		// NB: Alpha is 0…1 here but int(0…255) in ImageData
 
-		function scaleColor(componentPeakValue: number, pointValue: number) {
-			const scaleTop = fixedMax ?? maxCount;
-			const plotValue = fixedMax ? Math.min(fixedMax, pointValue) : pointValue;
-			return Math.round(
-				componentPeakValue -
-					(plotValue ** scalingPower / scaleTop ** scalingPower) *
-						componentPeakValue,
-			);
-		}
-
 		for (const period of withDates) {
-			const timestamp = period.timestamp;
-			const { dayOfYear, dayBucket } = dateTimeToBucket(timestamp);
+			const { dayOfYear, dayBucket } = dateTimeToBucket(period.timestamp);
 
-			// const tint = Math.floor((period.count / maxCount) * 255);
-			const a = 255;
-			const count = period.count;
-
-			// NB: we're currently hardcoding this to plot in various apparent opacities of blue
-			//  Smarter color options could use tinyColor's onbackground with alpha adjustment:
-			//  https://tinycolor.vercel.app/docs/#md:onbackground
-			const r = scaleColor(bgColorRgb.r, count);
-			const g = scaleColor(bgColorRgb.g, count);
-			const b = bgColorRgb.b;
+			const { r, g, b, a } = tinyColorToRgba255(
+				this.getColorForPlotValue(period.count),
+			);
 
 			for (let dx = 0; dx < scale; dx++) {
 				for (let dy = 0; dy < scale; dy++) {
@@ -140,7 +191,7 @@ class HeatmapChart extends ChartImageBuilder {
 			this.graphOffset.x + 1,
 			this.graphOffset.y + 1,
 		);
-		this.drawScale(maxCount, !!location);
+		this.drawScale();
 
 		return this.canvas;
 	}
@@ -197,13 +248,14 @@ class HeatmapChart extends ChartImageBuilder {
 		} while (timestamp.toMillis() < lastDateTime.toMillis());
 	}
 
-	private drawScale(maxCount: number, withSunLines: boolean) {
+	private drawScale() {
+		const withSunLines = !!this.location;
 		const ctx = this.context2d;
 
 		ctx.fillStyle = this.textColor;
 		ctx.font = this.labelFont;
 
-		const footnote = `${withSunLines ? "Showing sunrise & sunset times. " : ""}Scale: 5 minute buckets, max count/bucket = ${maxCount}`;
+		const footnote = `${withSunLines ? "Showing sunrise & sunset times. " : ""}Scale: 5 minute buckets, max count/bucket = ${this.trueScaleMax()}`;
 
 		const textMeasure = ctx.measureText(footnote);
 		const textHeight =
@@ -273,6 +325,18 @@ class HeatmapChart extends ChartImageBuilder {
 				1;
 			ctx.fillText(fullLabel, labelX, labelY);
 		}
+	}
+
+	protected getColorForPlotValue(plotValue: number): TinyColor {
+		const scaleTop = this.trueScaleMax();
+		const clippedValue = Math.min(scaleTop, plotValue);
+		const scalingPower = this.scalingPower;
+		const opacity = clippedValue ** scalingPower / scaleTop ** scalingPower;
+		return this.plotColor.clone().setAlpha(opacity).onBackground(this.bgColor);
+	}
+
+	protected trueScaleMax() {
+		return this.fixedMax || this.bucketMax;
 	}
 }
 

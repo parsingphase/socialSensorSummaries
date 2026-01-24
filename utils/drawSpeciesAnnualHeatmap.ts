@@ -247,10 +247,15 @@ function buildObservationHeatmap(
 		margins,
 		plotScale,
 		observations,
-		location,
 	);
 
-	chart.drawGraph(scalingPower, fixedMax);
+	if (location) {
+		chart.setLocation(location);
+	}
+
+	chart.setFixedMax(fixedMax ?? false).setScalingPower(scalingPower);
+
+	chart.drawGraph();
 	return chart.canvasAsPng();
 }
 
