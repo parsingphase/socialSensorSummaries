@@ -20,6 +20,17 @@ class HeatmapChart extends ChartImageBuilder {
 	protected location: { lat: number; lon: number } | undefined;
 	protected bucketData: CountWithDateTime[];
 
+	/**
+	 * Create chart builder with required config
+	 *
+	 * @param canvasWidth
+	 * @param canvasHeight
+	 * @param title
+	 * @param graphFrame Margins between image edge and graph plot
+	 * @param plotScale Edge length in pixels of the square plotting one time-bucket's data
+	 * @param bucketData Time-bucket data to plot
+	 * @param location Lat-lon position of the station, used for sunrise/set if present
+	 */
 	constructor(
 		canvasWidth: number,
 		canvasHeight: number,
@@ -72,13 +83,18 @@ class HeatmapChart extends ChartImageBuilder {
 			height,
 		);
 
-		const bgColorRgb = inputToRGB(this.fgColor);
+		const chartBackground = this.fgColor;
+		const bgColorRgb = inputToRGB(chartBackground);
+		// console.log({ chartBackground, bgColorRgb });
+		// NB: Alpha is 0…1 here but int(0…255) in ImageData
 
-		function scaleColor(r1: number, count: number) {
+		function scaleColor(componentPeakValue: number, pointValue: number) {
 			const scaleTop = fixedMax ?? maxCount;
-			const plotValue = fixedMax ? Math.min(fixedMax, count) : count;
+			const plotValue = fixedMax ? Math.min(fixedMax, pointValue) : pointValue;
 			return Math.round(
-				r1 - (plotValue ** scalingPower / scaleTop ** scalingPower) * r1,
+				componentPeakValue -
+					(plotValue ** scalingPower / scaleTop ** scalingPower) *
+						componentPeakValue,
 			);
 		}
 
@@ -89,6 +105,10 @@ class HeatmapChart extends ChartImageBuilder {
 			// const tint = Math.floor((period.count / maxCount) * 255);
 			const a = 255;
 			const count = period.count;
+
+			// NB: we're currently hardcoding this to plot in various apparent opacities of blue
+			//  Smarter color options could use tinyColor's onbackground with alpha adjustment:
+			//  https://tinycolor.vercel.app/docs/#md:onbackground
 			const r = scaleColor(bgColorRgb.r, count);
 			const g = scaleColor(bgColorRgb.g, count);
 			const b = bgColorRgb.b;
@@ -256,6 +276,16 @@ class HeatmapChart extends ChartImageBuilder {
 	}
 }
 
+/**
+ * Color component number range is 0…255
+ * @param myImageData
+ * @param x
+ * @param y
+ * @param r
+ * @param g
+ * @param b
+ * @param a
+ */
 function plotPixelFromBottomLeft(
 	myImageData: ImageData,
 	x: number,
@@ -266,6 +296,8 @@ function plotPixelFromBottomLeft(
 	a: number,
 ) {
 	const pixelOffset = ((myImageData.height - y) * myImageData.width + x) * 4;
+
+	// console.log({ x, y, r, g, b, a });
 
 	myImageData.data[pixelOffset] = r;
 	myImageData.data[pixelOffset + 1] = g;
