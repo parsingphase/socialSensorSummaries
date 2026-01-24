@@ -26,10 +26,10 @@ type CachedBucketPeriodWithDateTime = RawCachedBucketPeriod & {
 
 async function getOpts() {
 	const program = new Command()
-		.requiredOption("--stationId <number>", "Required, stationId to chart")
-		.requiredOption("--speciesId <number>", "Required, speciesId to chart")
+		.requiredOption("--station-id <number>", "Required, stationId to chart")
+		.requiredOption("--species-id <number>", "Required, speciesId to chart")
 		.option(
-			"--speciesName <number>",
+			"--species-name <number>",
 			"Optional, looked up if from speciesId if missing",
 		)
 		.option(
@@ -46,6 +46,10 @@ async function getOpts() {
 			"Scaling factor N to apply to chart counts, applied by scaling to Nth root of observation count. Try values from 1-3 (1 is unscaled)",
 			"1",
 		)
+		.option(
+			"--fixed-max <number>",
+			"Set this value as max upper scale for comparable charts",
+		)
 		.description(
 			"Data must be pre-cached with fetchBirdWeatherBucketHistory.ts\nFor a full list of timezones, see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones",
 		);
@@ -59,10 +63,12 @@ async function getOpts() {
 		location: stringLocation,
 		timezone,
 		scalingRoot: scalingRootString,
+		fixedMax: fixedMaxString,
 	} = options;
 	const stationId = Number(stationIdString);
 	const speciesId = Number(speciesIdString);
 	const scalingRoot = Number(scalingRootString);
+	const fixedMax = fixedMaxString ? Number(fixedMaxString) : undefined;
 
 	const apiUrl = config.birdWeather.apiBaseUrl;
 	let { speciesName } = options;
@@ -91,7 +97,16 @@ async function getOpts() {
 			throw e;
 		}
 	}
-	return { stationId, speciesId, speciesName, location, timezone, scalingRoot };
+	// console.log({ stationId, speciesId, speciesName, location, timezone, scalingRoot, fixedMax });
+	return {
+		stationId,
+		speciesId,
+		speciesName,
+		location,
+		timezone,
+		scalingRoot,
+		fixedMax,
+	};
 }
 
 /**
@@ -209,6 +224,7 @@ function buildObservationHeatmap(
 	observations: CachedBucketPeriodWithDateTime[],
 	location?: LatLon,
 	scalingPower = 1,
+	fixedMax?: number,
 ): Buffer {
 	const width = 1000;
 	const height = 800;
@@ -234,13 +250,20 @@ function buildObservationHeatmap(
 		location,
 	);
 
-	chart.drawGraph(scalingPower);
+	chart.drawGraph(scalingPower, fixedMax);
 	return chart.canvasAsPng();
 }
 
 async function main(): Promise<void> {
-	const { stationId, speciesId, speciesName, location, timezone, scalingRoot } =
-		await getOpts();
+	const {
+		stationId,
+		speciesId,
+		speciesName,
+		location,
+		timezone,
+		scalingRoot,
+		fixedMax,
+	} = await getOpts();
 
 	const minutes = 5;
 	// const allData = loadSpeciesBucketCache(speciesId, stationId, minutes);
@@ -252,11 +275,13 @@ async function main(): Promise<void> {
 		withDates,
 		location || undefined,
 		1 / scalingRoot,
+		fixedMax,
 	);
 
 	const scalingRootString = `${scalingRoot}`.replace(".", "_");
+	const optMaxString = fixedMax ? `-mx${fixedMax}` : "";
 
-	const outpath = `${PROJECT_DIR}/tmp/yearHeatMap-station${stationId}-species${speciesId}-sr${scalingRootString}.png`;
+	const outpath = `${PROJECT_DIR}/tmp/yearHeatMap-station${stationId}-species${speciesId}-sr${scalingRootString}${optMaxString}.png`;
 	console.log({ outpath });
 	fs.writeFileSync(outpath, fileData);
 }

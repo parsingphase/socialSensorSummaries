@@ -19,7 +19,7 @@ function getOpts() {
 		.option(
 			"--to <yyyy-mm-dd>",
 			"End of range to fetch",
-			DateTime.now().toISODate(),
+			DateTime.now().minus({ day: 1 }).toISODate(),
 		)
 		.option("--no-skip-cached", "Refresh even cached files")
 		.description(

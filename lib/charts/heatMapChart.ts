@@ -38,7 +38,12 @@ class HeatmapChart extends ChartImageBuilder {
 		this.fgColor = "rgb(250,250,250)";
 	}
 
-	drawGraph(scalingPower = 1): Canvas {
+	/**
+	 * Draw the chart, returning a canvas
+	 * @param scalingPower Exponent to apply to value when picking color, so extreme highs don't swamp typical values
+	 * @param fixedMax Fixed upper limit of scale (values will clip if needed) to support direct comparison
+	 */
+	drawGraph(scalingPower = 1, fixedMax?: number): Canvas {
 		this.drawTitleAndBackground();
 		this.drawInnerFrame();
 		this.drawMonthLabels();
@@ -70,8 +75,10 @@ class HeatmapChart extends ChartImageBuilder {
 		const bgColorRgb = inputToRGB(this.fgColor);
 
 		function scaleColor(r1: number, count: number) {
+			const scaleTop = fixedMax ?? maxCount;
+			const plotValue = fixedMax ? Math.min(fixedMax, count) : count;
 			return Math.round(
-				r1 - (count ** scalingPower / maxCount ** scalingPower) * r1,
+				r1 - (plotValue ** scalingPower / scaleTop ** scalingPower) * r1,
 			);
 		}
 
@@ -104,6 +111,8 @@ class HeatmapChart extends ChartImageBuilder {
 		// now loop through *days* in range to provide sunrise/set if we have a location:
 		const location = this.location;
 		if (location) {
+			// FIXME generate a clean list of days from period (or year?) start to end, else we only
+			//  plot sun times for days where we have observations
 			this.plotSunriseSunset(myImageData, withDates, location, scale);
 		}
 		ctx.putImageData(
