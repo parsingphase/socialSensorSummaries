@@ -33,6 +33,10 @@ class HeatmapChart extends ChartImageBuilder {
 	 */
 	protected bucketData: CountWithDateTime[] = [];
 
+	/**
+	 * Max datapoint value in any bucket
+	 * @protected
+	 */
 	protected bucketMax: number = 0;
 
 	/**
@@ -155,7 +159,7 @@ class HeatmapChart extends ChartImageBuilder {
 			height,
 		);
 
-		// NB: Alpha is 0…1 here but int(0…255) in ImageData
+		// NB: Alpha is 0…1 in TinyColor but int(0…255) in ImageData
 
 		for (const period of withDates) {
 			const { dayOfYear, dayBucket } = dateTimeToBucket(period.timestamp);
@@ -255,17 +259,56 @@ class HeatmapChart extends ChartImageBuilder {
 		ctx.fillStyle = this.textColor;
 		ctx.font = this.labelFont;
 
-		const footnote = `${withSunLines ? "Showing sunrise & sunset times. " : ""}Scale: 5 minute buckets, max count/bucket = ${this.trueScaleMax()}`;
+		const scaleMax = this.trueScaleMax();
+		const footnote = `${withSunLines ? "Showing sunrise & sunset times. " : ""}Scale: 5 minute buckets, max count/bucket = ${this.bucketMax}`;
 
 		const textMeasure = ctx.measureText(footnote);
 		const textHeight =
 			textMeasure.actualBoundingBoxAscent +
 			textMeasure.actualBoundingBoxDescent;
-		ctx.fillText(
-			footnote,
-			this.canvasWidth - textMeasure.width - this.graphOffset.right,
-			textHeight + this.canvasHeight - this.graphOffset.bottom / 2,
-		);
+		const textBottom =
+			textHeight + this.canvasHeight - this.graphOffset.bottom / 1.75;
+		const textLeft =
+			this.canvasWidth - textMeasure.width - this.graphOffset.right;
+		ctx.fillText(footnote, textLeft, textBottom);
+
+		const scaleTop = textBottom + this.graphOffset.bottom / 10;
+		const scaleHeight = this.graphOffset.bottom / 5;
+
+		const numScaleLegendElements = 6;
+		const scaleLegendValues = [0];
+		const numIntervals = numScaleLegendElements - 1;
+		for (let i = 1; i < numIntervals; i++) {
+			scaleLegendValues.push(Math.round((i / numIntervals) * scaleMax));
+		}
+		scaleLegendValues.push(scaleMax);
+
+		const scaleElementWidth = this.graphWidth / (2 * numScaleLegendElements);
+		const scaleLeft = this.graphOffset.x + this.graphWidth / 2;
+
+		for (const [i, scaleValue] of scaleLegendValues.entries()) {
+			const elementColor = this.getColorForPlotValue(scaleValue);
+			ctx.fillStyle = elementColor.toRgbString();
+			const textColor = elementColor.isDark()
+				? "rgb(255,255,255)"
+				: "rgb(0,0,0)";
+			const elementLeft = scaleLeft + i * scaleElementWidth;
+			ctx.fillRect(elementLeft, scaleTop, scaleElementWidth, scaleHeight);
+
+			ctx.strokeStyle = this.fgColor;
+			ctx.lineWidth = 1;
+			ctx.strokeRect(elementLeft, scaleTop, scaleElementWidth, scaleHeight);
+
+			ctx.fillStyle = textColor;
+			ctx.font = this.labelFont;
+			const elementText = `${scaleValue}${scaleValue === this.fixedMax ? "+" : ""}`;
+			const measure = ctx.measureText(elementText);
+			ctx.fillText(
+				elementText,
+				elementLeft + (scaleElementWidth - measure.width) / 2,
+				scaleTop + (scaleHeight + measure.actualBoundingBoxAscent) / 2,
+			);
+		}
 	}
 
 	// (roughly) copied from class LineChart - FIXME create an intermediate inheriting class!
@@ -332,7 +375,12 @@ class HeatmapChart extends ChartImageBuilder {
 		const clippedValue = Math.min(scaleTop, plotValue);
 		const scalingPower = this.scalingPower;
 		const opacity = clippedValue ** scalingPower / scaleTop ** scalingPower;
-		return this.plotColor.clone().setAlpha(opacity).onBackground(this.bgColor);
+		const pointColor = this.plotColor
+			.clone()
+			.setAlpha(opacity)
+			.onBackground(this.fgColor);
+		// console.log({pointColor: pointColor.toRgbString(), bgColor: this.bgColor, plotColor: this.plotColor.toRgbString()});
+		return pointColor;
 	}
 
 	protected trueScaleMax() {
@@ -360,8 +408,6 @@ function plotPixelFromBottomLeft(
 	a: number,
 ) {
 	const pixelOffset = ((myImageData.height - y) * myImageData.width + x) * 4;
-
-	// console.log({ x, y, r, g, b, a });
 
 	myImageData.data[pixelOffset] = r;
 	myImageData.data[pixelOffset + 1] = g;
