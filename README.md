@@ -25,7 +25,7 @@ Scripts run as AWS Lambdas, CDK IaC is included.
 
 #### [drawSpeciesAnnualHeatmap.ts](utils/drawSpeciesAnnualHeatmap.ts)
 
-![yearHeatMap-station8628-species120.png](docs/yearHeatMap-station8628-species120.png)
+![yearHeatMap-station8628-species120-sr2.png](docs/yearHeatMap-station8628-species120-old.png)
 
 ## Code quality
 
