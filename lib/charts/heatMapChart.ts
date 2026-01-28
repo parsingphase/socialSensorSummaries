@@ -428,6 +428,12 @@ function dateTimeToBucket(timestamp: DateTime, scale = 1) {
 	return { dayOfYear, dayBucket };
 }
 
+/**
+ * Get sunrise and sunset times in the date and timezone of the passed timestamp
+ *
+ * @param location
+ * @param timestamp
+ */
 function getSunriseSunsetForDateTime(
 	location: {
 		latitude: number;
@@ -439,8 +445,8 @@ function getSunriseSunsetForDateTime(
 	const envTimes = SunCalc.getTimes(timestamp.toJSDate(), latitude, longitude);
 	const { sunrise: sunriseDT, sunset: sunsetDT } = envTimes;
 
-	const sunrise = DateTime.fromJSDate(sunriseDT);
-	const sunset = DateTime.fromJSDate(sunsetDT);
+	const sunrise = DateTime.fromJSDate(sunriseDT, { zone: timestamp.zone });
+	const sunset = DateTime.fromJSDate(sunsetDT, { zone: timestamp.zone });
 	return { sunrise, sunset };
 }
 
