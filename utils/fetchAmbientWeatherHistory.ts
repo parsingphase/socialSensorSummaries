@@ -50,7 +50,8 @@ async function main(): Promise<void> {
 	);
 	fs.mkdirSync(dirForSpeciesStation, { recursive: true });
 
-	// Cache whole day's obs as one JSON file
+	// Cache whole day's obs as one JSON file.
+	// FIXME: Note that "day" is defined in the local timezone for now
 	for (
 		let day = toDate;
 		day.toISODate() >= fromDate.toISODate();

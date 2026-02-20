@@ -157,6 +157,12 @@ function loadSpeciesBucketCache(
 
 void loadSpeciesBucketCache; // unused until API is fixed
 
+/**
+ * Load & accumulate data into buckets in the source timezone
+ * @param speciesId
+ * @param stationId
+ * @param minutes
+ */
 function loadSpeciesCacheDataAsBuckets(
 	speciesId: number,
 	stationId: number,
@@ -209,6 +215,12 @@ function loadSpeciesCacheDataAsBuckets(
 	return Object.values(keyedBuckets);
 }
 
+/**
+ * Convert bucket timezones to that given
+ *
+ * @param allData
+ * @param targetTimeZone
+ */
 function hydrateSpeciesBucketCacheDates(
 	allData: RawCachedBucketPeriod[],
 	targetTimeZone: string,
@@ -278,6 +290,9 @@ async function main(): Promise<void> {
 	const allData = loadSpeciesCacheDataAsBuckets(speciesId, stationId, minutes);
 
 	const withDates = hydrateSpeciesBucketCacheDates(allData, timezone);
+
+	// TODO load max/min temp data (see: utils/scanWeatherData.ts), incorporate	into chart
+
 	const fileData = buildObservationHeatmap(
 		speciesName ?? "",
 		withDates,
