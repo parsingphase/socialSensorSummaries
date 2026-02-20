@@ -154,6 +154,7 @@ class LineChart extends ChartImageBuilder {
 			"rgb(223,193,98)",
 			"rgb(100,200,100)",
 			"rgb(100,150,220)",
+			"rgb(200,150,220)",
 		].map((c) => new TinyColor(c));
 
 		// Draw data

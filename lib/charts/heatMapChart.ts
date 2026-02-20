@@ -101,6 +101,15 @@ class HeatmapChart extends ChartImageBuilder {
 				currentValue.count > prevMax ? currentValue.count : prevMax,
 			0,
 		);
+
+		// experimental: generate an auto-fixed-limit by percentile
+		// const sortedCounts = this.bucketData.map(s=>s.count).sort();
+		//
+		// const perc90 = sortedCounts[Math.round(0.999*sortedCounts.length)];
+		//
+		// console.log({perc90, sortedCounts})
+		// this.fixedMax = perc90;
+
 		return this;
 	}
 

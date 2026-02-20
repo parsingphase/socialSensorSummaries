@@ -28,6 +28,13 @@ function getSpeciesObservationCacheRootDir(): string {
 	);
 }
 
+/**
+ * Get the root dir for the speciesObservationCache
+ */
+function getAmbientWeatherCacheRootDir(): string {
+	return path.join(PROJECT_DIR, "rawAmbientWeatherData", "dailyWeatherCache");
+}
+
 function getSpeciesObservationCacheDirForSpeciesStation(
 	speciesId: number,
 	stationId: number,
@@ -36,7 +43,14 @@ function getSpeciesObservationCacheDirForSpeciesStation(
 	return `${cacheRootDir}/station-${stationId}/species-${speciesId}`;
 }
 
+function getAmbientWeatherCacheDirForStation(macAddress: string) {
+	const stationId = macAddress.replaceAll(":", "");
+	const cacheRootDir = getAmbientWeatherCacheRootDir();
+	return `${cacheRootDir}/station-${stationId}`;
+}
+
 export {
+	getAmbientWeatherCacheDirForStation,
 	getSpeciesBucketCacheRootDir,
 	getSpeciesBucketCacheDirForSpeciesStationDuration,
 	getSpeciesObservationCacheRootDir,

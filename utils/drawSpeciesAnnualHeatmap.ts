@@ -253,7 +253,10 @@ function buildObservationHeatmap(
 		chart.setLocation(location);
 	}
 
-	chart.setFixedMax(fixedMax ?? false).setScalingPower(scalingPower);
+	if (fixedMax) {
+		chart.setFixedMax(fixedMax);
+	}
+	chart.setScalingPower(scalingPower);
 
 	chart.drawGraph();
 	return chart.canvasAsPng();

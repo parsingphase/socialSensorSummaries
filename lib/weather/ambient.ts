@@ -67,7 +67,7 @@ type AmbientWeatherApiDeviceQueryParams = {
 async function fetchDeviceWeatherRecords(
 	ambientWeatherConfig: AmbientWeatherApiConfig,
 	queryParams: AmbientWeatherApiDeviceQueryParams,
-): Promise<AmbientWeatherInterval[]> {
+): Promise<AmbientWeatherInterval[] | { error: string }> {
 	const { apiBaseUrl, apiKey, applicationKey, deviceMac } =
 		ambientWeatherConfig;
 	const endpoint = "/v1/devices/";

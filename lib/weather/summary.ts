@@ -96,6 +96,10 @@ async function buildWeatherSummaryForDay(
 		queryParams,
 	);
 
+	if ("error" in weatherData) {
+		throw new Error(`Fetch error: ${weatherData.error}`);
+	}
+
 	const wholeDaySummary = analyzeWeatherData(weatherData);
 
 	const sunlightHoursData = weatherData.filter(

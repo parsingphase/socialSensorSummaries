@@ -2,7 +2,8 @@ cdk.out
 build/output
 config.ts
 dist
-rawHaikuData
 node_modules
 lefthook.yml.sample
+rawAmbientWeatherData
 rawBirdWeatherData
+rawHaikuData
