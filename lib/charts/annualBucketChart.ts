@@ -1,4 +1,4 @@
-import { inputToRGB, TinyColor } from "@ctrl/tinycolor";
+import { inputToRGB, type TinyColor } from "@ctrl/tinycolor";
 import { type Canvas, DOMMatrix, type ImageData } from "canvas";
 import { DateTime, Interval } from "luxon";
 import SunCalc from "suncalc";
@@ -27,6 +27,9 @@ class BucketPlotChart extends ChartImageBuilder {
 	 */
 	protected bucketData: DatumWithDateTime[] = [];
 
+	//NOTE: we're implying Fahrenheit here
+	protected freezingPoint = 32;
+
 	/**
 	 * Cell square side for bucket
 	 * @protected
@@ -41,20 +44,10 @@ class BucketPlotChart extends ChartImageBuilder {
 	protected minDatum: number = 0;
 
 	/**
-	 * Plot color as string (mostly informational)
-	 * @protected
-	 */
-	protected plotColorStrings = {
-		min: "rgb(0,0,220)",
-		mid: "rgb(220,220,220)",
-		max: "rgb(220,0,0)",
-	};
-
-	/**
 	 * Color in object form as a parser cache. Set on construct or setter
 	 * @protected
 	 */
-	protected plotColors: Record<"min" | "mid" | "max", TinyColor>;
+	protected colorGradient: tinygradient.Instance;
 
 	// Chained setters for optional values
 	public setLocation(location: LatLon): this {
@@ -95,13 +88,19 @@ class BucketPlotChart extends ChartImageBuilder {
 
 		this.labelFont = "16px Impact";
 		this.fgColor = "rgb(250,250,250)";
-		// this.fgColor = "rgb(200,200,200)";
 
-		this.plotColors = {
-			min: new TinyColor(this.plotColorStrings.min),
-			mid: new TinyColor(this.plotColorStrings.mid),
-			max: new TinyColor(this.plotColorStrings.max),
-		};
+		// this will probably fail if the range doesn't cover freezing point AND the fixed mid-value?
+		const plotColorSpec = [
+			{ color: "rgb(0,0,240)", pos: 0 },
+			{
+				color: "rgb(60,180,240)",
+				pos: this.valueAsScaleFraction(this.freezingPoint),
+			},
+			{ color: "rgb(60,200,60)", pos: this.valueAsScaleFraction(50) },
+			{ color: "rgb(220,200,100)", pos: this.valueAsScaleFraction(70) },
+			{ color: "rgb(240,0,0)", pos: 1 },
+		];
+		this.colorGradient = tinygradient(plotColorSpec);
 	}
 
 	/**
@@ -232,8 +231,6 @@ class BucketPlotChart extends ChartImageBuilder {
 		ctx.fillStyle = this.textColor;
 		ctx.font = this.labelFont;
 
-		const scaleMax = this.maxDatum;
-		const scaleMin = this.minDatum;
 		const range = this.maxDatum - this.minDatum;
 
 		const footnote = `${withSunLines ? "Showing sunrise & sunset times. " : ""}Scale: 5 minute buckets`;
@@ -254,10 +251,17 @@ class BucketPlotChart extends ChartImageBuilder {
 		const numScaleLegendElements = 7;
 		const scaleLegendValues = [];
 		const numIntervals = numScaleLegendElements - 1;
-		for (let i = 0; i < numIntervals; i++) {
-			scaleLegendValues.push(Math.round((i / numIntervals) * range + scaleMin));
+		for (let i = 0; i <= numIntervals; i++) {
+			let legendValue = Math.round((i / numIntervals) * range + this.minDatum);
+
+			if (Math.abs(legendValue - this.freezingPoint) < 5) {
+				// make 32ºF a fixed value if there's a scale value nearby
+				legendValue = this.freezingPoint;
+			} else {
+				legendValue = Math.round(legendValue / 5) * 5;
+			}
+			scaleLegendValues.push(legendValue);
 		}
-		scaleLegendValues.push(Math.round(scaleMax));
 
 		const scaleElementWidth = this.graphWidth / (2 * numScaleLegendElements);
 		const scaleLeft = this.graphOffset.x + this.graphWidth / 2;
@@ -359,29 +363,19 @@ class BucketPlotChart extends ChartImageBuilder {
 	 * @protected
 	 */
 	protected getColorForPlotValue(plotValue: number): TinyColor {
+		const fractionOfMaxRange = this.valueAsScaleFraction(plotValue);
+		return this.colorGradient.hsvAt(fractionOfMaxRange);
+	}
+
+	private valueAsScaleFraction(plotValue: number) {
 		// limit to 0…1 in case we call out-of-range, eg for scale ends
-		const fractionOfMaxRange = Math.max(
+		return Math.max(
 			0,
 			Math.min(
 				(plotValue - this.minDatum) / (this.maxDatum - this.minDatum),
 				1,
 			),
 		);
-		// const pointColor =
-		// 	fractionOfMaxRange > 0.5
-		// 		? this.plotColors.mid
-		// 				.clone()
-		// 				.mix(this.plotColors.max, (fractionOfMaxRange - 0.5) * 2 * 100)
-		// 		: this.plotColors.min
-		// 				.clone()
-		// 				.mix(this.plotColors.mid, fractionOfMaxRange * 2 * 100);
-		const gradient = tinygradient([
-			this.plotColors.min,
-			this.plotColors.mid,
-			this.plotColors.max,
-		]);
-		// console.log({ plotValue, fractionOfMaxRange });
-		return gradient.rgbAt(fractionOfMaxRange);
 	}
 }
 

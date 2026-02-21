@@ -83,7 +83,7 @@ function buildObservationHeatmap(
 	const chart = new BucketPlotChart(
 		width,
 		height,
-		`Temperatures`,
+		`Temperatures ${timedData[0].timestamp.toISODate()} - ${timedData[timedData.length - 1].timestamp.toISODate()}`,
 		margins,
 		timedData,
 	);
