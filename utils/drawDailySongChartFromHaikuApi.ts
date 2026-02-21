@@ -1,6 +1,7 @@
 #!/usr/bin/env npx tsx
 
 import fs from "node:fs";
+import { DateTime, Duration } from "luxon";
 import { config } from "../config/config";
 import {
 	drawChartFromDailySongData,
@@ -12,8 +13,8 @@ import { fetchDailyCount } from "../lib/haiku";
  * CLI payload - draw chart for one day's topX birds
  */
 async function main(): Promise<void> {
-	const dateString = "2025-12-27";
-
+	const when = DateTime.now().minus(Duration.fromObject({ days: 1 }));
+	const dateString = when.toFormat("yyyy-MM-dd");
 	const width = 1200;
 	const height = 800;
 	// { top: 50, left: 170, bottom: 40, right: 20 }

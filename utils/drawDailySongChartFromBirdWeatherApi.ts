@@ -1,6 +1,7 @@
 #!/usr/bin/env npx tsx
 
 import fs from "node:fs";
+import { DateTime, Duration } from "luxon";
 import { config } from "../config/config";
 import { fetchDailyCount } from "../lib/birdWeather";
 import {
@@ -14,7 +15,8 @@ import {
 async function main(): Promise<void> {
 	const startEpoch = Date.now();
 
-	const dateString = "2025-12-27";
+	const when = DateTime.now().minus(Duration.fromObject({ days: 1 }));
+	const dateString = when.toFormat("yyyy-MM-dd");
 	const minConfidence = 0; // Only confidence > 0.5 (configurable?) seems to appear in source data
 
 	const width = 1200;

@@ -96,30 +96,31 @@ function listDatesWithData(dataDir: string): string[] {
 	return rawFiles;
 }
 
-type AmbientRecord = Record<string, string | number>;
-
-type DayRecord = { date: string; dayData: AmbientRecord[] | null };
+type AmbientDayRecord = {
+	date: string;
+	dayData: AmbientWeatherInterval[] | null;
+};
 
 /**
  * Fetch and parse a given day's file
  *
  * @param dataDir
  */
-function loadCachedDailyData(dataDir: string): DayRecord[] {
+function loadCachedDailyData(dataDir: string): AmbientDayRecord[] {
 	const dates = listDatesWithData(dataDir);
 
-	const allData: DayRecord[] = [];
+	const allData: AmbientDayRecord[] = [];
 	// console.log(JSON.stringify(dates));
 	for (const date of dates) {
 		const dayData = JSON.parse(
 			fs.readFileSync(`${dataDir}/${date}.json`, "utf-8"),
-		) as AmbientRecord[] | null;
+		) as AmbientWeatherInterval[] | null;
 		allData.push({ date, dayData: dayData });
 	}
 	return allData;
 }
 
-function getMaxMinFromDailyWeatherData(fileData: DayRecord) {
+function getMaxMinFromDailyWeatherData(fileData: AmbientDayRecord) {
 	const date = fileData.date;
 	const intervals = fileData?.dayData || [];
 
@@ -147,6 +148,7 @@ export {
 	loadCachedDailyData,
 };
 export type {
+	AmbientDayRecord,
 	AmbientWeatherInterval,
 	AmbientWeatherApiConfig,
 	AmbientWeatherApiDeviceQueryParams,
