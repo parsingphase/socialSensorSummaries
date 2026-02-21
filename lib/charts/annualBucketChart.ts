@@ -44,9 +44,9 @@ class BucketPlotChart extends ChartImageBuilder {
 	 * @protected
 	 */
 	protected plotColorStrings = {
-		min: "rgb(0,0,255)",
-		mid: "rgb(255,255,255)",
-		max: "rgb(255,0,0)",
+		min: "rgb(0,0,220)",
+		mid: "rgb(220,220,220)",
+		max: "rgb(220,0,0)",
 	};
 
 	/**
@@ -93,8 +93,8 @@ class BucketPlotChart extends ChartImageBuilder {
 		this.setBucketData(bucketData);
 
 		this.labelFont = "16px Impact";
-		// this.fgColor = "rgb(250,250,250)";
-		this.fgColor = "rgb(230,230,230)";
+		this.fgColor = "rgb(250,250,250)";
+		// this.fgColor = "rgb(200,200,200)";
 
 		this.plotColors = {
 			min: new TinyColor(this.plotColorStrings.min),
@@ -166,8 +166,6 @@ class BucketPlotChart extends ChartImageBuilder {
 			this.graphOffset.y + 1,
 		);
 
-		console.log({ location });
-
 		this.drawScale();
 
 		return this.canvas;
@@ -237,7 +235,7 @@ class BucketPlotChart extends ChartImageBuilder {
 		const scaleMin = this.minDatum;
 		const range = this.maxDatum - this.minDatum;
 
-		const footnote = `${withSunLines ? "Showing sunrise & sunset times. " : ""}Scale: 5 minute buckets, max count/bucket = ${this.maxDatum}`;
+		const footnote = `${withSunLines ? "Showing sunrise & sunset times. " : ""}Scale: 5 minute buckets`;
 
 		const textMeasure = ctx.measureText(footnote);
 		const textHeight =
@@ -258,7 +256,7 @@ class BucketPlotChart extends ChartImageBuilder {
 		for (let i = 0; i < numIntervals; i++) {
 			scaleLegendValues.push(Math.round((i / numIntervals) * range + scaleMin));
 		}
-		scaleLegendValues.push(scaleMax);
+		scaleLegendValues.push(Math.round(scaleMax));
 
 		const scaleElementWidth = this.graphWidth / (2 * numScaleLegendElements);
 		const scaleLeft = this.graphOffset.x + this.graphWidth / 2;
@@ -347,6 +345,18 @@ class BucketPlotChart extends ChartImageBuilder {
 		}
 	}
 
+	/**
+	 * Get color by linear combinations
+	 *
+	 * Note: To get color more like
+	 * https://weatherspark.com/h/y/26197/2025/Historical-Weather-during-2025-in-Boston-Massachusetts-United-States#Figures-ColorTemperature,
+	 * would need to use color rotation, not combination (probably https://tinycolor.vercel.app/docs/classes/TinyColor.html#spin.spin-1)
+	 *
+	 * Also consider: https://github.com/mistic100/tinygradient
+	 *
+	 * @param plotValue
+	 * @protected
+	 */
 	protected getColorForPlotValue(plotValue: number): TinyColor {
 		const fractionOfMaxRange =
 			(plotValue - this.minDatum) / (this.maxDatum - this.minDatum);

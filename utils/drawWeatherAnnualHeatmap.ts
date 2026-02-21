@@ -39,7 +39,6 @@ async function getOpts() {
 		location = { lat, lon };
 	}
 
-	console.log({ location, timezone });
 	return {
 		location,
 		timezone,
@@ -100,7 +99,10 @@ function buildObservationHeatmap(
 async function main(): Promise<void> {
 	const { location, timezone } = await getOpts();
 
-	const allData = loadCachedDataByDay();
+	const ambientDayRecords = loadCachedDataByDay();
+	const allData = ambientDayRecords.slice(
+		Math.max(0, ambientDayRecords.length - 363),
+	);
 
 	let timedData: DatumWithDateTime[] = [];
 	for (const allDayData of allData) {
