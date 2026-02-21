@@ -2,6 +2,7 @@ import { inputToRGB, TinyColor } from "@ctrl/tinycolor";
 import { type Canvas, DOMMatrix, type ImageData } from "canvas";
 import { DateTime, Interval } from "luxon";
 import SunCalc from "suncalc";
+import tinygradient from "tinygradient";
 import { ChartImageBuilder, type Margins } from "./canvasChartBuilder";
 import { dateToLeapYearDayOfYear } from "./lineChart";
 import { tinyColorToRgba255 } from "./tinyTools";
@@ -358,17 +359,29 @@ class BucketPlotChart extends ChartImageBuilder {
 	 * @protected
 	 */
 	protected getColorForPlotValue(plotValue: number): TinyColor {
-		const fractionOfMaxRange =
-			(plotValue - this.minDatum) / (this.maxDatum - this.minDatum);
-		const pointColor =
-			fractionOfMaxRange > 0.5
-				? this.plotColors.mid
-						.clone()
-						.mix(this.plotColors.max, (fractionOfMaxRange - 0.5) * 2 * 100)
-				: this.plotColors.min
-						.clone()
-						.mix(this.plotColors.mid, fractionOfMaxRange * 2 * 100);
-		return pointColor;
+		// limit to 0…1 in case we call out-of-range, eg for scale ends
+		const fractionOfMaxRange = Math.max(
+			0,
+			Math.min(
+				(plotValue - this.minDatum) / (this.maxDatum - this.minDatum),
+				1,
+			),
+		);
+		// const pointColor =
+		// 	fractionOfMaxRange > 0.5
+		// 		? this.plotColors.mid
+		// 				.clone()
+		// 				.mix(this.plotColors.max, (fractionOfMaxRange - 0.5) * 2 * 100)
+		// 		: this.plotColors.min
+		// 				.clone()
+		// 				.mix(this.plotColors.mid, fractionOfMaxRange * 2 * 100);
+		const gradient = tinygradient([
+			this.plotColors.min,
+			this.plotColors.mid,
+			this.plotColors.max,
+		]);
+		// console.log({ plotValue, fractionOfMaxRange });
+		return gradient.rgbAt(fractionOfMaxRange);
 	}
 }
 

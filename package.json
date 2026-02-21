@@ -53,6 +53,7 @@
 		"luxon": "^3.1.1",
 		"masto": "^6.5.1",
 		"pino": "^10.1.0",
-		"suncalc": "^1.9.0"
+		"suncalc": "^1.9.0",
+		"tinygradient": "^2.0.1"
 	}
 }
