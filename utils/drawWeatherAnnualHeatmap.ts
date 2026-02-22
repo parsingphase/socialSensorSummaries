@@ -2,7 +2,7 @@
 
 import fs from "node:fs";
 import { Command } from "@commander-js/extra-typings";
-import { DateTime } from "luxon";
+import { DateTime, Interval } from "luxon";
 import { config } from "../config/config";
 import {
 	BucketPlotChart,
@@ -26,6 +26,16 @@ async function getOpts() {
 			"Timezone to calculate start/end of day",
 			Intl.DateTimeFormat().resolvedOptions().timeZone,
 		)
+		.option(
+			"--from <yyyy-mm-dd>",
+			"Start of chart range",
+			DateTime.now().minus({ day: 362 }).toISODate(),
+		)
+		.option(
+			"--to <yyyy-mm-dd>",
+			"End of chart range",
+			DateTime.now().minus({ day: 1 }).toISODate(),
+		)
 		.description(
 			"Data must be pre-cached with fetchAmbientWeatherHistory.ts\nFor a full list of timezones, see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones",
 		);
@@ -41,11 +51,27 @@ async function getOpts() {
 			.split(/\s*,\s*/)
 			.map((x) => parseFloat(x));
 		location = { lat, lon };
+	} else {
+		location = config.location
+			? {
+					lat: config.location.latitude,
+					lon: config.location.longitude,
+				}
+			: null;
+	}
+	const { from: fromDateString, to: toDateString } = options;
+	const fromDate = DateTime.fromISO(fromDateString);
+	const toDate = DateTime.fromISO(toDateString);
+
+	if (!fromDate.isValid || !toDate.isValid) {
+		throw new Error("Invalid date");
 	}
 
 	return {
 		location,
 		timezone,
+		fromDate,
+		toDate,
 	};
 }
 
@@ -68,6 +94,8 @@ function loadCachedDataByDay(): AmbientDayRecord[] {
 
 function buildObservationHeatmap(
 	timedData: DatumWithDateTime[],
+	titlePrefix: string,
+	_unit: string,
 	location?: LatLon,
 ): Buffer {
 	const width = 1000;
@@ -87,7 +115,7 @@ function buildObservationHeatmap(
 	const chart = new BucketPlotChart(
 		width,
 		height,
-		`Temperatures ${timedData[0].timestamp.toISODate()} - ${timedData[timedData.length - 1].timestamp.toISODate()}`,
+		`${titlePrefix}, ${timedData[0].timestamp.toISODate()} - ${timedData[timedData.length - 1].timestamp.toISODate()}`,
 		margins,
 		timedData,
 	);
@@ -101,16 +129,21 @@ function buildObservationHeatmap(
 }
 
 async function main(): Promise<void> {
-	const { location, timezone } = await getOpts();
+	const opts = await getOpts();
+	const { fromDate, toDate, location, timezone } = opts;
+	const targetInterval = Interval.fromDateTimes(
+		fromDate.startOf("day"),
+		toDate.endOf("day"),
+	);
+	console.log({ opts, targetInterval });
 
-	const ambientDayRecords = loadCachedDataByDay();
-	// const allData = ambientDayRecords.slice(
-	// 	Math.max(0, ambientDayRecords.length - 363),
-	// );
-	//
-	const allData = ambientDayRecords.filter((r) => r.date.startsWith("2025"));
+	const allData = loadCachedDataByDay();
 
-	const fieldOfInterest: keyof AmbientWeatherInterval = "tempinf";
+	/************************** PICK INPUT FIELD **********************/
+	// FIXME make this CLI config
+	const fieldOfInterest: keyof AmbientWeatherInterval = "baromabsin";
+	const titlePrefix = "Pressure";
+	const unit = "inHg";
 
 	let timedData: DatumWithDateTime[] = [];
 	for (const allDayData of allData) {
@@ -127,17 +160,30 @@ async function main(): Promise<void> {
 		timedData = [...timedData, ...timedTemps];
 	}
 
-	timedData.sort((a, b) => a.timestamp.toMillis() - b.timestamp.toMillis());
+	const timedDataInRange = timedData.filter((d) =>
+		targetInterval.contains(d.timestamp),
+	);
 
-	const fileData = buildObservationHeatmap(timedData, location || undefined);
+	timedDataInRange.sort(
+		(a, b) => a.timestamp.toMillis() - b.timestamp.toMillis(),
+	);
+
+	const fileData = buildObservationHeatmap(
+		timedDataInRange,
+		titlePrefix,
+		unit,
+		location || undefined,
+	);
+
+	// console.log(timedDataInRange.length)
 
 	const stationId = config.ambientWeather.deviceMac.replaceAll(":", "");
 
-	const outpath = `${PROJECT_DIR}/tmp/yearHeatMap-station${stationId}-${fieldOfInterest}-weather-${timedData[0].timestamp.toISODate()}-${timedData[timedData.length - 1].timestamp.toISODate()}.png`;
+	const outpath = `${PROJECT_DIR}/tmp/yearHeatMap-station${stationId}-${fieldOfInterest}-weather-${timedDataInRange[0].timestamp.toISODate()}-${timedDataInRange[timedDataInRange.length - 1].timestamp.toISODate()}.png`;
 	console.log({ outpath });
 	fs.writeFileSync(outpath, fileData);
 }
 
 main()
-	.catch((e) => console.error(e.message ?? e))
+	.catch((e) => console.error(e))
 	.finally(() => console.log("DONE"));

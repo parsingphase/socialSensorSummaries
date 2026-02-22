@@ -43,6 +43,11 @@ type AmbientWeatherInterval = {
 	lightning_time: number; //int, epochMs
 	lightning_distance: number; //float, miles
 	lightning_hour: number; //int, count
+
+	pm25: number;
+	pm25_24h: number;
+	aqi_pm25: number;
+	aqi_pm25_24h: number;
 };
 
 type AmbientWeatherApiConfig = {
