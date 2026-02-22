@@ -95,7 +95,7 @@ function loadCachedDataByDay(): AmbientDayRecord[] {
 function buildObservationHeatmap(
 	timedData: DatumWithDateTime[],
 	titlePrefix: string,
-	_unit: string,
+	unit: string,
 	location?: LatLon,
 ): Buffer {
 	const width = 1000;
@@ -118,6 +118,7 @@ function buildObservationHeatmap(
 		`${titlePrefix}, ${timedData[0].timestamp.toISODate()} - ${timedData[timedData.length - 1].timestamp.toISODate()}`,
 		margins,
 		timedData,
+		unit,
 	);
 
 	if (location) {

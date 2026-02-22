@@ -28,13 +28,15 @@ class BucketPlotChart extends ChartImageBuilder {
 	protected bucketData: DatumWithDateTime[] = [];
 
 	//NOTE: we're implying Fahrenheit here
-	protected freezingPoint = 32;
+	protected freezingPoint: number | undefined = undefined;
 
 	/**
 	 * Cell square side for bucket
 	 * @protected
 	 */
 	protected plotScale = 2;
+
+	protected unit = "";
 
 	/**
 	 * Max datapoint value in any bucket
@@ -82,6 +84,7 @@ class BucketPlotChart extends ChartImageBuilder {
 		title: string,
 		graphFrame: Margins,
 		bucketData: DatumWithDateTime[],
+		unit?: string,
 	) {
 		super(canvasWidth, canvasHeight, title, graphFrame);
 		this.setBucketData(bucketData);
@@ -109,7 +112,10 @@ class BucketPlotChart extends ChartImageBuilder {
 		const plotColorSpec = candidateColorLevels
 			.filter(
 				(c) =>
-					"pos" in c || (c.value >= this.minDatum && c.value <= this.maxDatum),
+					"pos" in c ||
+					(c.value !== undefined &&
+						c.value >= this.minDatum &&
+						c.value <= this.maxDatum),
 			)
 			.map((c) => {
 				c.pos = c.value ? this.valueAsScaleFraction(c.value) : c.pos;
@@ -117,6 +123,10 @@ class BucketPlotChart extends ChartImageBuilder {
 			});
 
 		this.colorGradient = tinygradient(plotColorSpec);
+
+		if (unit !== undefined) {
+			this.unit = unit;
+		}
 	}
 
 	/**
@@ -249,6 +259,11 @@ class BucketPlotChart extends ChartImageBuilder {
 
 		const range = this.maxDatum - this.minDatum;
 
+		// heuristics to get functional scale formatting
+		const numZerosInRange = Math.floor(Math.log10(range));
+		const negNumDps = numZerosInRange - 1;
+		const scaleGranularity = 10 ** negNumDps;
+
 		const footnote = `${withSunLines ? "Showing sunrise & sunset times. " : ""}Scale: 5 minute buckets`;
 
 		const textMeasure = ctx.measureText(footnote);
@@ -264,31 +279,52 @@ class BucketPlotChart extends ChartImageBuilder {
 		const scaleTop = textBottom + this.graphOffset.bottom / 10;
 		const scaleHeight = this.graphOffset.bottom / 5;
 
+		// Build a list of numeric strings representing what we'll put in each scale element
 		const numScaleLegendElements = 7;
-		const scaleLegendValues = [];
+		const scaleLegendValues: string[] = [];
 		const numIntervals = numScaleLegendElements - 1;
 
-		const scaleGranularity =
-			this.maxDatum - this.minDatum > 5 * numIntervals ? 5 : 1;
-
 		for (let i = 0; i <= numIntervals; i++) {
-			let legendValue = Math.round((i / numIntervals) * range + this.minDatum);
+			let legendValue = (i / numIntervals) * range + this.minDatum;
+			let legendString = `${legendValue}`;
 
-			if (Math.abs(legendValue - this.freezingPoint) < scaleGranularity) {
-				// make 32ºF a fixed value if there's a scale value nearby
+			if (
+				this.freezingPoint !== undefined &&
+				Math.abs(legendValue - this.freezingPoint) < scaleGranularity
+			) {
+				// make freezingPoint a fixed value if there's a scale value nearby
 				legendValue = this.freezingPoint;
-			} else {
-				legendValue =
-					Math.round(legendValue / scaleGranularity) * scaleGranularity;
 			}
-			scaleLegendValues.push(legendValue);
+
+			if (negNumDps < 0) {
+				legendString = legendValue.toFixed(0 - negNumDps);
+			} else {
+				legendString = `${Math.round(legendValue / scaleGranularity) * scaleGranularity}`;
+			}
+			scaleLegendValues.push(legendString);
 		}
 
-		const scaleElementWidth = this.graphWidth / (2 * numScaleLegendElements);
-		const scaleLeft = this.graphOffset.x + this.graphWidth / 2;
+		console.log({ scaleLegendValues });
+
+		let scaleElementWidth = this.graphWidth / (2 * numScaleLegendElements);
+		let maxScaleMeasure = 0;
+
+		for (const scaleValue of scaleLegendValues.values()) {
+			const elementText = ` ${scaleValue}${this.unit} `;
+			const measure = ctx.measureText(elementText).width;
+			maxScaleMeasure = Math.max(maxScaleMeasure, measure);
+		}
+		scaleElementWidth = Math.max(maxScaleMeasure, scaleElementWidth);
+
+		const scaleLeft =
+			this.graphOffset.x +
+			this.graphWidth -
+			scaleElementWidth * numScaleLegendElements;
 
 		for (const [i, scaleValue] of scaleLegendValues.entries()) {
-			const elementColor = this.getColorForPlotValue(scaleValue);
+			const elementColor = this.getColorForPlotValue(
+				Number.parseFloat(scaleValue),
+			);
 			ctx.fillStyle = elementColor.toRgbString();
 			const textColor = elementColor.isDark()
 				? "rgb(255,255,255)"
@@ -302,7 +338,7 @@ class BucketPlotChart extends ChartImageBuilder {
 
 			ctx.fillStyle = textColor;
 			ctx.font = this.labelFont;
-			const elementText = `${scaleValue}ºF`;
+			const elementText = `${scaleValue}${this.unit}`;
 			const measure = ctx.measureText(elementText);
 			ctx.fillText(
 				elementText,
