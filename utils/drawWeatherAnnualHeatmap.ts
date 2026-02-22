@@ -97,6 +97,7 @@ function buildObservationHeatmap(
 	titlePrefix: string,
 	unit: string,
 	location?: LatLon,
+	freezeValue?: number,
 ): Buffer {
 	const width = 1000;
 	const height = 800;
@@ -125,6 +126,10 @@ function buildObservationHeatmap(
 		chart.setLocation(location);
 	}
 
+	if (freezeValue !== undefined) {
+		chart.setFreezingPoint(freezeValue);
+	}
+
 	chart.drawGraph();
 	return chart.canvasAsPng();
 }
@@ -136,15 +141,45 @@ async function main(): Promise<void> {
 		fromDate.startOf("day"),
 		toDate.endOf("day"),
 	);
-	console.log({ opts, targetInterval });
+	// console.log({ opts, targetInterval });
 
 	const allData = loadCachedDataByDay();
 
 	/************************** PICK INPUT FIELD **********************/
 	// FIXME make this CLI config
-	const fieldOfInterest: keyof AmbientWeatherInterval = "baromabsin";
-	const titlePrefix = "Pressure";
-	const unit = "inHg";
+	// const fieldOfInterest: keyof AmbientWeatherInterval = "baromabsin";
+	// const titlePrefix = "Pressure";
+	// const unit = "inHg";
+	// const freezeValue = undefined;
+
+	// const fieldOfInterest: keyof AmbientWeatherInterval = "tempf";
+	// const titlePrefix = "Temperature";
+	// const unit = "ºF";
+	// const freezeValue = 32;
+
+	const fieldOfInterest: keyof AmbientWeatherInterval = "feelsLike";
+	const titlePrefix = "Temperature (feels like)";
+	const unit = "ºF";
+	const freezeValue = 32;
+
+	// FIXME 50,70 in default scale cause odd (but aesthetic) effects
+	// Notes for designing future scale: lots under 200, little over 800, max 1200
+	// - could also use a power scale
+	// const fieldOfInterest: keyof AmbientWeatherInterval = "solarradiation";
+	// const titlePrefix = "Insolation";
+	// const unit = "W/m²";
+	// const freezeValue = undefined;
+
+	// const fieldOfInterest: keyof AmbientWeatherInterval = "windspeedmph";
+	// const titlePrefix = "Wind speed";
+	// const unit = "mph";
+	// const freezeValue = undefined;
+
+	// also needs a power scale
+	// const fieldOfInterest: keyof AmbientWeatherInterval = "hourlyrainin";
+	// const titlePrefix = "Rain (hourly)";
+	// const unit = "in";
+	// const freezeValue = undefined;
 
 	let timedData: DatumWithDateTime[] = [];
 	for (const allDayData of allData) {
@@ -174,6 +209,7 @@ async function main(): Promise<void> {
 		titlePrefix,
 		unit,
 		location || undefined,
+		freezeValue,
 	);
 
 	// console.log(timedDataInRange.length)

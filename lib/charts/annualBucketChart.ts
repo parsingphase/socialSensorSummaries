@@ -27,7 +27,7 @@ class BucketPlotChart extends ChartImageBuilder {
 	 */
 	protected bucketData: DatumWithDateTime[] = [];
 
-	//NOTE: we're implying Fahrenheit here
+	//TODO: Generalize to a set of FixedScalePoints, or possibly draw from gradient inputs?
 	protected freezingPoint: number | undefined = undefined;
 
 	/**
@@ -57,6 +57,11 @@ class BucketPlotChart extends ChartImageBuilder {
 		return this;
 	}
 
+	public setFreezingPoint(freezingPoint: number) {
+		this.freezingPoint = freezingPoint;
+		return this;
+	}
+
 	public setBucketData(bucketData: DatumWithDateTime[]) {
 		this.bucketData = bucketData;
 
@@ -77,6 +82,7 @@ class BucketPlotChart extends ChartImageBuilder {
 	 * @param title
 	 * @param graphFrame Margins between image edge and graph plot
 	 * @param bucketData Time-bucket data to plot
+	 * @param unit
 	 */
 	constructor(
 		canvasWidth: number,
@@ -94,10 +100,10 @@ class BucketPlotChart extends ChartImageBuilder {
 
 		const candidateColorLevels = [
 			{ color: "rgb(0,0,240)", pos: 0 },
-			{
-				color: "rgb(60,180,240)",
-				value: this.freezingPoint,
-			},
+			// {
+			// 	color: "rgb(60,180,240)",
+			// 	value: this.freezingPoint, // FIXME this isn't set yet! BUT! candidateColorLevels should be passed in, in future
+			// },
 			{
 				color: "rgb(60,200,60)",
 				value: 50,
@@ -285,7 +291,7 @@ class BucketPlotChart extends ChartImageBuilder {
 		const numIntervals = numScaleLegendElements - 1;
 
 		for (let i = 0; i <= numIntervals; i++) {
-			let legendValue = (i / numIntervals) * range + this.minDatum;
+			const legendValue = (i / numIntervals) * range + this.minDatum;
 			let legendString = `${legendValue}`;
 
 			if (
@@ -293,10 +299,8 @@ class BucketPlotChart extends ChartImageBuilder {
 				Math.abs(legendValue - this.freezingPoint) < scaleGranularity
 			) {
 				// make freezingPoint a fixed value if there's a scale value nearby
-				legendValue = this.freezingPoint;
-			}
-
-			if (negNumDps < 0) {
+				legendString = this.freezingPoint.toFixed(Math.max(0, 0 - negNumDps));
+			} else if (negNumDps < 0) {
 				legendString = legendValue.toFixed(0 - negNumDps);
 			} else {
 				legendString = `${Math.round(legendValue / scaleGranularity) * scaleGranularity}`;
@@ -304,7 +308,7 @@ class BucketPlotChart extends ChartImageBuilder {
 			scaleLegendValues.push(legendString);
 		}
 
-		console.log({ scaleLegendValues });
+		// console.log({ scaleLegendValues });
 
 		let scaleElementWidth = this.graphWidth / (2 * numScaleLegendElements);
 		let maxScaleMeasure = 0;
