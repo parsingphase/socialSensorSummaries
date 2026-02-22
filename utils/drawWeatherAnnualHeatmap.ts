@@ -11,7 +11,11 @@ import {
 import type { Margins } from "../lib/charts/canvasChartBuilder";
 import type { LatLon } from "../lib/charts/utils";
 import { PROJECT_DIR } from "../lib/utils";
-import { type AmbientDayRecord, loadCachedDailyData } from "../lib/weather";
+import {
+	type AmbientDayRecord,
+	type AmbientWeatherInterval,
+	loadCachedDailyData,
+} from "../lib/weather";
 import { getAmbientWeatherCacheDirForStation } from "./shared";
 
 async function getOpts() {
@@ -100,18 +104,22 @@ async function main(): Promise<void> {
 	const { location, timezone } = await getOpts();
 
 	const ambientDayRecords = loadCachedDataByDay();
-	const allData = ambientDayRecords.slice(
-		Math.max(0, ambientDayRecords.length - 363),
-	);
+	// const allData = ambientDayRecords.slice(
+	// 	Math.max(0, ambientDayRecords.length - 363),
+	// );
+	//
+	const allData = ambientDayRecords.filter((r) => r.date.startsWith("2025"));
+
+	const fieldOfInterest: keyof AmbientWeatherInterval = "tempinf";
 
 	let timedData: DatumWithDateTime[] = [];
 	for (const allDayData of allData) {
 		const timedTemps: DatumWithDateTime[] =
 			allDayData.dayData
-				?.filter((d) => "tempf" in d)
+				?.filter((d) => fieldOfInterest in d)
 				.map((d) => {
 					const t: DatumWithDateTime = {
-						datum: d.tempf as number,
+						datum: d[fieldOfInterest] as number,
 						timestamp: DateTime.fromMillis(d.dateutc, { zone: timezone }),
 					};
 					return t;
@@ -125,7 +133,7 @@ async function main(): Promise<void> {
 
 	const stationId = config.ambientWeather.deviceMac.replaceAll(":", "");
 
-	const outpath = `${PROJECT_DIR}/tmp/yearHeatMap-station${stationId}-weather.png`;
+	const outpath = `${PROJECT_DIR}/tmp/yearHeatMap-station${stationId}-${fieldOfInterest}-weather-${timedData[0].timestamp.toISODate()}-${timedData[timedData.length - 1].timestamp.toISODate()}.png`;
 	console.log({ outpath });
 	fs.writeFileSync(outpath, fileData);
 }

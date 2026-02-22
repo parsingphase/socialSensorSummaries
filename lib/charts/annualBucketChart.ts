@@ -89,17 +89,33 @@ class BucketPlotChart extends ChartImageBuilder {
 		this.labelFont = "16px Impact";
 		this.fgColor = "rgb(250,250,250)";
 
-		// this will probably fail if the range doesn't cover freezing point AND the fixed mid-value?
-		const plotColorSpec = [
+		const candidateColorLevels = [
 			{ color: "rgb(0,0,240)", pos: 0 },
 			{
 				color: "rgb(60,180,240)",
-				pos: this.valueAsScaleFraction(this.freezingPoint),
+				value: this.freezingPoint,
 			},
-			{ color: "rgb(60,200,60)", pos: this.valueAsScaleFraction(50) },
-			{ color: "rgb(220,200,100)", pos: this.valueAsScaleFraction(70) },
+			{
+				color: "rgb(60,200,60)",
+				value: 50,
+			},
+			{
+				color: "rgb(220,200,100)",
+				value: 70,
+			},
 			{ color: "rgb(240,0,0)", pos: 1 },
 		];
+		// filter out anything not actually in our range
+		const plotColorSpec = candidateColorLevels
+			.filter(
+				(c) =>
+					"pos" in c || (c.value >= this.minDatum && c.value <= this.maxDatum),
+			)
+			.map((c) => {
+				c.pos = c.value ? this.valueAsScaleFraction(c.value) : c.pos;
+				return c;
+			});
+
 		this.colorGradient = tinygradient(plotColorSpec);
 	}
 
@@ -251,14 +267,19 @@ class BucketPlotChart extends ChartImageBuilder {
 		const numScaleLegendElements = 7;
 		const scaleLegendValues = [];
 		const numIntervals = numScaleLegendElements - 1;
+
+		const scaleGranularity =
+			this.maxDatum - this.minDatum > 5 * numIntervals ? 5 : 1;
+
 		for (let i = 0; i <= numIntervals; i++) {
 			let legendValue = Math.round((i / numIntervals) * range + this.minDatum);
 
-			if (Math.abs(legendValue - this.freezingPoint) < 5) {
+			if (Math.abs(legendValue - this.freezingPoint) < scaleGranularity) {
 				// make 32ºF a fixed value if there's a scale value nearby
 				legendValue = this.freezingPoint;
 			} else {
-				legendValue = Math.round(legendValue / 5) * 5;
+				legendValue =
+					Math.round(legendValue / scaleGranularity) * scaleGranularity;
 			}
 			scaleLegendValues.push(legendValue);
 		}
