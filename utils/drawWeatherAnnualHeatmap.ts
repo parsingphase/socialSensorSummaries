@@ -119,6 +119,8 @@ async function main(): Promise<void> {
 		timedData = [...timedData, ...timedTemps];
 	}
 
+	timedData.sort((a, b) => a.timestamp.toMillis() - b.timestamp.toMillis());
+
 	const fileData = buildObservationHeatmap(timedData, location || undefined);
 
 	const stationId = config.ambientWeather.deviceMac.replaceAll(":", "");
