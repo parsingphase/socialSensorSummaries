@@ -15,6 +15,19 @@ type DatumWithDateTime = {
 	timestamp: DateTime;
 };
 
+type ColorScaleSpec = (
+	| {
+			color: string;
+			pos: number;
+			value?: undefined;
+	  }
+	| {
+			color: string;
+			value: number;
+			pos?: undefined;
+	  }
+)[];
+
 class BucketPlotChart extends ChartImageBuilder {
 	/**
 	 * Lat-lon position of the station, used for sunrise/set if present
@@ -82,6 +95,7 @@ class BucketPlotChart extends ChartImageBuilder {
 	 * @param title
 	 * @param graphFrame Margins between image edge and graph plot
 	 * @param bucketData Time-bucket data to plot
+	 * @param colorScale
 	 * @param unit
 	 */
 	constructor(
@@ -91,6 +105,7 @@ class BucketPlotChart extends ChartImageBuilder {
 		graphFrame: Margins,
 		bucketData: DatumWithDateTime[],
 		unit?: string,
+		colorScale?: ColorScaleSpec,
 	) {
 		super(canvasWidth, canvasHeight, title, graphFrame);
 		this.setBucketData(bucketData);
@@ -98,24 +113,13 @@ class BucketPlotChart extends ChartImageBuilder {
 		this.labelFont = "16px Impact";
 		this.fgColor = "rgb(250,250,250)";
 
-		const candidateColorLevels = [
-			{ color: "rgb(0,0,240)", pos: 0 },
-			// {
-			// 	color: "rgb(60,180,240)",
-			// 	value: this.freezingPoint, // FIXME this isn't set yet! BUT! candidateColorLevels should be passed in, in future
-			// },
-			{
-				color: "rgb(60,200,60)",
-				value: 50,
-			},
-			{
-				color: "rgb(220,200,100)",
-				value: 70,
-			},
-			{ color: "rgb(240,0,0)", pos: 1 },
+		const defaultColorScale: ColorScaleSpec = [
+			{ color: this.fgColor, pos: 0 },
+			{ color: "rgb(0,0,0)", pos: 1 },
 		];
+
 		// filter out anything not actually in our range
-		const plotColorSpec = candidateColorLevels
+		const plotColorSpec = (colorScale ?? defaultColorScale)
 			.filter(
 				(c) =>
 					"pos" in c ||
@@ -477,4 +481,4 @@ function getSunriseSunsetForDateTime(
 }
 
 export { BucketPlotChart };
-export type { DatumWithDateTime };
+export type { ColorScaleSpec, DatumWithDateTime };

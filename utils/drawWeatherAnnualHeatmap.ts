@@ -6,6 +6,7 @@ import { DateTime, Interval } from "luxon";
 import { config } from "../config/config";
 import {
 	BucketPlotChart,
+	type ColorScaleSpec,
 	type DatumWithDateTime,
 } from "../lib/charts/annualBucketChart";
 import type { Margins } from "../lib/charts/canvasChartBuilder";
@@ -98,6 +99,7 @@ function buildObservationHeatmap(
 	unit: string,
 	location?: LatLon,
 	freezeValue?: number,
+	colorScale?: ColorScaleSpec,
 ): Buffer {
 	const width = 1000;
 	const height = 800;
@@ -120,6 +122,7 @@ function buildObservationHeatmap(
 		margins,
 		timedData,
 		unit,
+		colorScale,
 	);
 
 	if (location) {
@@ -157,18 +160,36 @@ async function main(): Promise<void> {
 	// const unit = "ºF";
 	// const freezeValue = 32;
 
-	const fieldOfInterest: keyof AmbientWeatherInterval = "feelsLike";
-	const titlePrefix = "Temperature (feels like)";
-	const unit = "ºF";
-	const freezeValue = 32;
+	// const fieldOfInterest: keyof AmbientWeatherInterval = "feelsLike";
+	// const titlePrefix = "Temperature (feels like)";
+	// const unit = "ºF";
+	// const freezeValue = 32;
+	//
+	// const colorScale: ColorScaleSpec = [
+	// 	{ color: "rgb(0,0,240)", pos: 0 },
+	// 	{
+	// 		color: "rgb(60,180,240)",
+	// 		value: freezeValue,
+	// 	},
+	// 	{
+	// 		color: "rgb(60,200,60)",
+	// 		value: 50,
+	// 	},
+	// 	{
+	// 		color: "rgb(220,200,100)",
+	// 		value: 70,
+	// 	},
+	// 	{ color: "rgb(240,0,0)", pos: 1 },
+	// ];
 
 	// FIXME 50,70 in default scale cause odd (but aesthetic) effects
 	// Notes for designing future scale: lots under 200, little over 800, max 1200
 	// - could also use a power scale
-	// const fieldOfInterest: keyof AmbientWeatherInterval = "solarradiation";
-	// const titlePrefix = "Insolation";
-	// const unit = "W/m²";
-	// const freezeValue = undefined;
+	const fieldOfInterest: keyof AmbientWeatherInterval = "solarradiation";
+	const titlePrefix = "Insolation";
+	const unit = "W/m²";
+	const freezeValue = undefined;
+	const colorScale = undefined;
 
 	// const fieldOfInterest: keyof AmbientWeatherInterval = "windspeedmph";
 	// const titlePrefix = "Wind speed";
@@ -210,6 +231,7 @@ async function main(): Promise<void> {
 		unit,
 		location || undefined,
 		freezeValue,
+		colorScale,
 	);
 
 	// console.log(timedDataInRange.length)
