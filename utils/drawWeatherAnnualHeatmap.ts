@@ -100,6 +100,7 @@ function buildObservationHeatmap(
 	location?: LatLon,
 	freezeValue?: number,
 	colorScale?: ColorScaleSpec,
+	scalingPower = 1,
 ): Buffer {
 	const width = 1000;
 	const height = 800;
@@ -131,6 +132,10 @@ function buildObservationHeatmap(
 
 	if (freezeValue !== undefined) {
 		chart.setFreezingPoint(freezeValue);
+	}
+
+	if (scalingPower) {
+		chart.setScalingPower(scalingPower);
 	}
 
 	chart.drawGraph();
@@ -185,16 +190,23 @@ async function main(): Promise<void> {
 	// FIXME 50,70 in default scale cause odd (but aesthetic) effects
 	// Notes for designing future scale: lots under 200, little over 800, max 1200
 	// - could also use a power scale
-	const fieldOfInterest: keyof AmbientWeatherInterval = "solarradiation";
-	const titlePrefix = "Insolation";
-	const unit = "W/m²";
-	const freezeValue = undefined;
-	const colorScale = undefined;
-
-	// const fieldOfInterest: keyof AmbientWeatherInterval = "windspeedmph";
-	// const titlePrefix = "Wind speed";
-	// const unit = "mph";
+	// const fieldOfInterest: keyof AmbientWeatherInterval = "solarradiation";
+	// const titlePrefix = "Insolation";
+	// const unit = "W/m²";
 	// const freezeValue = undefined;
+	// const scalingPower = 0.5;
+
+	// NB: actually works pretty well in negative (default scale)
+	const colorScale: ColorScaleSpec = [
+		{ color: "rgb(0,0,0)", pos: 0 },
+		{ color: "rgb(255,255,255)", pos: 1 },
+	];
+
+	const fieldOfInterest: keyof AmbientWeatherInterval = "windspeedmph";
+	const titlePrefix = "Wind speed";
+	const unit = "mph";
+	const freezeValue = undefined;
+	const scalingPower = 0.5;
 
 	// also needs a power scale
 	// const fieldOfInterest: keyof AmbientWeatherInterval = "hourlyrainin";
@@ -232,13 +244,14 @@ async function main(): Promise<void> {
 		location || undefined,
 		freezeValue,
 		colorScale,
+		scalingPower,
 	);
 
 	// console.log(timedDataInRange.length)
 
 	const stationId = config.ambientWeather.deviceMac.replaceAll(":", "");
 
-	const outpath = `${PROJECT_DIR}/tmp/yearHeatMap-station${stationId}-${fieldOfInterest}-weather-${timedDataInRange[0].timestamp.toISODate()}-${timedDataInRange[timedDataInRange.length - 1].timestamp.toISODate()}.png`;
+	const outpath = `${PROJECT_DIR}/tmp/yearHeatMap-station${stationId}-${fieldOfInterest}-sp${scalingPower.toString().replace(".", "_")}-weather-${timedDataInRange[0].timestamp.toISODate()}-${timedDataInRange[timedDataInRange.length - 1].timestamp.toISODate()}.png`;
 	console.log({ outpath });
 	fs.writeFileSync(outpath, fileData);
 }

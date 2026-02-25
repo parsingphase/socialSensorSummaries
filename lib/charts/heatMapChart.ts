@@ -336,6 +336,7 @@ class HeatmapChart extends ChartImageBuilder {
 		}
 	}
 
+	// FIXME move to shared?
 	private graphXtoCanvasX(x: number): number {
 		const maxXValue = 366;
 		return this.graphOffset.x + ((x + 0.5) / maxXValue) * this.graphWidth;

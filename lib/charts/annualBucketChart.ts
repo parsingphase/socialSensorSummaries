@@ -64,6 +64,8 @@ class BucketPlotChart extends ChartImageBuilder {
 	 */
 	protected colorGradient: tinygradient.Instance;
 
+	protected scalingPower: number = 1;
+
 	// Chained setters for optional values
 	public setLocation(location: LatLon): this {
 		this.location = location;
@@ -72,6 +74,11 @@ class BucketPlotChart extends ChartImageBuilder {
 
 	public setFreezingPoint(freezingPoint: number) {
 		this.freezingPoint = freezingPoint;
+		return this;
+	}
+
+	public setScalingPower(scalingPower: number) {
+		this.scalingPower = scalingPower;
 		return this;
 	}
 
@@ -99,6 +106,7 @@ class BucketPlotChart extends ChartImageBuilder {
 	 * @param unit
 	 */
 	constructor(
+		/// FIXME tidy up size & layout to one object param
 		canvasWidth: number,
 		canvasHeight: number,
 		title: string,
@@ -434,10 +442,12 @@ class BucketPlotChart extends ChartImageBuilder {
 
 	private valueAsScaleFraction(plotValue: number) {
 		// limit to 0…1 in case we call out-of-range, eg for scale ends
+		const scalingPower = this.scalingPower;
 		return Math.max(
 			0,
 			Math.min(
-				(plotValue - this.minDatum) / (this.maxDatum - this.minDatum),
+				(plotValue - this.minDatum) ** scalingPower /
+					(this.maxDatum - this.minDatum) ** scalingPower,
 				1,
 			),
 		);
