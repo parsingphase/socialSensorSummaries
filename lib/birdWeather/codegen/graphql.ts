@@ -1140,6 +1140,7 @@ export type SummarySpeciesCount = {
 export type SystemReading = {
   __typename?: 'SystemReading';
   batteryVoltage?: Maybe<Scalars['Float']['output']>;
+  /** @deprecated Firmware version is no longer stored in sensor data */
   firmware?: Maybe<Scalars['String']['output']>;
   powerSource?: Maybe<Scalars['String']['output']>;
   sdAvailable?: Maybe<Scalars['BigInt']['output']>;

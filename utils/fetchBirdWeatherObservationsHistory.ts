@@ -1,4 +1,4 @@
-#!/usr/bin/env tsx
+#!/usr/bin/env -S npx tsx
 
 import fs from "node:fs";
 import { Command } from "@commander-js/extra-typings";

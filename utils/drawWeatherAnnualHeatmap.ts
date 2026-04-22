@@ -160,32 +160,34 @@ async function main(): Promise<void> {
 	// const unit = "inHg";
 	// const freezeValue = undefined;
 
-	// const fieldOfInterest: keyof AmbientWeatherInterval = "tempf";
-	// const titlePrefix = "Temperature";
-	// const unit = "ºF";
-	// const freezeValue = 32;
+	const fieldOfInterest: keyof AmbientWeatherInterval = "tempf";
+	const titlePrefix = "Temperature";
+	const unit = "ºF";
+	const freezeValue = 32;
 
 	// const fieldOfInterest: keyof AmbientWeatherInterval = "feelsLike";
 	// const titlePrefix = "Temperature (feels like)";
 	// const unit = "ºF";
 	// const freezeValue = 32;
 	//
-	// const colorScale: ColorScaleSpec = [
-	// 	{ color: "rgb(0,0,240)", pos: 0 },
-	// 	{
-	// 		color: "rgb(60,180,240)",
-	// 		value: freezeValue,
-	// 	},
-	// 	{
-	// 		color: "rgb(60,200,60)",
-	// 		value: 50,
-	// 	},
-	// 	{
-	// 		color: "rgb(220,200,100)",
-	// 		value: 70,
-	// 	},
-	// 	{ color: "rgb(240,0,0)", pos: 1 },
-	// ];
+	const colorScale: ColorScaleSpec = [
+		{ color: "rgb(0,0,240)", pos: 0 },
+		{
+			color: "rgb(60,180,240)",
+			value: freezeValue,
+		},
+		{
+			color: "rgb(60,200,60)",
+			value: 50,
+		},
+		{
+			color: "rgb(220,200,100)",
+			value: 70,
+		},
+		{ color: "rgb(240,0,0)", pos: 1 },
+	];
+
+	const scalingPower = 1;
 
 	// FIXME 50,70 in default scale cause odd (but aesthetic) effects
 	// Notes for designing future scale: lots under 200, little over 800, max 1200
@@ -197,22 +199,33 @@ async function main(): Promise<void> {
 	// const scalingPower = 0.5;
 
 	// NB: actually works pretty well in negative (default scale)
-	const colorScale: ColorScaleSpec = [
-		{ color: "rgb(0,0,0)", pos: 0 },
-		{ color: "rgb(255,255,255)", pos: 1 },
-	];
-
-	const fieldOfInterest: keyof AmbientWeatherInterval = "windspeedmph";
-	const titlePrefix = "Wind speed";
-	const unit = "mph";
-	const freezeValue = undefined;
-	const scalingPower = 0.5;
+	// const colorScale: ColorScaleSpec = [
+	// 	{ color: "rgb(0,0,0)", pos: 0 },
+	// 	{ color: "rgb(255,255,255)", pos: 1 },
+	// ];
+	//
+	// const fieldOfInterest: keyof AmbientWeatherInterval = "windspeedmph";
+	// const titlePrefix = "Wind speed";
+	// const unit = "mph";
+	// const freezeValue = undefined;
+	// const scalingPower = 0.5;
 
 	// also needs a power scale
 	// const fieldOfInterest: keyof AmbientWeatherInterval = "hourlyrainin";
 	// const titlePrefix = "Rain (hourly)";
 	// const unit = "in";
 	// const freezeValue = undefined;
+
+	// const fieldOfInterest: keyof AmbientWeatherInterval = "aqi_pm25";
+	// const titlePrefix = "AQI (PM25)";
+	// const unit = "";
+	// const freezeValue = undefined;
+	// const colorScale: ColorScaleSpec = [
+	// 	{ color: "rgb(230,230,255)", pos: 0 },
+	// 	// { color: "rgb(220,220,220)", pos: 0.5 },
+	// 	{ color: "rgb(160,160,160)", pos: 1 },
+	// ];
+	// const scalingPower=0.5
 
 	let timedData: DatumWithDateTime[] = [];
 	for (const allDayData of allData) {

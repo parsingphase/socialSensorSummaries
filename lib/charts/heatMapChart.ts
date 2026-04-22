@@ -211,7 +211,10 @@ class HeatmapChart extends ChartImageBuilder {
 		location: LatLon,
 		scale: number,
 	) {
-		const firstDateTime = intervals[0].timestamp;
+		const firstDateTime = intervals[0]?.timestamp;
+		if (!firstDateTime) {
+			return; // FIXME get from filename?
+		}
 		const lastDateTime = intervals[intervals.length - 1].timestamp;
 
 		let timestamp = firstDateTime;
