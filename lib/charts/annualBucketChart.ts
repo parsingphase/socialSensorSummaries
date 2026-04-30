@@ -41,7 +41,7 @@ class BucketPlotChart extends ChartImageBuilder {
 	protected bucketData: DatumWithDateTime[] = [];
 
 	//TODO: Generalize to a set of FixedScalePoints, or possibly draw from gradient inputs?
-	protected freezingPoint: number | undefined = undefined;
+	protected fixedScalePoint: number | undefined = undefined;
 
 	/**
 	 * Cell square side for bucket
@@ -72,8 +72,8 @@ class BucketPlotChart extends ChartImageBuilder {
 		return this;
 	}
 
-	public setFreezingPoint(freezingPoint: number) {
-		this.freezingPoint = freezingPoint;
+	public setFixedScalePoint(fixedScalePoint: number) {
+		this.fixedScalePoint = fixedScalePoint;
 		return this;
 	}
 
@@ -307,11 +307,11 @@ class BucketPlotChart extends ChartImageBuilder {
 			let legendString = `${legendValue}`;
 
 			if (
-				this.freezingPoint !== undefined &&
-				Math.abs(legendValue - this.freezingPoint) < scaleGranularity
+				this.fixedScalePoint !== undefined &&
+				Math.abs(legendValue - this.fixedScalePoint) < scaleGranularity
 			) {
 				// make freezingPoint a fixed value if there's a scale value nearby
-				legendString = this.freezingPoint.toFixed(Math.max(0, 0 - negNumDps));
+				legendString = this.fixedScalePoint.toFixed(Math.max(0, 0 - negNumDps));
 			} else if (negNumDps < 0) {
 				legendString = legendValue.toFixed(0 - negNumDps);
 			} else {

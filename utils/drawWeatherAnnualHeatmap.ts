@@ -19,8 +19,109 @@ import {
 } from "../lib/weather";
 import { getAmbientWeatherCacheDirForStation } from "./shared";
 
+type PlottableDataSpecification = {
+	fieldOfInterest: keyof AmbientWeatherInterval;
+	titlePrefix: string;
+	unit: string;
+	colorScale: ColorScaleSpec;
+	scalingPower: number;
+	fixedScalePoint?: number;
+};
+
+const fahrenheitTempScale = [
+	{ color: "rgb(0,0,240)", pos: 0 },
+	{
+		color: "rgb(60,180,240)",
+		value: 32,
+	},
+	{
+		color: "rgb(60,200,60)",
+		value: 50,
+	},
+	{
+		color: "rgb(220,200,100)",
+		value: 70,
+	},
+	{ color: "rgb(240,0,0)", pos: 1 },
+];
+const blackToWhiteScale = [
+	{ color: "rgb(0,0,0)", pos: 0 },
+	{ color: "rgb(255,255,255)", pos: 1 },
+];
+const whiteToBlackScale = [
+	{ color: "rgb(255,255,255)", pos: 0 },
+	{ color: "rgb(0,0,0)", pos: 1 },
+];
+
+const specMap: Record<string, PlottableDataSpecification> = {
+	outdoorTempF: {
+		fieldOfInterest: "tempf",
+		titlePrefix: "Temperature",
+		unit: "ºF",
+		fixedScalePoint: 32,
+		colorScale: fahrenheitTempScale,
+		scalingPower: 1,
+	},
+	outdoorFeelsLikeF: {
+		fieldOfInterest: "feelsLike",
+		titlePrefix: "Temperature (feels like)",
+		unit: "ºF",
+		fixedScalePoint: 32,
+		colorScale: fahrenheitTempScale,
+		scalingPower: 1,
+	},
+	pressure: {
+		fieldOfInterest: "baromabsin",
+		titlePrefix: "Pressure",
+		unit: "inHg",
+		scalingPower: 1,
+		colorScale: blackToWhiteScale,
+	},
+	insolation: {
+		fieldOfInterest: "solarradiation",
+		titlePrefix: "Insolation",
+		unit: "W/m²",
+		scalingPower: 0.5,
+		colorScale: whiteToBlackScale,
+	},
+	windSpeed: {
+		fieldOfInterest: "windspeedmph",
+		colorScale: whiteToBlackScale,
+		titlePrefix: "Wind speed",
+		unit: "mph",
+		scalingPower: 0.7,
+	},
+	rainRate: {
+		fieldOfInterest: "hourlyrainin",
+		titlePrefix: "Rain (hourly)",
+		unit: "in",
+		colorScale: [
+			{ color: "rgb(255,255,255)", pos: 0 },
+			{ color: "rgb(80,100,255)", pos: 1 },
+		],
+		scalingPower: 0.2,
+	},
+	airQualityOut: {
+		titlePrefix: "AQI (PM25)",
+		fieldOfInterest: "aqi_pm25",
+		colorScale: [
+			{ color: "rgb(230,230,255)", pos: 0 },
+			{ color: "rgb(220,220,220)", pos: 0.5 },
+			{ color: "rgb(160,160,160)", pos: 1 },
+		],
+		unit: "",
+		scalingPower: 0.5,
+	},
+};
+
 async function getOpts() {
 	const program = new Command()
+		.requiredOption(
+			"--parameter <parameter>",
+			`Parameter to plot, one of ${Object.keys(specMap)
+				.map((s) => `"${s}"`)
+				.join(", ")}`,
+		)
 		.option("--location <lat,lng>", "Location of station for sunrise/set data")
 		.option(
 			"--timezone <tz>",
@@ -44,7 +145,7 @@ async function getOpts() {
 	program.parse();
 
 	const options = program.opts(); // smart type
-	const { location: stringLocation, timezone } = options;
+	const { location: stringLocation, timezone, parameter } = options;
 
 	let location: LatLon | null = null;
 	if (stringLocation) {
@@ -73,6 +174,7 @@ async function getOpts() {
 		timezone,
 		fromDate,
 		toDate,
+		parameter,
 	};
 }
 
@@ -131,7 +233,7 @@ function buildObservationHeatmap(
 	}
 
 	if (freezeValue !== undefined) {
-		chart.setFreezingPoint(freezeValue);
+		chart.setFixedScalePoint(freezeValue);
 	}
 
 	if (scalingPower) {
@@ -142,9 +244,13 @@ function buildObservationHeatmap(
 	return chart.canvasAsPng();
 }
 
+function getDataSpec(key: string): PlottableDataSpecification {
+	return specMap[key];
+}
+
 async function main(): Promise<void> {
 	const opts = await getOpts();
-	const { fromDate, toDate, location, timezone } = opts;
+	const { fromDate, toDate, location, timezone, parameter } = opts;
 	const targetInterval = Interval.fromDateTimes(
 		fromDate.startOf("day"),
 		toDate.endOf("day"),
@@ -152,80 +258,15 @@ async function main(): Promise<void> {
 	// console.log({ opts, targetInterval });
 
 	const allData = loadCachedDataByDay();
-
-	/************************** PICK INPUT FIELD **********************/
-	// FIXME make this CLI config
-	// const fieldOfInterest: keyof AmbientWeatherInterval = "baromabsin";
-	// const titlePrefix = "Pressure";
-	// const unit = "inHg";
-	// const freezeValue = undefined;
-
-	const fieldOfInterest: keyof AmbientWeatherInterval = "tempf";
-	const titlePrefix = "Temperature";
-	const unit = "ºF";
-	const freezeValue = 32;
-
-	// const fieldOfInterest: keyof AmbientWeatherInterval = "feelsLike";
-	// const titlePrefix = "Temperature (feels like)";
-	// const unit = "ºF";
-	// const freezeValue = 32;
-	//
-	const colorScale: ColorScaleSpec = [
-		{ color: "rgb(0,0,240)", pos: 0 },
-		{
-			color: "rgb(60,180,240)",
-			value: freezeValue,
-		},
-		{
-			color: "rgb(60,200,60)",
-			value: 50,
-		},
-		{
-			color: "rgb(220,200,100)",
-			value: 70,
-		},
-		{ color: "rgb(240,0,0)", pos: 1 },
-	];
-
-	const scalingPower = 1;
-
+	const {
+		fieldOfInterest,
+		titlePrefix,
+		unit,
+		colorScale,
+		scalingPower,
+		fixedScalePoint,
+	} = getDataSpec(parameter);
 	// FIXME 50,70 in default scale cause odd (but aesthetic) effects
-	// Notes for designing future scale: lots under 200, little over 800, max 1200
-	// - could also use a power scale
-	// const fieldOfInterest: keyof AmbientWeatherInterval = "solarradiation";
-	// const titlePrefix = "Insolation";
-	// const unit = "W/m²";
-	// const freezeValue = undefined;
-	// const scalingPower = 0.5;
-
-	// NB: actually works pretty well in negative (default scale)
-	// const colorScale: ColorScaleSpec = [
-	// 	{ color: "rgb(0,0,0)", pos: 0 },
-	// 	{ color: "rgb(255,255,255)", pos: 1 },
-	// ];
-	//
-	// const fieldOfInterest: keyof AmbientWeatherInterval = "windspeedmph";
-	// const titlePrefix = "Wind speed";
-	// const unit = "mph";
-	// const freezeValue = undefined;
-	// const scalingPower = 0.5;
-
-	// also needs a power scale
-	// const fieldOfInterest: keyof AmbientWeatherInterval = "hourlyrainin";
-	// const titlePrefix = "Rain (hourly)";
-	// const unit = "in";
-	// const freezeValue = undefined;
-
-	// const fieldOfInterest: keyof AmbientWeatherInterval = "aqi_pm25";
-	// const titlePrefix = "AQI (PM25)";
-	// const unit = "";
-	// const freezeValue = undefined;
-	// const colorScale: ColorScaleSpec = [
-	// 	{ color: "rgb(230,230,255)", pos: 0 },
-	// 	// { color: "rgb(220,220,220)", pos: 0.5 },
-	// 	{ color: "rgb(160,160,160)", pos: 1 },
-	// ];
-	// const scalingPower=0.5
 
 	let timedData: DatumWithDateTime[] = [];
 	for (const allDayData of allData) {
@@ -255,7 +296,7 @@ async function main(): Promise<void> {
 		titlePrefix,
 		unit,
 		location || undefined,
-		freezeValue,
+		fixedScalePoint,
 		colorScale,
 		scalingPower,
 	);
@@ -264,7 +305,7 @@ async function main(): Promise<void> {
 
 	const stationId = config.ambientWeather.deviceMac.replaceAll(":", "");
 
-	const outpath = `${PROJECT_DIR}/tmp/yearHeatMap-station${stationId}-${fieldOfInterest}-sp${scalingPower.toString().replace(".", "_")}-weather-${timedDataInRange[0].timestamp.toISODate()}-${timedDataInRange[timedDataInRange.length - 1].timestamp.toISODate()}.png`;
+	const outpath = `${PROJECT_DIR}/tmp/yearHeatMap-station${stationId}-${parameter}-sp${scalingPower.toString().replace(".", "_")}-weather-${timedDataInRange[0].timestamp.toISODate()}-${timedDataInRange[timedDataInRange.length - 1].timestamp.toISODate()}.png`;
 	console.log({ outpath });
 	fs.writeFileSync(outpath, fileData);
 }
