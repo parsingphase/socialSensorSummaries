@@ -58,6 +58,10 @@ class BucketPlotChart extends ChartImageBuilder {
 	protected maxDatum: number = 0;
 	protected minDatum: number = 0;
 
+	// will default to maxDatum, minDatum
+	protected scaleMin: number = 0;
+	protected scaleMax: number = 0;
+
 	/**
 	 * Color in object form as a parser cache. Set on construct or setter
 	 * @protected
@@ -67,6 +71,7 @@ class BucketPlotChart extends ChartImageBuilder {
 	protected scalingPower: number = 1;
 
 	// Chained setters for optional values
+
 	public setLocation(location: LatLon): this {
 		this.location = location;
 		return this;
@@ -90,7 +95,19 @@ class BucketPlotChart extends ChartImageBuilder {
 			.filter((n) => n !== undefined && !Number.isNaN(n));
 		this.maxDatum = Math.max(...validData);
 		this.minDatum = Math.min(...validData);
+		this.scaleMax = this.maxDatum;
+		this.scaleMin = this.minDatum;
 
+		return this;
+	}
+
+	public setScaleMax(maxDatum: number) {
+		this.scaleMax = maxDatum;
+		return this;
+	}
+
+	public setScaleMin(minDatum: number) {
+		this.scaleMin = minDatum;
 		return this;
 	}
 
@@ -102,7 +119,6 @@ class BucketPlotChart extends ChartImageBuilder {
 	 * @param title
 	 * @param graphFrame Margins between image edge and graph plot
 	 * @param bucketData Time-bucket data to plot
-	 * @param colorScale
 	 * @param unit
 	 */
 	constructor(
@@ -113,7 +129,6 @@ class BucketPlotChart extends ChartImageBuilder {
 		graphFrame: Margins,
 		bucketData: DatumWithDateTime[],
 		unit?: string,
-		colorScale?: ColorScaleSpec,
 	) {
 		super(canvasWidth, canvasHeight, title, graphFrame);
 		this.setBucketData(bucketData);
@@ -126,8 +141,15 @@ class BucketPlotChart extends ChartImageBuilder {
 			{ color: "rgb(0,0,0)", pos: 1 },
 		];
 
-		// filter out anything not actually in our range
-		const plotColorSpec = (colorScale ?? defaultColorScale)
+		this.colorGradient = tinygradient(defaultColorScale);
+
+		if (unit !== undefined) {
+			this.unit = unit;
+		}
+	}
+
+	protected normalizeColorScale(colorScale: ColorScaleSpec) {
+		return colorScale
 			.filter(
 				(c) =>
 					"pos" in c ||
@@ -136,15 +158,19 @@ class BucketPlotChart extends ChartImageBuilder {
 						c.value <= this.maxDatum),
 			)
 			.map((c) => {
-				c.pos = c.value ? this.valueAsScaleFraction(c.value) : c.pos;
-				return c;
+				const pos = c.value
+					? this.valueAsScaleFraction(c.value)
+					: (c.pos as number);
+				return { pos, color: c.color };
 			});
+	}
 
-		this.colorGradient = tinygradient(plotColorSpec);
-
-		if (unit !== undefined) {
-			this.unit = unit;
-		}
+	/**
+	 * Call this AFTER setting max/min if used!
+	 * @param colorScale
+	 */
+	public setColorScale(colorScale: ColorScaleSpec) {
+		this.colorGradient = tinygradient(this.normalizeColorScale(colorScale));
 	}
 
 	/**
@@ -275,7 +301,7 @@ class BucketPlotChart extends ChartImageBuilder {
 		ctx.fillStyle = this.textColor;
 		ctx.font = this.labelFont;
 
-		const range = this.maxDatum - this.minDatum;
+		const range = this.scaleMax - this.scaleMin;
 
 		// heuristics to get functional scale formatting
 		const numZerosInRange = Math.floor(Math.log10(range));
@@ -303,7 +329,7 @@ class BucketPlotChart extends ChartImageBuilder {
 		const numIntervals = numScaleLegendElements - 1;
 
 		for (let i = 0; i <= numIntervals; i++) {
-			const legendValue = (i / numIntervals) * range + this.minDatum;
+			const legendValue = (i / numIntervals) * range + this.scaleMin;
 			let legendString = `${legendValue}`;
 
 			if (
@@ -446,8 +472,8 @@ class BucketPlotChart extends ChartImageBuilder {
 		return Math.max(
 			0,
 			Math.min(
-				(plotValue - this.minDatum) ** scalingPower /
-					(this.maxDatum - this.minDatum) ** scalingPower,
+				(plotValue - this.scaleMin) ** scalingPower /
+					(this.scaleMax - this.scaleMin) ** scalingPower,
 				1,
 			),
 		);

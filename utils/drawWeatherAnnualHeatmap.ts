@@ -26,6 +26,7 @@ type PlottableDataSpecification = {
 	colorScale: ColorScaleSpec;
 	scalingPower: number;
 	fixedScalePoint?: number;
+	fixedRange?: [number, number];
 };
 
 const fahrenheitTempScale = [
@@ -61,6 +62,7 @@ const specMap: Record<string, PlottableDataSpecification> = {
 		fixedScalePoint: 32,
 		colorScale: fahrenheitTempScale,
 		scalingPower: 1,
+		fixedRange: [-10, 110],
 	},
 	outdoorFeelsLikeF: {
 		fieldOfInterest: "feelsLike",
@@ -203,6 +205,7 @@ function buildObservationHeatmap(
 	freezeValue?: number,
 	colorScale?: ColorScaleSpec,
 	scalingPower = 1,
+	fixedRange?: [number, number],
 ): Buffer {
 	const width = 1000;
 	const height = 800;
@@ -225,9 +228,14 @@ function buildObservationHeatmap(
 		margins,
 		timedData,
 		unit,
-		colorScale,
 	);
 
+	if (fixedRange) {
+		chart.setScaleMin(fixedRange[0]).setScaleMax(fixedRange[1]);
+	}
+	if (colorScale) {
+		chart.setColorScale(colorScale);
+	}
 	if (location) {
 		chart.setLocation(location);
 	}
@@ -265,6 +273,7 @@ async function main(): Promise<void> {
 		colorScale,
 		scalingPower,
 		fixedScalePoint,
+		fixedRange,
 	} = getDataSpec(parameter);
 	// FIXME 50,70 in default scale cause odd (but aesthetic) effects
 
@@ -299,6 +308,7 @@ async function main(): Promise<void> {
 		fixedScalePoint,
 		colorScale,
 		scalingPower,
+		fixedRange,
 	);
 
 	// console.log(timedDataInRange.length)
