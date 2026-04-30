@@ -146,23 +146,44 @@ class HeatmapChart extends ChartImageBuilder {
 		this.drawInnerFrame();
 		this.drawMonthLabels();
 		this.drawHourLabels();
+		this.plotObservations();
+		this.drawSunriseSunset();
+		this.drawScale();
 
+		return this.canvas;
+	}
+
+	private drawSunriseSunset() {
 		const withDates = this.bucketData;
 
 		const scale = this.plotScale;
 
 		const ctx = this.context2d;
+		// now loop through *days* in range to provide sunrise/set if we have a location:
+		const location = this.location;
+		if (location) {
+			const myImageData = this.getPlotAreaAsImageData();
+			const endDate = withDates[withDates.length - 1].timestamp;
+			this.plotSunriseSunsetBetweenDates(
+				myImageData,
+				endDate.startOf("year"),
+				endDate.endOf("year"),
+				location,
+				scale,
+			);
+			ctx.putImageData(
+				myImageData,
+				this.graphOffset.x + 1,
+				this.graphOffset.y + 1,
+			);
+		}
+	}
 
-		const width = 365 * scale;
-		const height = 24 * 12 * scale;
+	private plotObservations() {
+		const withDates = this.bucketData;
 
-		// get the drawn chart background as our plotting area for pixel data
-		const myImageData = ctx.getImageData(
-			this.graphOffset.x + 1,
-			this.graphOffset.y + 1,
-			width,
-			height,
-		);
+		const myImageData = this.getPlotAreaAsImageData();
+		const scale = this.plotScale;
 
 		// NB: Alpha is 0…1 in TinyColor but int(0…255) in ImageData
 
@@ -187,25 +208,39 @@ class HeatmapChart extends ChartImageBuilder {
 				}
 			}
 		}
-
-		// now loop through *days* in range to provide sunrise/set if we have a location:
-		const location = this.location;
-		if (location) {
-			// FIXME generate a clean list of days from period (or year?) start to end, else we only
-			//  plot sun times for days where we have observations
-			this.plotSunriseSunset(myImageData, withDates, location, scale);
-		}
-		ctx.putImageData(
+		this.context2d.putImageData(
 			myImageData,
 			this.graphOffset.x + 1,
 			this.graphOffset.y + 1,
 		);
-		this.drawScale();
-
-		return this.canvas;
 	}
 
-	private plotSunriseSunset(
+	private getPlotAreaAsImageData() {
+		const ctx = this.context2d;
+		const scale = this.plotScale;
+
+		const width = 365 * scale;
+		const height = 24 * 12 * scale;
+
+		// get the drawn chart background as our plotting area for pixel data
+		const imageData = ctx.getImageData(
+			this.graphOffset.x + 1,
+			this.graphOffset.y + 1,
+			width,
+			height,
+		);
+		return imageData;
+	}
+
+	/**
+	 * @deprecated
+	 * @param myImageData
+	 * @param intervals
+	 * @param location
+	 * @param scale
+	 * @private
+	 */
+	private plotSunriseSunsetFromIntervals(
 		myImageData: ImageData,
 		intervals: CountWithDateTime[],
 		location: LatLon,
@@ -216,7 +251,22 @@ class HeatmapChart extends ChartImageBuilder {
 			return; // FIXME get from filename?
 		}
 		const lastDateTime = intervals[intervals.length - 1].timestamp;
+		this.plotSunriseSunsetBetweenDates(
+			myImageData,
+			firstDateTime,
+			lastDateTime,
+			location,
+			scale,
+		);
+	}
 
+	private plotSunriseSunsetBetweenDates(
+		myImageData: ImageData,
+		firstDateTime: DateTime<true>,
+		lastDateTime: DateTime<true>,
+		location: LatLon,
+		scale: number,
+	) {
 		let timestamp = firstDateTime;
 		do {
 			timestamp = timestamp.plus({ day: 1 });

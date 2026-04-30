@@ -24,7 +24,29 @@ type CachedBucketPeriodWithDateTime = RawCachedBucketPeriod & {
 	timestamp: DateTime;
 };
 
-async function getOpts() {
+type ScriptOpts = {
+	stationId: number;
+	speciesId: number;
+	speciesName: string;
+	location: LatLon | undefined;
+	timezone: string;
+	scalingRoot: number;
+	fixedMax: number | undefined;
+};
+
+async function getSpeciesName(
+	apiUrl: string,
+	speciesId: number,
+): Promise<string> {
+	const speciesInfo = await fetchSpeciesInfo(apiUrl, speciesId);
+	const commonName = speciesInfo.species?.commonName;
+	if (!commonName) {
+		throw new Error("No species name received");
+	}
+	return commonName;
+}
+
+async function getOpts(): Promise<ScriptOpts> {
 	const program = new Command()
 		.requiredOption("--station-id <number>", "Required, stationId to chart")
 		.requiredOption("--species-id <number>", "Required, speciesId to chart")
@@ -72,7 +94,7 @@ async function getOpts() {
 
 	const apiUrl = config.birdWeather.apiBaseUrl;
 	let { speciesName } = options;
-	let location: LatLon | null;
+	let location: LatLon | undefined;
 	if (stringLocation) {
 		const [lat, lon] = stringLocation
 			.split(/\s*,\s*/)
@@ -81,7 +103,11 @@ async function getOpts() {
 	} else {
 		try {
 			const stationInfo = await fetchStationInfo(apiUrl, stationId);
-			location = stationInfo.station.coords ?? null;
+			const locationCandidate = stationInfo.station.coords;
+			if (locationCandidate) {
+				const { lat, lon } = locationCandidate;
+				location = { lat, lon };
+			}
 		} catch (e) {
 			console.error("Error in fetchStationInfo");
 			throw e;
@@ -89,13 +115,7 @@ async function getOpts() {
 	}
 
 	if (!speciesName) {
-		try {
-			const speciesInfo = await fetchSpeciesInfo(apiUrl, speciesId);
-			speciesName = speciesInfo.species?.commonName;
-		} catch (e) {
-			console.error("Error in fetchSpeciesInfo");
-			throw e;
-		}
+		speciesName = await getSpeciesName(apiUrl, speciesId);
 	}
 	// console.log({ stationId, speciesId, speciesName, location, timezone, scalingRoot, fixedMax });
 	return {
@@ -157,6 +177,11 @@ function loadSpeciesBucketCache(
 
 void loadSpeciesBucketCache; // unused until API is fixed
 
+type BucketDataRange = {
+	periods: CachedBucketPeriodWithDateTime[];
+	dateRange?: { from: DateTime; to: DateTime };
+};
+
 /**
  * Load & accumulate data into buckets in the source timezone
  * @param speciesId
@@ -167,12 +192,14 @@ function loadSpeciesCacheDataAsBuckets(
 	speciesId: number,
 	stationId: number,
 	minutes: number,
-): CachedBucketPeriodWithDateTime[] {
+): BucketDataRange {
 	const keyedBuckets: Record<string, CachedBucketPeriodWithDateTime> = {};
 	const dirForSpeciesStation = getSpeciesObservationCacheDirForSpeciesStation(
 		speciesId,
 		stationId,
 	);
+
+	const fileDates: DateTime[] = [];
 
 	const files = fs.readdirSync(dirForSpeciesStation);
 	for (const file of files) {
@@ -180,6 +207,8 @@ function loadSpeciesCacheDataAsBuckets(
 			const fileData = fs.readFileSync(`${dirForSpeciesStation}/${file}`, {
 				encoding: "utf-8",
 			});
+			const fileDate = DateTime.fromISO(file.replace(".json", ""));
+			fileDates.push(fileDate); // YYYY-MM-DD in whatever TZ the API uses for periods (possibly station-local?)
 			const records: ObservationRecord[] = JSON.parse(fileData);
 			for (const record of records) {
 				if (!record) {
@@ -212,16 +241,29 @@ function loadSpeciesCacheDataAsBuckets(
 		}
 	}
 
-	return Object.values(keyedBuckets);
+	const retVal: BucketDataRange = { periods: Object.values(keyedBuckets) };
+
+	const validFileDates: DateTime<true>[] = fileDates
+		.filter((d) => d.isValid)
+		.sort();
+	console.log({ validFileDates });
+	if (validFileDates.length > 0) {
+		retVal.dateRange = {
+			from: validFileDates[0],
+			to: validFileDates[validFileDates.length - 1],
+		};
+	}
+
+	return retVal;
 }
 
 /**
- * Convert bucket timezones to that given
+ * Add a timestamp field to each bucket with the given timezone
  *
  * @param allData
  * @param targetTimeZone
  */
-function hydrateSpeciesBucketCacheDates(
+function addZonedDateTimesToBuckets(
 	allData: RawCachedBucketPeriod[],
 	targetTimeZone: string,
 ): CachedBucketPeriodWithDateTime[] {
@@ -289,14 +331,21 @@ async function main(): Promise<void> {
 	// const allData = loadSpeciesBucketCache(speciesId, stationId, minutes);
 	const allData = loadSpeciesCacheDataAsBuckets(speciesId, stationId, minutes);
 
-	const withDates = hydrateSpeciesBucketCacheDates(allData, timezone);
+	const hydratedPeriods = addZonedDateTimesToBuckets(allData.periods, timezone);
 
 	// TODO load max/min temp data (see: utils/scanWeatherData.ts), incorporate	into chart
 
+	console.log({
+		"data range": {
+			first: hydratedPeriods[0],
+			last: hydratedPeriods[hydratedPeriods.length - 1],
+		},
+	});
+
 	const fileData = buildObservationHeatmap(
 		speciesName ?? "",
-		withDates,
-		location || undefined,
+		hydratedPeriods,
+		location,
 		1 / scalingRoot,
 		fixedMax,
 	);
@@ -304,7 +353,7 @@ async function main(): Promise<void> {
 	const scalingRootString = `${scalingRoot}`.replace(".", "_");
 	const optMaxString = fixedMax ? `-mx${fixedMax}` : "";
 
-	const outpath = `${PROJECT_DIR}/tmp/yearHeatMap-station${stationId}-species${speciesId}-sr${scalingRootString}${optMaxString}.png`;
+	const outpath = `${PROJECT_DIR}/tmp/yearHeatMap-station${stationId}-species${speciesId}-${speciesName.replace(/\W/g, "")}-sr${scalingRootString}${optMaxString}.png`;
 	console.log({ outpath });
 	fs.writeFileSync(outpath, fileData);
 }

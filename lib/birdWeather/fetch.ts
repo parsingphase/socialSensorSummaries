@@ -143,7 +143,7 @@ async function fetchSpeciesObservationsForDay(
 	apiUrl: string,
 	stationId: string,
 	speciesId: string,
-	dateOfInterest: string,
+	dateOfInterest: string, // YYYY-MM-DD, no TZ
 	minConfidence: number = 0,
 ): Promise<ObservationRecord[]> {
 	const client = initBirdWeatherClient(apiUrl);
