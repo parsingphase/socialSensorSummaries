@@ -147,13 +147,17 @@ class HeatmapChart extends ChartImageBuilder {
 		this.drawMonthLabels();
 		this.drawHourLabels();
 		this.plotObservations();
-		this.drawSunriseSunset();
+		this.plotSunriseSunset();
 		this.drawScale();
 
 		return this.canvas;
 	}
 
-	private drawSunriseSunset() {
+	/**
+	 * Plot solar lines on 2D ImageData matrix
+	 * @private
+	 */
+	private plotSunriseSunset() {
 		const withDates = this.bucketData;
 
 		const scale = this.plotScale;
@@ -179,6 +183,10 @@ class HeatmapChart extends ChartImageBuilder {
 		}
 	}
 
+	/**
+	 * Plot all observations as intensity using 2D ImageData Matrix
+	 * @private
+	 */
 	private plotObservations() {
 		const withDates = this.bucketData;
 
@@ -230,34 +238,6 @@ class HeatmapChart extends ChartImageBuilder {
 			height,
 		);
 		return imageData;
-	}
-
-	/**
-	 * @deprecated
-	 * @param myImageData
-	 * @param intervals
-	 * @param location
-	 * @param scale
-	 * @private
-	 */
-	private plotSunriseSunsetFromIntervals(
-		myImageData: ImageData,
-		intervals: CountWithDateTime[],
-		location: LatLon,
-		scale: number,
-	) {
-		const firstDateTime = intervals[0]?.timestamp;
-		if (!firstDateTime) {
-			return; // FIXME get from filename?
-		}
-		const lastDateTime = intervals[intervals.length - 1].timestamp;
-		this.plotSunriseSunsetBetweenDates(
-			myImageData,
-			firstDateTime,
-			lastDateTime,
-			location,
-			scale,
-		);
 	}
 
 	private plotSunriseSunsetBetweenDates(
@@ -448,9 +428,7 @@ class HeatmapChart extends ChartImageBuilder {
 }
 
 function dateTimeToBucket(timestamp: DateTime, scale = 1) {
-	const dayOfYear = Math.floor(
-		Interval.fromDateTimes(timestamp.startOf("year"), timestamp).length("days"),
-	);
+	const dayOfYear = timestamp.ordinal - 1; // zero-offset
 	const minuteOfDay = Interval.fromDateTimes(
 		timestamp.startOf("day"),
 		timestamp,

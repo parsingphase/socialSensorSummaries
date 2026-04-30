@@ -32,6 +32,8 @@ type ScriptOpts = {
 	timezone: string;
 	scalingRoot: number;
 	fixedMax: number | undefined;
+	fromDate: DateTime;
+	toDate: DateTime;
 };
 
 async function getSpeciesName(
@@ -72,6 +74,16 @@ async function getOpts(): Promise<ScriptOpts> {
 			"--fixed-max <number>",
 			"Set this value as max upper scale for comparable charts",
 		)
+		.option(
+			"--from <yyyy-mm-dd>",
+			"Start of range to draw",
+			DateTime.now().startOf("year").toISODate(),
+		)
+		.option(
+			"--to <yyyy-mm-dd>",
+			"End of range to draw",
+			DateTime.now().endOf("year").toISODate(),
+		)
 		.description(
 			"Data must be pre-cached with fetchBirdWeatherBucketHistory.ts\nFor a full list of timezones, see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones",
 		);
@@ -86,11 +98,20 @@ async function getOpts(): Promise<ScriptOpts> {
 		timezone,
 		scalingRoot: scalingRootString,
 		fixedMax: fixedMaxString,
+		from: fromDateString,
+		to: toDateString,
 	} = options;
 	const stationId = Number(stationIdString);
 	const speciesId = Number(speciesIdString);
 	const scalingRoot = Number(scalingRootString);
 	const fixedMax = fixedMaxString ? Number(fixedMaxString) : undefined;
+
+	const fromDate = DateTime.fromISO(fromDateString);
+	const toDate = DateTime.fromISO(toDateString);
+
+	if ((fromDate && !fromDate.isValid) || (toDate && !toDate.isValid)) {
+		throw new Error("Invalid dates");
+	}
 
 	const apiUrl = config.birdWeather.apiBaseUrl;
 	let { speciesName } = options;
@@ -126,6 +147,8 @@ async function getOpts(): Promise<ScriptOpts> {
 		timezone,
 		scalingRoot,
 		fixedMax,
+		fromDate,
+		toDate,
 	};
 }
 
@@ -187,11 +210,13 @@ type BucketDataRange = {
  * @param speciesId
  * @param stationId
  * @param minutes
+ * @param range
  */
 function loadSpeciesCacheDataAsBuckets(
 	speciesId: number,
 	stationId: number,
 	minutes: number,
+	range?: { fromDate: DateTime<true>; toDate: DateTime<true> },
 ): BucketDataRange {
 	const keyedBuckets: Record<string, CachedBucketPeriodWithDateTime> = {};
 	const dirForSpeciesStation = getSpeciesObservationCacheDirForSpeciesStation(
@@ -208,6 +233,14 @@ function loadSpeciesCacheDataAsBuckets(
 				encoding: "utf-8",
 			});
 			const fileDate = DateTime.fromISO(file.replace(".json", ""));
+			if (
+				range &&
+				((range.fromDate && range.fromDate) > fileDate ||
+					(range.toDate && range.toDate) < fileDate)
+			) {
+				// console.log(`Skip date: ${fileDate}`);
+				continue;
+			}
 			fileDates.push(fileDate); // YYYY-MM-DD in whatever TZ the API uses for periods (possibly station-local?)
 			const records: ObservationRecord[] = JSON.parse(fileData);
 			for (const record of records) {
@@ -325,11 +358,16 @@ async function main(): Promise<void> {
 		timezone,
 		scalingRoot,
 		fixedMax,
+		fromDate,
+		toDate,
 	} = await getOpts();
 
 	const minutes = 5;
 	// const allData = loadSpeciesBucketCache(speciesId, stationId, minutes);
-	const allData = loadSpeciesCacheDataAsBuckets(speciesId, stationId, minutes);
+	const allData = loadSpeciesCacheDataAsBuckets(speciesId, stationId, minutes, {
+		fromDate,
+		toDate,
+	});
 
 	const hydratedPeriods = addZonedDateTimesToBuckets(allData.periods, timezone);
 

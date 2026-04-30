@@ -1,4 +1,5 @@
 #!/usr/bin/env tsx
+const ERROR_MESSAGE = "This API is not currently reliable";
 
 import fs from "node:fs";
 import { Command } from "@commander-js/extra-typings";
@@ -39,6 +40,8 @@ function getOpts() {
 }
 
 async function main(): Promise<void> {
+	throw new Error(ERROR_MESSAGE);
+	// biome-ignore lint/correctness/noUnreachable: Script not currently functional
 	const cacheRootDir = getSpeciesBucketCacheRootDir();
 	fs.mkdirSync(cacheRootDir, { recursive: true });
 
