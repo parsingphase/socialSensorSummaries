@@ -58,6 +58,8 @@ class HeatmapChart extends ChartImageBuilder {
 	protected fixedMax: number | false = false;
 
 	// Chained setters for optional values
+	private rangeStartDoy: number;
+	private rangeEndDoy: number;
 	public setLocation(location: LatLon): this {
 		this.location = location;
 		return this;
@@ -118,6 +120,8 @@ class HeatmapChart extends ChartImageBuilder {
 	 * @param graphFrame Margins between image edge and graph plot
 	 * @param plotScale Edge length in pixels of the square plotting one time-bucket's data
 	 * @param bucketData Time-bucket data to plot
+	 * @param rangeStartDoy
+	 * @param rangeEndDoy
 	 */
 	constructor(
 		canvasWidth: number,
@@ -126,6 +130,8 @@ class HeatmapChart extends ChartImageBuilder {
 		graphFrame: Margins,
 		plotScale: number,
 		bucketData: CountWithDateTime[],
+		rangeStartDoy = 0,
+		rangeEndDoy = 365,
 	) {
 		super(canvasWidth, canvasHeight, title, graphFrame);
 		this.plotScale = plotScale;
@@ -136,6 +142,8 @@ class HeatmapChart extends ChartImageBuilder {
 
 		// init - this is a with-default property, so use a setter to change it
 		this.plotColor = new TinyColor(this.plotColorString);
+		this.rangeStartDoy = rangeStartDoy;
+		this.rangeEndDoy = rangeEndDoy;
 	}
 
 	/**
@@ -424,6 +432,29 @@ class HeatmapChart extends ChartImageBuilder {
 
 	protected trueScaleMax() {
 		return this.fixedMax || this.bucketMax;
+	}
+
+	protected drawInnerFrameBackground() {
+		// over-ride this to show limited data range
+		const ctx = this.context2d;
+
+		ctx.fillStyle = new TinyColor(this.fgColor)
+			.mix(new TinyColor(this.bgColor))
+			.toRgbString();
+		ctx.fillRect(
+			this.graphXtoCanvasX(0),
+			this.graphOffset.y,
+			this.graphXtoCanvasX(365) - this.graphOffset.x,
+			this.graphHeight,
+		);
+
+		ctx.fillStyle = this.fgColor;
+		ctx.fillRect(
+			this.graphXtoCanvasX(this.rangeStartDoy),
+			this.graphOffset.y,
+			this.graphXtoCanvasX(this.rangeEndDoy) - this.graphOffset.x,
+			this.graphHeight,
+		);
 	}
 }
 

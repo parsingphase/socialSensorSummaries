@@ -279,7 +279,7 @@ function loadSpeciesCacheDataAsBuckets(
 	const validFileDates: DateTime<true>[] = fileDates
 		.filter((d) => d.isValid)
 		.sort();
-	console.log({ validFileDates });
+	// console.log({ validFileDates });
 	if (validFileDates.length > 0) {
 		retVal.dateRange = {
 			from: validFileDates[0],
@@ -312,6 +312,7 @@ function buildObservationHeatmap(
 	location?: LatLon,
 	scalingPower = 1,
 	fixedMax?: number,
+	dateRange?: { from: DateTime; to: DateTime },
 ): Buffer {
 	const width = 1000;
 	const height = 800;
@@ -334,6 +335,8 @@ function buildObservationHeatmap(
 		margins,
 		plotScale,
 		observations,
+		dateRange?.from ? dateRange.from.ordinal - 1 : undefined,
+		dateRange?.to ? dateRange.to.ordinal - 1 : undefined,
 	);
 
 	if (location) {
@@ -373,12 +376,12 @@ async function main(): Promise<void> {
 
 	// TODO load max/min temp data (see: utils/scanWeatherData.ts), incorporate	into chart
 
-	console.log({
-		"data range": {
-			first: hydratedPeriods[0],
-			last: hydratedPeriods[hydratedPeriods.length - 1],
-		},
-	});
+	// console.log({
+	// 	"data range": {
+	// 		first: hydratedPeriods[0],
+	// 		last: hydratedPeriods[hydratedPeriods.length - 1],
+	// 	},
+	// });
 
 	const fileData = buildObservationHeatmap(
 		speciesName ?? "",
@@ -386,6 +389,7 @@ async function main(): Promise<void> {
 		location,
 		1 / scalingRoot,
 		fixedMax,
+		allData.dateRange,
 	);
 
 	const scalingRootString = `${scalingRoot}`.replace(".", "_");

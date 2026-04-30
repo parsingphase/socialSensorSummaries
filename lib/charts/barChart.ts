@@ -33,10 +33,10 @@ class BarChart extends ChartImageBuilder {
 		this.labelFontSize = Math.floor(canvasWidth / 50);
 		this.labelFont = `${this.labelFontSize}px Impact`;
 
-		console.log({
-			titleFontSize: this.titleFontSize,
-			labelFontSize: this.labelFontSize,
-		});
+		// console.log({
+		// 	titleFontSize: this.titleFontSize,
+		// 	labelFontSize: this.labelFontSize,
+		// });
 	}
 
 	get footnote(): string | undefined {
@@ -49,7 +49,7 @@ class BarChart extends ChartImageBuilder {
 
 	protected drawFootnote(): void {
 		if (this.footnote) {
-			console.log(`drawnote: ${this.footnote}`);
+			// console.log(`drawnote: ${this.footnote}`);
 			const ctx = this.context2d;
 
 			ctx.fillStyle = this.textColor;

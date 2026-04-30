@@ -122,17 +122,22 @@ export abstract class ChartImageBuilder {
 	 */
 	protected drawInnerFrame(): void {
 		const ctx = this.context2d;
-
-		ctx.fillStyle = this.fgColor;
-		ctx.fillRect(
+		this.drawInnerFrameBackground();
+		ctx.strokeStyle = "rgb(100,100,100)";
+		ctx.lineWidth = 1;
+		ctx.strokeRect(
 			this.graphOffset.x,
 			this.graphOffset.y,
 			this.graphWidth,
 			this.graphHeight,
 		);
-		ctx.strokeStyle = "rgb(100,100,100)";
-		ctx.lineWidth = 1;
-		ctx.strokeRect(
+	}
+
+	protected drawInnerFrameBackground() {
+		const ctx = this.context2d;
+
+		ctx.fillStyle = this.fgColor;
+		ctx.fillRect(
 			this.graphOffset.x,
 			this.graphOffset.y,
 			this.graphWidth,
