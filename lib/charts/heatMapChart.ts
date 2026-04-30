@@ -60,6 +60,7 @@ class HeatmapChart extends ChartImageBuilder {
 	// Chained setters for optional values
 	private rangeStartDoy: number;
 	private rangeEndDoy: number;
+
 	public setLocation(location: LatLon): this {
 		this.location = location;
 		return this;
@@ -321,7 +322,8 @@ class HeatmapChart extends ChartImageBuilder {
 		const scaleTop = textBottom + this.graphOffset.bottom / 10;
 		const scaleHeight = this.graphOffset.bottom / 5;
 
-		const numScaleLegendElements = 6;
+		const numScaleLegendElements =
+			this.bucketMax >= 6 ? 6 : Math.max(2, this.bucketMax);
 		const scaleLegendValues = [0];
 		const numIntervals = numScaleLegendElements - 1;
 		for (let i = 1; i < numIntervals; i++) {
