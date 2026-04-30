@@ -247,13 +247,10 @@ class BucketPlotChart extends ChartImageBuilder {
 		location: LatLon,
 		scale: number,
 	) {
-		const firstDateTime = intervals[0].timestamp;
-		const lastDateTime = intervals[intervals.length - 1].timestamp;
+		const lastDateTime =
+			intervals[intervals.length - 1].timestamp.endOf("year");
 
-		// console.log("plotSunriseSunset");
-		// console.log({ firstDateTime, lastDateTime });
-
-		let timestamp = firstDateTime;
+		let timestamp = lastDateTime.startOf("year");
 		do {
 			timestamp = timestamp.plus({ day: 1 });
 			const { sunrise, sunset } = getSunriseSunsetForDateTime(

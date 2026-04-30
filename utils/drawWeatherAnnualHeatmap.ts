@@ -263,7 +263,6 @@ async function main(): Promise<void> {
 		fromDate.startOf("day"),
 		toDate.endOf("day"),
 	);
-	// console.log({ opts, targetInterval });
 
 	const allData = loadCachedDataByDay();
 	const {
@@ -275,7 +274,6 @@ async function main(): Promise<void> {
 		fixedScalePoint,
 		fixedRange,
 	} = getDataSpec(parameter);
-	// FIXME 50,70 in default scale cause odd (but aesthetic) effects
 
 	let timedData: DatumWithDateTime[] = [];
 	for (const allDayData of allData) {
@@ -310,8 +308,6 @@ async function main(): Promise<void> {
 		scalingPower,
 		fixedRange,
 	);
-
-	// console.log(timedDataInRange.length)
 
 	const stationId = config.ambientWeather.deviceMac.replaceAll(":", "");
 
