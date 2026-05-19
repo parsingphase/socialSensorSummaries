@@ -114,6 +114,18 @@ const specMap: Record<string, PlottableDataSpecification> = {
 		unit: "",
 		scalingPower: 0.5,
 	},
+	airQualityOutFixedScale: {
+		titlePrefix: "AQI (PM25)",
+		fieldOfInterest: "aqi_pm25",
+		colorScale: [
+			{ color: "rgb(230,230,255)", pos: 0 },
+			{ color: "rgb(220,220,220)", pos: 0.5 },
+			{ color: "rgb(160,160,160)", pos: 1 },
+		],
+		unit: "",
+		scalingPower: 0.5,
+		fixedRange: [0, 400],
+	},
 };
 
 async function getOpts() {
