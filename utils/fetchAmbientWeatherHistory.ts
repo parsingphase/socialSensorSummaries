@@ -20,9 +20,7 @@ function getOpts() {
 			DateTime.now().minus({ day: 1 }).toISODate(),
 		)
 		.option("--no-skip-cached", "Refresh even cached files")
-		.description(
-			"Fetch BirdWeather bucket data to cache for heatmaps. Use searchSpecies.ts to look up IDs.",
-		);
+		.description("Fetch Ambient Weather bucket data to cache for heatmaps.");
 
 	program.parse();
 
