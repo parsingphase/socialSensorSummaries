@@ -91,6 +91,7 @@ const pm25AqiColorBands: ColorScaleSpecBanded | undefined =
 		min: z.aqi.lowEnd,
 		max: z.aqi.highEnd,
 		color: aqiDescriptorColorMap[z.descriptor],
+		descriptor: z.descriptor,
 	}));
 // FIXME handle / throw error if undefined
 

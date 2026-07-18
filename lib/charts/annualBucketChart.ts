@@ -34,6 +34,7 @@ type ColorScaleSpecBanded = {
 	color: string;
 	min: number;
 	max: number;
+	descriptor: string;
 }[];
 
 type ColorScaleSpec = ColorScaleSpecLinear | ColorScaleSpecBanded;
@@ -86,6 +87,7 @@ class BucketPlotChart extends ChartImageBuilder {
 	 */
 	protected colorGradient: tinygradient.Instance;
 	protected bandedColorForValue?: { getColor: (ravValue: number) => TinyColor };
+	protected fixedLegend?: { descriptor: string; color: TinyColor }[];
 
 	protected scalingPower: number = 1;
 
@@ -216,6 +218,10 @@ class BucketPlotChart extends ChartImageBuilder {
 			return new TinyColor("white"); // FIXME throw here?
 		};
 		this.bandedColorForValue = { getColor: valueToColor };
+		this.fixedLegend = scale.map((s) => ({
+			descriptor: s.descriptor,
+			color: new TinyColor(s.color),
+		}));
 	}
 
 	/**
@@ -281,10 +287,7 @@ class BucketPlotChart extends ChartImageBuilder {
 			this.graphOffset.y + 1,
 		);
 
-		// quick hack: skip numeric legend for banded colorscheme
-		if (!this.bandedColorForValue) {
-			this.drawScale();
-		}
+		this.drawScale();
 
 		return this.canvas;
 	}
@@ -339,6 +342,10 @@ class BucketPlotChart extends ChartImageBuilder {
 		} while (timestamp.toMillis() < lastDateTime.toMillis());
 	}
 
+	/**
+	 * Draw scale AND sun times footnotes
+	 * @private
+	 */
 	private drawScale() {
 		const withSunLines = !!this.location;
 		const ctx = this.context2d;
@@ -346,13 +353,7 @@ class BucketPlotChart extends ChartImageBuilder {
 		ctx.fillStyle = this.textColor;
 		ctx.font = this.labelFont;
 
-		const range = this.scaleMax - this.scaleMin;
-
-		// heuristics to get functional scale formatting
-		const numZerosInRange = Math.floor(Math.log10(range));
-		const negNumDps = numZerosInRange - 1;
-		const scaleGranularity = 10 ** negNumDps;
-
+		// Build and draw footnote
 		const footnote = `${withSunLines ? "Showing sunrise & sunset times. " : ""}Scale: 5 minute buckets`;
 
 		const textMeasure = ctx.measureText(footnote);
@@ -365,7 +366,9 @@ class BucketPlotChart extends ChartImageBuilder {
 			this.canvasWidth - textMeasure.width - this.graphOffset.right;
 		ctx.fillText(footnote, textLeft, textBottom);
 
+		// Position for drawing scale (top edge)
 		const scaleTop = textBottom + this.graphOffset.bottom / 10;
+		// Height of drawn scale
 		const scaleHeight = this.graphOffset.bottom / 5;
 
 		// Build a list of numeric strings representing what we'll put in each scale element
@@ -373,6 +376,14 @@ class BucketPlotChart extends ChartImageBuilder {
 		const scaleLegendValues: string[] = [];
 		const numIntervals = numScaleLegendElements - 1;
 
+		const range = this.scaleMax - this.scaleMin;
+
+		// heuristics to get functional scale formatting
+		const numZerosInRange = Math.floor(Math.log10(range));
+		const negNumDps = numZerosInRange - 1;
+		const scaleGranularity = 10 ** negNumDps; // scale step size
+
+		// build scaleLegendValues
 		for (let i = 0; i <= numIntervals; i++) {
 			const legendValue = (i / numIntervals) * range + this.scaleMin;
 			let legendString = `${legendValue}`;
@@ -391,10 +402,9 @@ class BucketPlotChart extends ChartImageBuilder {
 			scaleLegendValues.push(legendString);
 		}
 
-		// console.log({ scaleLegendValues });
-
+		// width of each scale Element (default: add up to half of graph width)
 		let scaleElementWidth = this.graphWidth / (2 * numScaleLegendElements);
-		let maxScaleMeasure = 0;
+		let maxScaleMeasure = 0; // text width of largest scale element (so far)
 
 		for (const scaleValue of scaleLegendValues.values()) {
 			const elementText = ` ${scaleValue}${this.unit} `;
@@ -403,15 +413,20 @@ class BucketPlotChart extends ChartImageBuilder {
 		}
 		scaleElementWidth = Math.max(maxScaleMeasure, scaleElementWidth);
 
+		// scaleLeft: left-hand boundary of scale drawing
 		const scaleLeft =
 			this.graphOffset.x +
 			this.graphWidth -
 			scaleElementWidth * numScaleLegendElements;
 
+		// For each value for which we've picked a scale element, get its color, and plot it
 		for (const [i, scaleValue] of scaleLegendValues.entries()) {
+			// This is specific to numeric scale:
 			const elementColor = this.getColorForPlotValue(
 				Number.parseFloat(scaleValue),
 			);
+
+			// This is all generic, regardless of scale type; but we assume that scaleElementWidth is adequate
 			ctx.fillStyle = elementColor.toRgbString();
 			const textColor = elementColor.isDark()
 				? "rgb(255,255,255)"
@@ -425,7 +440,7 @@ class BucketPlotChart extends ChartImageBuilder {
 
 			ctx.fillStyle = textColor;
 			ctx.font = this.labelFont;
-			const elementText = `${scaleValue}${this.unit}`;
+			const elementText = `${scaleValue}${this.unit}`; // This is NOT generic!!!!!!! - presumes number
 			const measure = ctx.measureText(elementText);
 			ctx.fillText(
 				elementText,
@@ -433,7 +448,7 @@ class BucketPlotChart extends ChartImageBuilder {
 				scaleTop + (scaleHeight + measure.actualBoundingBoxAscent) / 2,
 			);
 		}
-	}
+	} // end drawScale
 
 	// (roughly) copied from class LineChart - FIXME create an intermediate inheriting class!
 	private drawMonthLabels(): void {

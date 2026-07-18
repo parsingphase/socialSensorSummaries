@@ -59,6 +59,9 @@ const aqiDescriptorColorMap: AqiDescriptorColorMap = {
 	Hazardous: rbgToHexColor(126, 0, 35),
 };
 
+// 'rgb(143,63,151)';
+// 'rgb(126,0,35)'; // not shown on usual plots… hopefully
+
 // Scale from US EPA 2024-05, 24-hour averages
 const aqiPollutantSpecTable: AqiPollutantSpecTable = {
 	[AqiPollutants.PM2_5]: {
