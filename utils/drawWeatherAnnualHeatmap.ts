@@ -169,6 +169,14 @@ const specMap: Record<string, PlottableDataSpecification> = {
 		unit: "",
 		scalingPower: 1, // NOT USED
 	},
+	airQualityOut24hBanded: {
+		titlePrefix: "AQI (PM25), 24h rolling average",
+		fieldOfInterest: "pm25_24h",
+		fieldPreProcessor: aqiFromPm25,
+		colorBands: pm25AqiColorBands,
+		unit: "",
+		scalingPower: 1, // NOT USED
+	},
 	airQualityOutAwnValue: {
 		titlePrefix: "AQI (PM25)",
 		fieldOfInterest: "aqi_pm25",
@@ -351,7 +359,11 @@ function buildObservationHeatmap(
 }
 
 function getDataSpec(key: string): PlottableDataSpecification {
-	return specMap[key];
+	const spec = specMap[key];
+	if (!spec) {
+		throw new Error(`Invalid key: ${key}`);
+	}
+	return spec;
 }
 
 async function main(): Promise<void> {
