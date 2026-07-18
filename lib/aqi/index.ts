@@ -192,5 +192,6 @@ export {
 	getAqiDataFromConcentration,
 	UGM3,
 	AqiPollutants,
+	AqiZoneDescriptors,
 	NonAqiAirConstituents,
 };

@@ -6,12 +6,14 @@ import { DateTime, Interval } from "luxon";
 import { config } from "../config/config";
 import {
 	AqiPollutants,
+	aqiDescriptorColorMap,
 	aqiPollutantSpecTable,
 	getAqiDataFromConcentration,
 } from "../lib/aqi";
 import {
 	BucketPlotChart,
-	type ColorScaleSpec,
+	type ColorScaleSpecBanded,
+	type ColorScaleSpecLinear,
 	type DatumWithDateTime,
 } from "../lib/charts/annualBucketChart";
 import type { Margins } from "../lib/charts/canvasChartBuilder";
@@ -29,8 +31,13 @@ type PlottableDataSpecification = {
 	fieldPreProcessor?: (rawValue: number) => number;
 	titlePrefix: string;
 	unit: string;
-	colorScale: ColorScaleSpec;
-	scalingPower: number;
+
+	// must pick one:
+	colorScale?: ColorScaleSpecLinear;
+	scalingPower: number; // only meaningful with linear scale; used in color picking
+
+	colorBands?: ColorScaleSpecBanded;
+
 	fixedScalePoint?: number;
 	fixedRange?: [number, number];
 };
@@ -60,6 +67,10 @@ const whiteToBlackScale = [
 	{ color: "rgb(0,0,0)", pos: 1 },
 ];
 
+/**
+ * Convert raw concentration to AQI as a pre-processor for data loading
+ * @param x
+ */
 const aqiFromPm25 = (x: number) => {
 	const scaling = aqiPollutantSpecTable[AqiPollutants.PM2_5];
 	if (!scaling) {
@@ -74,6 +85,15 @@ const aqiFromPm25 = (x: number) => {
 	}
 	return aqi;
 };
+
+const pm25AqiColorBands: ColorScaleSpecBanded | undefined =
+	aqiPollutantSpecTable[AqiPollutants.PM2_5]?.zones.map((z) => ({
+		min: z.aqi.lowEnd,
+		max: z.aqi.highEnd,
+		color: aqiDescriptorColorMap[z.descriptor],
+	}));
+// FIXME handle / throw error if undefined
+
 const specMap: Record<string, PlottableDataSpecification> = {
 	outdoorTempF: {
 		fieldOfInterest: "tempf",
@@ -135,6 +155,14 @@ const specMap: Record<string, PlottableDataSpecification> = {
 		],
 		unit: "",
 		scalingPower: 0.5,
+	},
+	airQualityOutBanded: {
+		titlePrefix: "AQI (PM25)",
+		fieldOfInterest: "pm25",
+		fieldPreProcessor: aqiFromPm25,
+		colorBands: pm25AqiColorBands,
+		unit: "",
+		scalingPower: 1, // NOT USED
 	},
 	airQualityOutAwnValue: {
 		titlePrefix: "AQI (PM25)",
@@ -263,7 +291,9 @@ function buildObservationHeatmap(
 	unit: string,
 	location?: LatLon,
 	freezeValue?: number,
-	colorScale?: ColorScaleSpec,
+	linearColorScale?:
+		| { type: "linear"; scale: ColorScaleSpecLinear }
+		| { type: "banded"; scale: ColorScaleSpecBanded },
 	scalingPower = 1,
 	fixedRange?: [number, number],
 ): Buffer {
@@ -293,8 +323,10 @@ function buildObservationHeatmap(
 	if (fixedRange) {
 		chart.setScaleMin(fixedRange[0]).setScaleMax(fixedRange[1]);
 	}
-	if (colorScale) {
-		chart.setColorScale(colorScale);
+	if (linearColorScale && linearColorScale.type === "linear") {
+		chart.setColorScale(linearColorScale.scale);
+	} else if (linearColorScale && linearColorScale.type === "banded") {
+		chart.setBandColorSelector(linearColorScale.scale);
 	}
 	if (location) {
 		chart.setLocation(location);
@@ -331,6 +363,7 @@ async function main(): Promise<void> {
 		titlePrefix,
 		unit,
 		colorScale,
+		colorBands,
 		scalingPower,
 		fixedScalePoint,
 		fixedRange,
@@ -367,7 +400,11 @@ async function main(): Promise<void> {
 		unit,
 		location || undefined,
 		fixedScalePoint,
-		colorScale,
+		colorBands
+			? { type: "banded", scale: colorBands }
+			: colorScale
+				? { type: "linear", scale: colorScale }
+				: undefined,
 		scalingPower,
 		fixedRange,
 	);

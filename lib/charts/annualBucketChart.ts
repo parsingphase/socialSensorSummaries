@@ -1,4 +1,4 @@
-import { inputToRGB, type TinyColor } from "@ctrl/tinycolor";
+import { inputToRGB, TinyColor } from "@ctrl/tinycolor";
 import { type Canvas, DOMMatrix, type ImageData } from "canvas";
 import { DateTime, Interval } from "luxon";
 import SunCalc from "suncalc";
@@ -15,18 +15,30 @@ type DatumWithDateTime = {
 	timestamp: DateTime;
 };
 
-type ColorScaleSpec = (
-	| {
-			color: string;
-			pos: number;
-			value?: undefined;
-	  }
-	| {
-			color: string;
-			value: number;
-			pos?: undefined;
-	  }
+type ColorScaleElementLinearRelative = {
+	color: string;
+	pos: number; // 0 - 1
+	value?: never;
+};
+type ColorScaleElementLinearAbsolute = {
+	color: string;
+	value: number; // any value (raw data)
+	pos?: never;
+};
+type ColorScaleSpecLinear = (
+	| ColorScaleElementLinearAbsolute
+	| ColorScaleElementLinearRelative
 )[];
+
+type ColorScaleSpecBanded = {
+	color: string;
+	min: number;
+	max: number;
+}[];
+
+type ColorScaleSpec = ColorScaleSpecLinear | ColorScaleSpecBanded;
+
+type ColorScaleSpecLinearRelative = ColorScaleElementLinearRelative[];
 
 class BucketPlotChart extends ChartImageBuilder {
 	/**
@@ -73,6 +85,7 @@ class BucketPlotChart extends ChartImageBuilder {
 	 * @protected
 	 */
 	protected colorGradient: tinygradient.Instance;
+	protected bandedColorForValue?: { getColor: (ravValue: number) => TinyColor };
 
 	protected scalingPower: number = 1;
 
@@ -154,7 +167,16 @@ class BucketPlotChart extends ChartImageBuilder {
 		}
 	}
 
-	protected normalizeColorScale(colorScale: ColorScaleSpec) {
+	/**
+	 * Normalize ColorScaleSpecLinear to ColorScaleSpecLinearRelative (with pos field)
+	 *
+	 * Filters out all ranges where the point value is outside our real min/max data range
+	 * @param colorScale
+	 * @protected
+	 */
+	protected normalizeColorScale(
+		colorScale: ColorScaleSpecLinear,
+	): ColorScaleSpecLinearRelative {
 		return colorScale
 			.filter(
 				(c) =>
@@ -175,8 +197,25 @@ class BucketPlotChart extends ChartImageBuilder {
 	 * Call this AFTER setting max/min if used!
 	 * @param colorScale
 	 */
-	public setColorScale(colorScale: ColorScaleSpec) {
+	public setColorScale(colorScale: ColorScaleSpecLinear) {
 		this.colorGradient = tinygradient(this.normalizeColorScale(colorScale));
+	}
+
+	public setBandColorSelector(scale: ColorScaleSpecBanded) {
+		const valueToColor: (ravValue: number) => TinyColor = (
+			rawValue: number,
+		) => {
+			const matchingBand = scale.find(
+				(bucket) =>
+					(bucket.min === undefined || bucket.min <= rawValue) &&
+					(bucket.max === undefined || bucket.max >= rawValue),
+			);
+			if (matchingBand) {
+				return new TinyColor(matchingBand.color);
+			}
+			return new TinyColor("white"); // FIXME throw here?
+		};
+		this.bandedColorForValue = { getColor: valueToColor };
 	}
 
 	/**
@@ -339,7 +378,7 @@ class BucketPlotChart extends ChartImageBuilder {
 				this.fixedScalePoint !== undefined &&
 				Math.abs(legendValue - this.fixedScalePoint) < scaleGranularity
 			) {
-				// make freezingPoint a fixed value if there's a scale value nearby
+				// make fixedScalePoint a fixed value if there's a scale value nearby
 				legendString = this.fixedScalePoint.toFixed(Math.max(0, 0 - negNumDps));
 			} else if (negNumDps < 0) {
 				legendString = legendValue.toFixed(0 - negNumDps);
@@ -453,22 +492,27 @@ class BucketPlotChart extends ChartImageBuilder {
 	}
 
 	/**
-	 * Get color by linear combinations
-	 *
-	 * Note: To get color more like
-	 * https://weatherspark.com/h/y/26197/2025/Historical-Weather-during-2025-in-Boston-Massachusetts-United-States#Figures-ColorTemperature,
-	 * would need to use color rotation, not combination (probably https://tinycolor.vercel.app/docs/classes/TinyColor.html#spin.spin-1)
-	 *
-	 * Also consider: https://github.com/mistic100/tinygradient
+	 * Get color by HSV offset if linear, else by bucket
 	 *
 	 * @param plotValue
 	 * @protected
 	 */
 	protected getColorForPlotValue(plotValue: number): TinyColor {
+		if (this.bandedColorForValue) {
+			// handle bucketed scale
+			return this.bandedColorForValue.getColor(plotValue);
+		}
+
 		const fractionOfMaxRange = this.valueAsScaleFraction(plotValue);
 		return this.colorGradient.hsvAt(fractionOfMaxRange);
 	}
 
+	/**
+	 * Return a 0…1 value for raw input, taking scalingPower into account, to enable color picking
+	 *
+	 * @param plotValue
+	 * @private
+	 */
 	private valueAsScaleFraction(plotValue: number) {
 		// limit to 0…1 in case we call out-of-range, eg for scale ends
 		const scalingPower = this.scalingPower;
@@ -520,4 +564,9 @@ function getSunriseSunsetForDateTime(
 }
 
 export { BucketPlotChart };
-export type { ColorScaleSpec, DatumWithDateTime };
+export type {
+	ColorScaleSpec,
+	ColorScaleSpecLinear,
+	ColorScaleSpecBanded,
+	DatumWithDateTime,
+};
