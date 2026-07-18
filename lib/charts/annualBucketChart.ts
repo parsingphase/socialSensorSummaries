@@ -281,7 +281,10 @@ class BucketPlotChart extends ChartImageBuilder {
 			this.graphOffset.y + 1,
 		);
 
-		this.drawScale();
+		// quick hack: skip numeric legend for banded colorscheme
+		if (!this.bandedColorForValue) {
+			this.drawScale();
+		}
 
 		return this.canvas;
 	}
