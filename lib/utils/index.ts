@@ -17,6 +17,19 @@ function objectToQueryString(obj: {
 		.join("&");
 }
 
+function lpad(s: string | number, length: number) {
+	return "0".repeat(length - `${s}`.length) + s;
+}
+
+function rbgToHexColor(red: number, green: number, blue: number): string {
+	function toHexPair(component: number) {
+		const s = component.toString(16);
+		const length = 2;
+		return lpad(s, length);
+	}
+	return `#${toHexPair(red)}${toHexPair(green)}${toHexPair(blue)}`.toUpperCase();
+}
+
 const PROJECT_DIR = path.dirname(path.dirname(__dirname));
 
-export { objectToQueryString, PROJECT_DIR };
+export { lpad, objectToQueryString, rbgToHexColor, PROJECT_DIR };

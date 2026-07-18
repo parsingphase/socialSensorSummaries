@@ -40,7 +40,13 @@ class BucketPlotChart extends ChartImageBuilder {
 	 */
 	protected bucketData: DatumWithDateTime[] = [];
 
-	//TODO: Generalize to a set of FixedScalePoints, or possibly draw from gradient inputs?
+	/**
+	 * Value to include as-is on the legend, for visual clarity
+	 *
+	 * TODO: Generalize to a set of FixedScalePoints, or possibly draw from gradient inputs?
+	 *
+	 * @protected
+	 */
 	protected fixedScalePoint: number | undefined = undefined;
 
 	/**

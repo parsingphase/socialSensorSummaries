@@ -5,6 +5,11 @@ import { Command } from "@commander-js/extra-typings";
 import { DateTime, Interval } from "luxon";
 import { config } from "../config/config";
 import {
+	AqiPollutants,
+	aqiPollutantSpecTable,
+	getAqiDataFromConcentration,
+} from "../lib/aqi";
+import {
 	BucketPlotChart,
 	type ColorScaleSpec,
 	type DatumWithDateTime,
@@ -21,6 +26,7 @@ import { getAmbientWeatherCacheDirForStation } from "./shared";
 
 type PlottableDataSpecification = {
 	fieldOfInterest: keyof AmbientWeatherInterval;
+	fieldPreProcessor?: (rawValue: number) => number;
 	titlePrefix: string;
 	unit: string;
 	colorScale: ColorScaleSpec;
@@ -54,6 +60,20 @@ const whiteToBlackScale = [
 	{ color: "rgb(0,0,0)", pos: 1 },
 ];
 
+const aqiFromPm25 = (x: number) => {
+	const scaling = aqiPollutantSpecTable[AqiPollutants.PM2_5];
+	if (!scaling) {
+		throw new Error(`No scale spec from ${AqiPollutants.PM2_5}`);
+	}
+	const summary = getAqiDataFromConcentration(x, scaling);
+	const aqi = summary?.aqi;
+	if (aqi === undefined) {
+		throw new Error(
+			`Cannot calculate AQI for ${AqiPollutants.PM2_5} (input = ${x})`,
+		);
+	}
+	return aqi;
+};
 const specMap: Record<string, PlottableDataSpecification> = {
 	outdoorTempF: {
 		fieldOfInterest: "tempf",
@@ -71,6 +91,7 @@ const specMap: Record<string, PlottableDataSpecification> = {
 		fixedScalePoint: 32,
 		colorScale: fahrenheitTempScale,
 		scalingPower: 1,
+		fixedRange: [-10, 110],
 	},
 	pressure: {
 		fieldOfInterest: "baromabsin",
@@ -105,7 +126,21 @@ const specMap: Record<string, PlottableDataSpecification> = {
 	},
 	airQualityOut: {
 		titlePrefix: "AQI (PM25)",
+		fieldOfInterest: "pm25",
+		fieldPreProcessor: aqiFromPm25,
+		colorScale: [
+			{ color: "rgb(230,230,255)", pos: 0 },
+			{ color: "rgb(220,220,220)", pos: 0.5 },
+			{ color: "rgb(160,160,160)", pos: 1 },
+		],
+		unit: "",
+		scalingPower: 0.5,
+	},
+	airQualityOutAwnValue: {
+		titlePrefix: "AQI (PM25)",
 		fieldOfInterest: "aqi_pm25",
+		// this MAY BE WRONG as we've not verified that they perform the conversion correctly.
+		// actually still seems outdated! (Unless there's a new, diluted spec, which we'll ignore)
 		colorScale: [
 			{ color: "rgb(230,230,255)", pos: 0 },
 			{ color: "rgb(220,220,220)", pos: 0.5 },
@@ -115,6 +150,19 @@ const specMap: Record<string, PlottableDataSpecification> = {
 		scalingPower: 0.5,
 	},
 	airQualityOutFixedScale: {
+		titlePrefix: "AQI (PM25)",
+		fieldOfInterest: "pm25",
+		fieldPreProcessor: aqiFromPm25,
+		colorScale: [
+			{ color: "rgb(230,230,255)", pos: 0 },
+			{ color: "rgb(220,220,220)", pos: 0.5 },
+			{ color: "rgb(160,160,160)", pos: 1 },
+		],
+		unit: "",
+		scalingPower: 0.5,
+		fixedRange: [0, 400],
+	},
+	airQualityOutFixedScaleAwnValue: {
 		titlePrefix: "AQI (PM25)",
 		fieldOfInterest: "aqi_pm25",
 		colorScale: [
@@ -279,6 +327,7 @@ async function main(): Promise<void> {
 	const allData = loadCachedDataByDay();
 	const {
 		fieldOfInterest,
+		fieldPreProcessor,
 		titlePrefix,
 		unit,
 		colorScale,
@@ -294,7 +343,9 @@ async function main(): Promise<void> {
 				?.filter((d) => fieldOfInterest in d)
 				.map((d) => {
 					const t: DatumWithDateTime = {
-						datum: d[fieldOfInterest] as number,
+						datum: fieldPreProcessor
+							? fieldPreProcessor(d[fieldOfInterest] as number)
+							: (d[fieldOfInterest] as number),
 						timestamp: DateTime.fromMillis(d.dateutc, { zone: timezone }),
 					};
 					return t;
