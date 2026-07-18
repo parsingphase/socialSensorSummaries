@@ -81,6 +81,8 @@ class BucketPlotChart extends ChartImageBuilder {
 	protected scaleMin: number = 0;
 	protected scaleMax: number = 0;
 
+	protected legendFont;
+
 	/**
 	 * Color in object form as a parser cache. Set on construct or setter
 	 * @protected
@@ -132,6 +134,11 @@ class BucketPlotChart extends ChartImageBuilder {
 		return this;
 	}
 
+	public setLegendFont(font: string) {
+		this.legendFont = font;
+		return this;
+	}
+
 	/**
 	 * Create chart builder with required config
 	 *
@@ -152,6 +159,7 @@ class BucketPlotChart extends ChartImageBuilder {
 		unit?: string,
 	) {
 		super(canvasWidth, canvasHeight, title, graphFrame);
+		this.legendFont = this.labelFont;
 		this.setBucketData(bucketData);
 
 		this.labelFont = "16px Impact";
@@ -201,6 +209,7 @@ class BucketPlotChart extends ChartImageBuilder {
 	 */
 	public setColorScale(colorScale: ColorScaleSpecLinear) {
 		this.colorGradient = tinygradient(this.normalizeColorScale(colorScale));
+		return this;
 	}
 
 	public setBandColorSelector(scale: ColorScaleSpecBanded) {
@@ -222,6 +231,7 @@ class BucketPlotChart extends ChartImageBuilder {
 			descriptor: s.descriptor,
 			color: new TinyColor(s.color),
 		}));
+		return this;
 	}
 
 	/**
@@ -348,6 +358,20 @@ class BucketPlotChart extends ChartImageBuilder {
 	 */
 	private drawScale() {
 		const withSunLines = !!this.location;
+
+		// Switch dependent on scale type: linear or banded.
+		const scaleLegendElements: {
+			color: TinyColor;
+			label: string;
+		}[] = this.fixedLegend
+			? this.fixedLegend.map((l) => ({
+					label: l.descriptor,
+					color: l.color,
+				}))
+			: this.extractNumericScaleElements();
+
+		const numScaleLegendElements = scaleLegendElements.length;
+
 		const ctx = this.context2d;
 
 		ctx.fillStyle = this.textColor;
@@ -366,11 +390,55 @@ class BucketPlotChart extends ChartImageBuilder {
 			this.canvasWidth - textMeasure.width - this.graphOffset.right;
 		ctx.fillText(footnote, textLeft, textBottom);
 
+		// Build and draw scale
+		ctx.font = this.legendFont;
+
 		// Position for drawing scale (top edge)
 		const scaleTop = textBottom + this.graphOffset.bottom / 10;
 		// Height of drawn scale
 		const scaleHeight = this.graphOffset.bottom / 5;
 
+		// Planned width of each scale Element (default: add up to half of graph width)
+		let scaleElementWidth = this.graphWidth / (2 * numScaleLegendElements);
+		let maxScaleMeasure = 0; // text width of largest scale element (so far)
+
+		for (const scaleValue of scaleLegendElements) {
+			const measure = ctx.measureText(scaleValue.label).width + 10; // FIXME magic number for padding!
+			maxScaleMeasure = Math.max(maxScaleMeasure, measure);
+		}
+		scaleElementWidth = Math.max(maxScaleMeasure, scaleElementWidth);
+
+		// scaleLeft: left-hand boundary of scale drawing
+		const scaleLeft =
+			this.graphOffset.x +
+			this.graphWidth -
+			scaleElementWidth * numScaleLegendElements;
+
+		// For each value for which we've picked a scale element, get its color, and plot it
+		for (const [i, scaleValue] of scaleLegendElements.entries()) {
+			// This is specific to numeric scale:
+			const { color, label } = scaleValue;
+
+			ctx.fillStyle = color.toRgbString();
+			const textColor = color.isDark() ? "rgb(255,255,255)" : "rgb(0,0,0)";
+			const elementLeft = scaleLeft + i * scaleElementWidth;
+			ctx.fillRect(elementLeft, scaleTop, scaleElementWidth, scaleHeight);
+
+			ctx.strokeStyle = this.fgColor;
+			ctx.lineWidth = 1;
+			ctx.strokeRect(elementLeft, scaleTop, scaleElementWidth, scaleHeight);
+
+			ctx.fillStyle = textColor;
+			const measure = ctx.measureText(label);
+			ctx.fillText(
+				label,
+				elementLeft + (scaleElementWidth - measure.width) / 2,
+				scaleTop + (scaleHeight + measure.actualBoundingBoxAscent) / 2,
+			);
+		}
+	}
+
+	private extractNumericScaleElements() {
 		// Build a list of numeric strings representing what we'll put in each scale element
 		const numScaleLegendElements = 7;
 		const scaleLegendValues: string[] = [];
@@ -402,53 +470,18 @@ class BucketPlotChart extends ChartImageBuilder {
 			scaleLegendValues.push(legendString);
 		}
 
-		// width of each scale Element (default: add up to half of graph width)
-		let scaleElementWidth = this.graphWidth / (2 * numScaleLegendElements);
-		let maxScaleMeasure = 0; // text width of largest scale element (so far)
+		const scaleLegendElements = scaleLegendValues.map((value) => {
+			const color = this.getColorForPlotValue(Number.parseFloat(value));
+			const label = `${value}${this.unit}`; // This is NOT generic!!!!!!! - presumes number
+			return {
+				color,
+				label,
+			};
+		});
+		return scaleLegendElements;
+	}
 
-		for (const scaleValue of scaleLegendValues.values()) {
-			const elementText = ` ${scaleValue}${this.unit} `;
-			const measure = ctx.measureText(elementText).width;
-			maxScaleMeasure = Math.max(maxScaleMeasure, measure);
-		}
-		scaleElementWidth = Math.max(maxScaleMeasure, scaleElementWidth);
-
-		// scaleLeft: left-hand boundary of scale drawing
-		const scaleLeft =
-			this.graphOffset.x +
-			this.graphWidth -
-			scaleElementWidth * numScaleLegendElements;
-
-		// For each value for which we've picked a scale element, get its color, and plot it
-		for (const [i, scaleValue] of scaleLegendValues.entries()) {
-			// This is specific to numeric scale:
-			const elementColor = this.getColorForPlotValue(
-				Number.parseFloat(scaleValue),
-			);
-
-			// This is all generic, regardless of scale type; but we assume that scaleElementWidth is adequate
-			ctx.fillStyle = elementColor.toRgbString();
-			const textColor = elementColor.isDark()
-				? "rgb(255,255,255)"
-				: "rgb(0,0,0)";
-			const elementLeft = scaleLeft + i * scaleElementWidth;
-			ctx.fillRect(elementLeft, scaleTop, scaleElementWidth, scaleHeight);
-
-			ctx.strokeStyle = this.fgColor;
-			ctx.lineWidth = 1;
-			ctx.strokeRect(elementLeft, scaleTop, scaleElementWidth, scaleHeight);
-
-			ctx.fillStyle = textColor;
-			ctx.font = this.labelFont;
-			const elementText = `${scaleValue}${this.unit}`; // This is NOT generic!!!!!!! - presumes number
-			const measure = ctx.measureText(elementText);
-			ctx.fillText(
-				elementText,
-				elementLeft + (scaleElementWidth - measure.width) / 2,
-				scaleTop + (scaleHeight + measure.actualBoundingBoxAscent) / 2,
-			);
-		}
-	} // end drawScale
+	// end drawScale
 
 	// (roughly) copied from class LineChart - FIXME create an intermediate inheriting class!
 	private drawMonthLabels(): void {

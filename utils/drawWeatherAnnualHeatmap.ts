@@ -6,6 +6,7 @@ import { DateTime, Interval } from "luxon";
 import { config } from "../config/config";
 import {
 	AqiPollutants,
+	AqiZoneDescriptors,
 	aqiDescriptorColorMap,
 	aqiPollutantSpecTable,
 	getAqiDataFromConcentration,
@@ -91,7 +92,10 @@ const pm25AqiColorBands: ColorScaleSpecBanded | undefined =
 		min: z.aqi.lowEnd,
 		max: z.aqi.highEnd,
 		color: aqiDescriptorColorMap[z.descriptor],
-		descriptor: z.descriptor,
+		descriptor:
+			z.descriptor === AqiZoneDescriptors.UNHEALTHY_FSG
+				? "Unhealthy if sensitive"
+				: z.descriptor,
 	}));
 // FIXME handle / throw error if undefined
 
@@ -328,6 +332,7 @@ function buildObservationHeatmap(
 		chart.setColorScale(linearColorScale.scale);
 	} else if (linearColorScale && linearColorScale.type === "banded") {
 		chart.setBandColorSelector(linearColorScale.scale);
+		chart.setLegendFont("13px Impact");
 	}
 	if (location) {
 		chart.setLocation(location);

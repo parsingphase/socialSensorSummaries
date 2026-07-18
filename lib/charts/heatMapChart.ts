@@ -303,6 +303,7 @@ class HeatmapChart extends ChartImageBuilder {
 		const withSunLines = !!this.location;
 		const ctx = this.context2d;
 
+		// Footnote
 		ctx.fillStyle = this.textColor;
 		ctx.font = this.labelFont;
 
@@ -319,6 +320,7 @@ class HeatmapChart extends ChartImageBuilder {
 			this.canvasWidth - textMeasure.width - this.graphOffset.right;
 		ctx.fillText(footnote, textLeft, textBottom);
 
+		// Scale
 		const scaleTop = textBottom + this.graphOffset.bottom / 10;
 		const scaleHeight = this.graphOffset.bottom / 5;
 

@@ -40,6 +40,11 @@ export abstract class ChartImageBuilder {
 	protected canvas: Canvas;
 	protected context2d: CanvasRenderingContext2D;
 
+	public setLabelFont(font: string) {
+		this.labelFont = font;
+		return this;
+	}
+
 	constructor(
 		canvasWidth: number,
 		canvasHeight: number,
