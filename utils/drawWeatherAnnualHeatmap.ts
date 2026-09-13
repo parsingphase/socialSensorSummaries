@@ -149,6 +149,17 @@ const specMap: Record<string, PlottableDataSpecification> = {
 		],
 		scalingPower: 0.2,
 	},
+	rainRateFixedRange: {
+		fieldOfInterest: "hourlyrainin",
+		titlePrefix: "Rain (hourly)",
+		unit: "in",
+		colorScale: [
+			{ color: "rgb(255,255,255)", pos: 0 },
+			{ color: "rgb(80,100,255)", pos: 1 },
+		],
+		scalingPower: 0.2,
+		fixedRange: [0, 3],
+	},
 	airQualityOut: {
 		titlePrefix: "AQI (PM25)",
 		fieldOfInterest: "pm25",
@@ -201,7 +212,7 @@ const specMap: Record<string, PlottableDataSpecification> = {
 		],
 		unit: "",
 		scalingPower: 0.5,
-		fixedRange: [0, 400],
+		fixedRange: [0, 300],
 	},
 	airQualityOutFixedScaleAwnValue: {
 		titlePrefix: "AQI (PM25)",
@@ -213,7 +224,7 @@ const specMap: Record<string, PlottableDataSpecification> = {
 		],
 		unit: "",
 		scalingPower: 0.5,
-		fixedRange: [0, 400],
+		fixedRange: [0, 300],
 	},
 };
 
