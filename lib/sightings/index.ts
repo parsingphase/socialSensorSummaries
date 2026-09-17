@@ -77,6 +77,7 @@ const seenBirds = [
 	"Yellow-rumped Warbler",
 	"Indigo Bunting",
 	"Pine Warbler",
+	"Yellow-billed Cuckoo",
 ];
 
 export { seenBirds };

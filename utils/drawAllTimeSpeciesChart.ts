@@ -14,13 +14,13 @@ import {
 const rawDir = `${__dirname}/../rawHaikuData`;
 
 /**
- * Draw graph for a single species
+ * Draw graph for a single species (or total of all species)
  *
  * @param allData
  * @param targetSpecies
  * @param outFile
  */
-function drawSpeciesGraph(
+function drawSpeciesCallCountGraph(
 	allData: DayRecord[],
 	targetSpecies: string | null,
 	outFile: string,
@@ -61,6 +61,63 @@ function drawSpeciesGraph(
 }
 
 /**
+ * Draw graph of number of species heard, subject to optional minimum count
+ *
+ * @param allData
+ * @param minCalls
+ * @param outFile
+ */
+function drawNumSpeciesGraph(
+	allData: DayRecord[],
+	minCalls = 1,
+	outFile: string,
+): void {
+	const speciesDayCount: DatedCount[] = [];
+
+	for (const dailyTotals of allData) {
+		const { date, dayData } = dailyTotals;
+
+		let count: number | null = null;
+		if (dayData) {
+			const speciesCount: BirdRecord[] = dayData.filter(
+				(d) => d.count >= minCalls,
+			);
+			count = speciesCount.length;
+			// console.log(`${date}: ${count} species >= ${minCalls} calls`);
+		} else {
+			count = null;
+		}
+		const dateRecord: DatedCount = {
+			bird: "Species count", // NB: slight hack of field usage here
+			date,
+			count,
+		};
+		speciesDayCount.push(dateRecord);
+	}
+
+	const graph = new LineChart(
+		800,
+		600,
+		speciesDayCount,
+		`Species count${minCalls > 1 ? ` ( >= ${minCalls} calls)` : " (No minimum)"}`,
+	);
+	graph.drawGraph();
+
+	graph.writeToPng(outFile);
+
+	console.log(`Wrote ${speciesDayCount.length} points to ${outFile}`);
+}
+
+/**
+ * Generate a full output filename based on species name and count
+ * @param species
+ * @param speciesCount
+ */
+function outPathForSpecies(species: string, speciesCount: number): string {
+	return `${__dirname}/../tmp/${species} (${speciesCount}).png`;
+}
+
+/**
  * Run script
  */
 function main(): void {
@@ -86,27 +143,28 @@ function main(): void {
 		drawSpecies = aggregate.map((a) => a.bird);
 	}
 
-	/**
-	 * Generate a full output filename based on species name and count
-	 * @param species
-	 * @param speciesCount
-	 */
-	function outPathForSpecies(species: string, speciesCount: number): string {
-		return `${__dirname}/../tmp/${species} (${speciesCount}).png`;
-	}
-
 	// we want an ordered list of [ { bird: SPECIES, date: YYYY-MM-DD, count: number }]
 	for (const species of drawSpecies) {
 		const speciesCount = aggregate.find((a) => a.bird === species)?.count || 0;
 		if (speciesCount >= 1) {
 			const outFile = outPathForSpecies(species, speciesCount);
-			drawSpeciesGraph(allData, species, outFile);
+			drawSpeciesCallCountGraph(allData, species, outFile);
 		}
 	}
 	let countAll = 0;
 	// biome-ignore lint/suspicious: FIXME cleanup
 	aggregate.forEach((a) => (countAll += a.count));
-	drawSpeciesGraph(allData, null, outPathForSpecies("All species", countAll));
+	drawSpeciesCallCountGraph(
+		allData,
+		null,
+		outPathForSpecies("All species", countAll),
+	);
+
+	drawNumSpeciesGraph(
+		allData,
+		minObservations,
+		outPathForSpecies("Num species", minObservations),
+	);
 }
 
 main();
