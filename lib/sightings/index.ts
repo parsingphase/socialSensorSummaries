@@ -76,8 +76,19 @@ const seenBirds = [
 	"Great Blue Heron", // Flyby
 	"Yellow-rumped Warbler",
 	"Indigo Bunting",
+	"Double-crested Cormorant",
+	"Red-eyed Vireo",
+	"Wilson’s Warbler",
+	"Black-throated Green Warbler",
 	"Pine Warbler",
+	"Northern Saw-whet Owl",
+	"Great-crested Flycatcher",
 	"Yellow-billed Cuckoo",
 ];
 
 export { seenBirds };
+
+/* Not currently included:
+	"Snow Goose", // Clear recording on Haikubox; not seen
+	"American Woodcock", // Clear recording on Haikubox; not seen
+ */
