@@ -200,7 +200,7 @@ function buildDailySummaryPostContent(
 	if (filteredBirds?.length) {
 		// Build happy-path text
 		postString = buildTopBirdsPostText(
-			birds || [],
+			filteredBirds || [],
 			maxSpeciesInSummary,
 			seenBirds,
 			maxPostLength,
@@ -209,6 +209,7 @@ function buildDailySummaryPostContent(
 		logger.info(
 			{
 				birds,
+				filteredBirds,
 				postString,
 				length: postString.length,
 				sourceName: textSubstitutions.sourceName,
@@ -216,17 +217,19 @@ function buildDailySummaryPostContent(
 			`${textSubstitutions.sourceName} Chart`,
 		);
 		images = buildBarChartForPost(
-			birds,
+			filteredBirds,
 			maxSpeciesInSummary,
 			textSubstitutions.dateString,
 			`from ${textSubstitutions.sourceName}`,
 			logger,
 		);
 	} else if (birds?.length) {
+		// birds.length, but not filteredBirds.length
 		const info = `Insufficient observations were made by ${textSubstitutions.sourceName} to generate a report.  
 To avoid posting spurious reports, each species must be heard at least ${minObservationCount} times in the day.`;
 		postString = buildInfoPostText(textSubstitutions.shortLocation, info);
 		logger.error(
+			{ birds },
 			`No birds detected over threshold - ${textSubstitutions.sourceName} may be impaired?`,
 		);
 	} else {
@@ -235,6 +238,7 @@ No birds detected, even below threshold. ${textSubstitutions.sourceName} may be 
 		postString = buildInfoPostText(textSubstitutions.shortLocation, info);
 
 		logger.error(
+			{ birds },
 			`No birds detected - ${textSubstitutions.sourceName} may be offline?`,
 		);
 	}
