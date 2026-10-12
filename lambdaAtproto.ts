@@ -183,6 +183,7 @@ async function postStatusFromBirdList(
 	client: AtpAgent,
 	replyRef?: StrongPostRef,
 ): Promise<StrongPostRef> {
+	// We can add reference links to this…
 	const links: Link[] = [
 		{
 			uri: "https://bsky.app/profile/did:plc:jsjgrbio76yz7zzch5fsasox/post/3mb356jnlrs2c", // FIXME parameterize
@@ -194,6 +195,19 @@ async function postStatusFromBirdList(
 	const maxPostLength = 300;
 	const maxBirds = 10;
 	const minObservationCount = 10;
+
+	birds.forEach((b) => {
+		const { bird } = b;
+		// Empirical analysis of links on AllAboutBirds: all non-letter characters except hyphen are removed, spaces => underscore
+		const birdNormalized = bird
+			.replace(/[^\p{General_Category=Letter} -]/gu, "")
+			.replaceAll(" ", "_")
+			.replace(/_{2,}/g, "_"); // collapse excess… pure assumption for now
+		links.push({
+			text: bird,
+			uri: `https://www.allaboutbirds.org/guide/${birdNormalized}`,
+		});
+	});
 
 	const textSubstitutions: SummaryPostTextSubstitutions = {
 		shortLocation,
