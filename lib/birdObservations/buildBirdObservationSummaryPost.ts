@@ -169,11 +169,11 @@ function buildBarChartForPost(
 type PostTextWithImages = { text: string; imageData: ImageSpecFromBuffer[] };
 
 type SummaryPostTextSubstitutions = {
-	shortLocation: string;
+	shortLocation: string; // Short-form description of the unit's approximate geographic location
 	dateString: string;
-	caveatText: string;
-	sourceName: string;
-	sourceTag: string;
+	caveatText: string; // Full plaintext of the caveat link with any required newline spacing
+	sourceName: string; // Name of the collecting unit / manufacturer
+	sourceTag: string; // Hashtag of the collecting unit / manufacturer
 };
 
 /**

@@ -93,15 +93,18 @@ function buildLinkFacets(
 ): AppBskyRichtextFacet.Main[] {
 	const facets: AppBskyRichtextFacet.Main[] = [];
 	for (const h of matches) {
-		const { text, uri } = h;
-		const index = postText.indexOf(text);
-		const length = postText.length;
+		const { text: linkText, uri } = h;
+		const linkTextStartPosition = postText.indexOf(linkText);
+		const linkTextLength = linkText.length;
 
-		if (index) {
+		if (linkTextStartPosition) {
 			facets.push({
 				index: {
-					byteStart: bytesBeforeUtf8Offset(postText, index),
-					byteEnd: bytesBeforeUtf8Offset(postText, index + length),
+					byteStart: bytesBeforeUtf8Offset(postText, linkTextStartPosition),
+					byteEnd: bytesBeforeUtf8Offset(
+						postText,
+						linkTextStartPosition + linkTextLength,
+					),
 				},
 				features: [
 					{
