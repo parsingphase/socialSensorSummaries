@@ -186,7 +186,8 @@ async function postStatusFromBirdList(
 	replyRef?: string,
 ): Promise<Status> {
 	const shortLocation = `(NE MA)`; // FIXME move this to config
-	const caveatText = `\n\n ^ See caveat`;
+	const caveatUrl = "https://m.phase.org/@parsingphase/111711558681612429"; // FIXME config!
+	const caveatText = `\n\n ^ See caveat: ${caveatUrl}`;
 	const maxPostLength = 300;
 	const maxBirds = 10;
 	const minObservationCount = 10;
